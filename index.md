@@ -2,8 +2,10 @@
 
 ## Education
 
-B.S. Statistics, Minor in Mathematics, Brigham Young University, Utah, April 2021
-- Honors: *magna cum laude* (GPA: 3.99/4.0)
+- Ph.D., Statistics, Baylor University, 2021 - Present.
 
+- B.S., Statistics, minor in Mathematics, Brigham Young University, 2021.
+
+&ensp; &ensp; &ensp; Honors: *magna cum laude* (GPA: 3.99/4.0)
 
 <a href="./publications">See publications</a>
