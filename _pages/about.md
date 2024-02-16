@@ -27,6 +27,7 @@ Research Interests
 ======
 
 * Multivariate statistics
+* Anomaly detection
 * Time series
 * Machine learning
 
