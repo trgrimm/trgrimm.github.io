@@ -8,13 +8,13 @@ tags:
   - categorical variables
 ---
 
-This post gives a brief introduction to the basics of fault detection with statistical process control (SPC), also referred to as statistical process monitoring (SPM).
+This post gives a basic overview of fault detection with statistical process control (SPC) methods, also referred to as statistical process monitoring (SPM).
 
 # What is fault detection?
 
 In many processes, such as industrial, manufacturing, chemical, water/wastewater treatment, etc., it is important to identify and quickly respond to any abnormal changes in the process that may damage process equipment or negatively impact environmental or human health.
 
-**Fault detection** is the process by which outliers/anomalies ("faults") are identified ("detected"). 
+*Fault detection* is the process by which outliers/anomalies ("faults") are identified ("detected"). Many methods for fault detection exist, including various supervised and unsupervised machine learning methods. However, these methods can often be difficult to fit or interpret, especially when a large amount of data is not available in advance. Alternatively, SPC methods can be used as a more traditional statistical solution that is typically much easier, faster, and more interpretable, often without sacrificing much (if any) fault detection performance.
 
 # What is SPC?
 
