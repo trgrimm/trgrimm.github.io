@@ -1,0 +1,21 @@
+---
+title: 'Fault Detection with Statistical Process Control'
+date: 2025-02-16
+permalink: /posts/2024/02/what-is-anova/
+tags:
+  - statistics
+  - analysis of variance
+  - categorical variables
+---
+
+This post gives a brief introduction to the basics of fault detection with statistical process control (SPC), also referred to as statistical process monitoring (SPM).
+
+# What is fault detection?
+
+In many processes, such as industrial, manufacturing, chemical, water/wastewater treatment, etc., it is important to identify and quickly respond to any abnormal changes in the process that may damage process equipment or negatively impact environmental or human health.
+
+**Fault detection** is the process by which outliers/anomalies ("faults") are identified ("detected"). 
+
+# What is SPC?
+
+
