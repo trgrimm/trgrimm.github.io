@@ -22,6 +22,7 @@ While at Baylor, I have had the opportunity to work on a variety of different pr
 
 Currently, I am working with my advisor, [Dr. Mandy Hering](https://statistics.artsandsciences.baylor.edu/person/dr-amanda-s-hering), to improve multivariate statistical methods for fault detection in complex processes with specific applications in water/wastewater treatment.
 
+---
 
 Research Interests
 ======
@@ -31,7 +32,7 @@ Research Interests
 * Time series
 * Machine learning
 
-
+---
 
 Education
 ======
