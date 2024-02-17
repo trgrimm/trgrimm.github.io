@@ -10,7 +10,7 @@ locale                   : "en-US"
 title                    : "Taylor Grimm"
 title_separator          : "-"
 name                     : &name "Taylor Grimm"
-description              : &description "Statistics PhD Candidate"
+description              : &description "Statistician"
 url                      : https://trgrimm.github.io # the base hostname & protocol for your site e.g. "https://mmistakes.github.io"
 baseurl                  : "" # the subpath of your site, e.g. "/blog"
 repository               : "trgrimm/trgrimm.github.io"
@@ -82,7 +82,7 @@ analytics:
 author:
   name             : "Taylor Grimm"
   avatar           : "profile3.jpg"
-  bio              : "Statistics PhD Student"
+  bio              : "Statistics PhD Candidate"
   location         : "Waco, TX"
   employer         :
   pubmed           : #"https://www.ncbi.nlm.nih.gov/pubmed/?term=john+snow"
