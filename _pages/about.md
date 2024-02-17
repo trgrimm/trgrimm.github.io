@@ -37,9 +37,12 @@ Research Interests
 Education
 ======
 
-**Ph.D.** in Statistics, GPA: 3.96/4.00 Baylor University  
-**M.S.** in Statistics, GPA: 3.94/4.00 Baylor University  
-**B.S.** in Statistical Science, minor in mathematics, GPA: 3.99/4.00   Brigham Young University
+### Baylor University  
+**Ph.D.** in Statistics, GPA: 3.96/4.00  
+**M.S.** in Statistics, GPA: 3.94/4.00
+
+### Brigham Young University
+**B.S.** in Statistical Science, minor in mathematics, GPA: 3.99/4.00
 
 [comment]: <> (For more info)
 [comment]: <> (------)
