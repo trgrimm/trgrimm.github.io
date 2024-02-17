@@ -60,19 +60,21 @@ that considers both the dosage levels *and* the delivery method.
 As is necessary before performing any analysis, we can now load in any
 packages we’ll be using and set up the data so it can be used for
 plotting and analysis.
+    
+```R
+library(tidyverse)
+library(kableExtra)
 
-    library(tidyverse)
-    library(kableExtra)
+# We can use the data() function to load the ToothGrowth dataset into our global environment
+data('ToothGrowth')
 
-    # We can use the data() function to load the ToothGrowth dataset into our global environment
-    data('ToothGrowth')
-
-    # Dose is initially stored as a numeric (double) vector, but for the purposes of our
-    # analysis, we want dose to be a factor variable
-    ToothGrowth$dose <- as.factor(ToothGrowth$dose)
+# Dose is initially stored as a numeric (double) vector, but for the purposes of our
+# analysis, we want dose to be a factor variable
+ToothGrowth$dose <- as.factor(ToothGrowth$dose)
+```
 
 Now, let’s look at a few random rows of the dataset to make sure
-everything is loaded in properly. The `gt` package gives us a nice way
+everything is loaded in properly. The `kableExtra` package gives us a nice way
 to make tables in RMarkdown that are more visually appealing than raw
 output, and `slice_sample()` from the `dplyr` package (part of the `tidyverse`) lets us
 easily select 10 random rows from the dataset to view. In this analysis,
@@ -80,14 +82,16 @@ we only consider data corresponding to guinea pigs that were not
 assigned to the orange juice supplement group. However, the table below
 includes data for all guinea pigs in the experiment.
 
-    ToothGrowth |> 
-      as_tibble() |> 
-      slice_sample(n = 10) |> 
+```R
+ToothGrowth |> 
+  as_tibble() |> 
+    slice_sample(n = 10) |> 
       kable(booktabs = TRUE,
       caption = "Table of 10 random observations from the ToothGrowth data.
          The columns contain data regarding the tooth length ('len'), supplement
          type ('supp'), and dose for each guinea pig, with each row representing data
          from a single guinea pig.")
+```
 
 <table>
 <caption>
@@ -228,14 +232,15 @@ looks like across each of the dosage levels (`dose`), we can look at the
 side-by-side boxplots created below. We see that as the Vitamin C dose
 increases across the groups, so does the tooth length.
 
-
-    ToothGrowth |> 
-      filter(supp == 'OJ') |> 
-      ggplot(aes(dose, len)) +
-      geom_boxplot() +
-      xlab("Vitamin C Dose (mg/day)") +
-      ylab("Tooth Length") +
-      ggtitle("Boxplots for Each Dosage Level")
+```R
+ToothGrowth |> 
+  filter(supp == 'OJ') |> 
+    ggplot(aes(dose, len)) +
+    geom_boxplot() +
+    xlab("Vitamin C Dose (mg/day)") +
+    ylab("Tooth Length") +
+    ggtitle("Boxplots for Each Dosage Level")
+```
 
 ![image](https://user-images.githubusercontent.com/70607091/213942730-10c2fba8-cc7f-4727-a861-66e18b5919fe.png)
 <p class="caption">
@@ -251,15 +256,17 @@ results observed in this dataset are plausible simply by random chance.
 This is where ANOVA comes into play. The code below shows how to fit a
 simple oneway ANOVA model using the `aov()` function in `R`.
 
-    OJ_data <- ToothGrowth |> filter(supp == 'OJ')
-    tooth_model <- aov(len ~ dose, data = OJ_data)
-    summary(tooth_model)
+```R
+OJ_data <- ToothGrowth |> filter(supp == 'OJ')
+tooth_model <- aov(len ~ dose, data = OJ_data)
+summary(tooth_model)
 
-    ##             Df Sum Sq Mean Sq F value   Pr(>F)    
-    ## dose         2  885.3   442.6   31.44 8.89e-08 ***
-    ## Residuals   27  380.1    14.1                     
-    ## ---
-    ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+##             Df Sum Sq Mean Sq F value   Pr(>F)    
+## dose         2  885.3   442.6   31.44 8.89e-08 ***
+## Residuals   27  380.1    14.1                     
+## ---
+## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+```
 
 From the summary output above, we see that `dose` is a significant explanatory
 variable. Specifically, performing an *F* test results in a significant
@@ -273,7 +280,9 @@ In order to determine which dosage levels are significantly different
 from one another, we can use a Tukey’s honest significant differences,
 as computed by the `TukeyHSD()` function in `R`.
 
-    tukey <- TukeyHSD(tooth_model)
+```R
+tukey <- TukeyHSD(tooth_model)
+```
 
 Using the `TukeyHSD()` function results in values that can be seen in the plot below.
 Any comparison that is completely above or below a difference of 0
@@ -283,9 +292,10 @@ dose level groups have significantly higher tooth growth than the 0.5
 mg/day group, but the 2 mg/day group does not have significantly
 different growth than the 1 mg/day group.
 
-    tukey$dose |>
-      as_tibble() |>
-      mutate(comparison = c("1-.5", "2-.5", "2-1")) |>
+```R
+tukey$dose |>
+  as_tibble() |>
+    mutate(comparison = c("1-.5", "2-.5", "2-1")) |>
       ggplot(aes(comparison, diff)) +
       geom_point() +
       geom_errorbar(aes(ymin = lwr, ymax = upr), width = .2) +
@@ -293,6 +303,7 @@ different growth than the 1 mg/day group.
       xlab("Dosage Comparison") +
       ylab("Difference") +
       ggtitle("Pairwise Comparisons for Each Dosage Level")
+```
 
 ![](https://user-images.githubusercontent.com/70607091/213942772-c20dc9b5-dd0f-4040-87ab-be9f6a9c3736.png)
 
