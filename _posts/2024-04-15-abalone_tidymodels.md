@@ -10,7 +10,7 @@ tags:
 
 This post provides a complete walkthrough of a simple analysis of [Abalone](https://en.wikipedia.org/wiki/Abalone) data from [Kaggle](https://www.kaggle.com/) in `R` using the `tidymodels` package. Various supervised statistical/machine learning regression methods are compared.
 
-Code to produce this blog post can be found in [this](https://github.com/trgrimm/t2_mewma) GitHub repository $\color{red}\textrm{[update repo link]}$.
+Code to produce this blog post can be found in [this](https://github.com/trgrimm/t2_mewma) GitHub repository [update repo link]}.
 
 
 ## Data description
