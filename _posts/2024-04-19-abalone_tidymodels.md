@@ -8,7 +8,7 @@ tags:
   - statistics
 ---
 
-This is a future post that will provide a complete walkthrough of a simple analysis of [Abalone](https://en.wikipedia.org/wiki/Abalone) data from [Kaggle](https://www.kaggle.com/) in `R` using the `tidymodels` package. Various supervised statistical/machine learning regression methods are compared, and the best model is selected.
+This is a future post that will provide a complete walkthrough of analyzing and applying supervised machine learning (ML) regression methods to [Abalone](https://en.wikipedia.org/wiki/Abalone) data from [Kaggle](https://www.kaggle.com/) in `R` using the `tidymodels` package. The best model will be selected from a suite of candidate models.
 
 <!-- Code to produce this blog post can be found in [this](https://github.com/trgrimm/abalone_analysis) GitHub repository}. -->
 
@@ -17,7 +17,7 @@ This is a future post that will provide a complete walkthrough of a simple analy
 
 Data for this analysis comes from a [Kaggle playground prediction competition](https://www.kaggle.com/competitions/playground-series-s4e4/overview) titled "Regression with an Abalone Dataset". This Kaggle data is synthetically generated from a real dataset of various physical measurements contained [here](https://archive.ics.uci.edu/dataset/1/abalone) on the UC Irvine Machine Learning Repository.
 
-Abalones are a group of marine gastropod mollusks found in various cold waters across the world. Typically, the age of an abalone is determined by cutting through its shell and counting the number of rings in a microsope. This process can be time-consuming. So, we want to use statistical/machine learning methods to predict the number of rings using other physical measurements that are more easily obtained.
+Abalones are a group of marine gastropod mollusks found in various cold waters across the world. Typically, the age of an abalone is determined by cutting through its shell and counting the number of rings in a microsope. This process can be time-consuming. So, we want to use data-driven ML methods to predict the number of rings using other physical measurements that are more easily obtained.
 
 Here's a picture of abalone:
 
