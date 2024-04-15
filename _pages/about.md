@@ -20,7 +20,7 @@ While at Baylor, I have had the opportunity to work on a variety of different pr
 * assisted in the development of a multi-day data science workshop for professionals in the water/wastewater treatment industry.
 * worked as a statistical consultant studying and applying various statistical methods to help clients understand their data on a case-by-case basis.
 
-Currently, I am working with my advisor, [Dr. Mandy Hering](https://statistics.artsandsciences.baylor.edu/person/dr-amanda-s-hering), to improve multivariate statistical methods for fault detection in complex processes with specific applications in water/wastewater treatment.
+Currently, I am working with my advisor, [Dr. Mandy Hering](https://statistics.artsandsciences.baylor.edu/person/dr-amanda-s-hering), to improve multivariate statistical methods for detecting anomalies (faults) in complex processes, with specific applications in water/wastewater treatment.
 
 ---
 
