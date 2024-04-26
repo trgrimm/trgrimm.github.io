@@ -18,7 +18,7 @@ Data for this analysis comes from a [Kaggle playground prediction competition](h
 
 Abalones are a group of marine gastropod mollusks found in various cold waters across the world. Typically, the age of an abalone is determined by cutting through its shell and counting the number of rings in a microsope. This process can be time-consuming. So, we want to use data-driven ML methods to predict the number of rings using other physical measurements that are more easily obtained.
 
-Here's a picture of abalone:
+Here's a picture of abalone for reference:
 
 <p align="center">
     <img src="https://github.com/trgrimm/trgrimm.github.io/assets/70607091/24ec8cc6-c185-4136-bf12-6f5ce6a2a8ec" width="400">
