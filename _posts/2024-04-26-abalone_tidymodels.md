@@ -137,8 +137,9 @@ train |>
   labs(y = 'Count', title = 'Histogram of Rings')
 ```
 
-<img src="https://github.com/trgrimm/trgrimm.github.io/assets/70607091/1ed5c3f5-31a2-4917-8ebf-eba4196b3740" width="500"
-data-fig-align="center" />
+<p align="center">
+    <img src="https://github.com/trgrimm/trgrimm.github.io/assets/70607091/1ed5c3f5-31a2-4917-8ebf-eba4196b3740" width="500">
+</p>
 
 Now, let’s split the histogram of `Rings` by `Sex`.
 
@@ -155,8 +156,9 @@ train |>
 
     `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
 
-<img src="https://github.com/trgrimm/trgrimm.github.io/assets/70607091/e37fa9de-9f5c-4b9a-a3ab-288ff4447f1a" width="500"
-data-fig-align="center" />
+<p align="center">
+<img src="https://github.com/trgrimm/trgrimm.github.io/assets/70607091/e37fa9de-9f5c-4b9a-a3ab-288ff4447f1a" width="500">
+</p>
 
 From the histograms above, the distributions appear to have similar
 shapes for each `Sex`, but the infants are centered around 7 while the
@@ -188,8 +190,9 @@ train |>
   ggtitle("Relationship between Rings and Numeric Predictors")
 ```
 
-<img src="https://github.com/trgrimm/trgrimm.github.io/assets/70607091/94834cf3-e8e9-48c8-85ed-500a46f85e81" width="500"
-data-fig-align="center" />
+<p align="center">
+<img src="https://github.com/trgrimm/trgrimm.github.io/assets/70607091/94834cf3-e8e9-48c8-85ed-500a46f85e81" width="500">
+</p>
 
 To supplement the plots above, the plot below shows the pairwise
 correlations between the numeric variables. All variables are positively
@@ -205,8 +208,9 @@ ggcorrplot::ggcorrplot(train |>
                      lab = TRUE)
 ```
 
-<img src="https://github.com/trgrimm/trgrimm.github.io/assets/70607091/cb5d71e1-0c77-470d-8a18-dd0b3f27aeff" width="500"
-data-fig-align="center" />
+<p align="center">
+<img src="https://github.com/trgrimm/trgrimm.github.io/assets/70607091/cb5d71e1-0c77-470d-8a18-dd0b3f27aeff" width="500">
+</p>
 
 
 # Building predictive models
@@ -419,8 +423,9 @@ autoplot(race_results,
          select_best = TRUE)
 ```
 
-<img src="https://github.com/trgrimm/trgrimm.github.io/assets/70607091/492a774a-1d77-4027-a4dd-363ab1a6d5f1" width="500"
-data-fig-align="center" />
+<p align="center">
+<img src="https://github.com/trgrimm/trgrimm.github.io/assets/70607091/492a774a-1d77-4027-a4dd-363ab1a6d5f1" width="500">
+</p>
 
 The best model is XGBoost, which produces a 10-fold CV RMSLE of 0.148.
 The performance of XGBoost is pretty close to RF, and the linear
@@ -474,8 +479,9 @@ xgb_test_results %>%
   labs(x = "observed", y = "predicted")
 ```
 
-<img src="https://github.com/trgrimm/trgrimm.github.io/assets/70607091/8d9892aa-46e5-4353-bdde-5995ee267bf4" width="500"
-data-fig-align="center" />
+<p align="center">
+<img src="https://github.com/trgrimm/trgrimm.github.io/assets/70607091/8d9892aa-46e5-4353-bdde-5995ee267bf4" width="500">
+</p>
 
 # Conclusion
 
@@ -666,8 +672,9 @@ autoplot(blend, "weights") +
   lims(x = c(-0.01, 0.8))
 ```
 
-<img src="https://github.com/trgrimm/trgrimm.github.io/assets/70607091/3993df18-21f3-4db6-ae83-ed4c3388f7dc" width="500"
-data-fig-align="center" />
+<p align="center">
+<img src="https://github.com/trgrimm/trgrimm.github.io/assets/70607091/3993df18-21f3-4db6-ae83-ed4c3388f7dc" width="500">
+</p>
 
 ``` r
 # obtain final model fit to full training set
