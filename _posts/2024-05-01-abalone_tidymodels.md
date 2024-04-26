@@ -497,6 +497,9 @@ that were not explored here that are useful. However, this post was a
 nice way for me to demonstrate some simple things I’ve learned recently
 with the `tidymodels` framework.
 
+<br>
+<br>
+
 ------------------------------------------------------------------------
 
 # Bonus: Submitting predictions to Kaggle
