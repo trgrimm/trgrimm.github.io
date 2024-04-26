@@ -1,7 +1,7 @@
 ---
 title: 'Analysis Walkthrough: Supervised Regression with Abalone Data'
-date: 2024-04-26
-permalink: /posts/2024/04/abalone_tidymodels/
+date: 2024-05-1
+permalink: /posts/2024/05/abalone_tidymodels/
 tags:
   - machine learning
   - regression
@@ -499,7 +499,7 @@ with the `tidymodels` framework.
 
 ------------------------------------------------------------------------
 
-# Submitting predictions to Kaggle
+# Bonus: Submitting predictions to Kaggle
 
 Recall that the data came from Kaggle already split into train and test
 sets, which I have called `kaggle_train` and `kaggle_test`. However, the
