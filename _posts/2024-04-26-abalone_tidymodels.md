@@ -634,19 +634,11 @@ on the 10-fold CV model fits above.
 
 ``` r
 library(stacks) # package needed to create a model ensemble via model stacking
-```
 
-    Warning: package 'stacks' was built under R version 4.2.3
-
-``` r
 # Create the model stack
 abalone_stack <- stacks() |> 
   add_candidates(race_results_final)
 ```
-
-    Warning: The inputted `candidates` argument `preproc_rf` generated notes during
-    tuning/resampling. Model stacking may fail due to these issues; see
-    `collect_notes()` (`?tune::collect_notes()`) if so.
 
 Next, we “blend” these models in such a way that we improve our
 predictions. Then, we fit the models with those weights to the full
