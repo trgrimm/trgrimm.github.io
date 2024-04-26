@@ -14,14 +14,24 @@ This post provides a complete walkthrough of analyzing [Abalone](https://en.wiki
 
 # Data description
 
-Data for this analysis comes from a [Kaggle playground prediction competition](https://www.kaggle.com/competitions/playground-series-s4e4/overview) titled \`\`Regression with an Abalone Dataset”. This Kaggle data is synthetically generated from a real dataset of various physical measurements contained [here](https://archive.ics.uci.edu/dataset/1/abalone) on the UC Irvine Machine Learning Repository.
+Data for this analysis comes from a [Kaggle playground prediction competition](https://www.kaggle.com/competitions/playground-series-s4e4/overview) titled "Regression with an Abalone Dataset". This Kaggle data is synthetically generated from a real dataset of various physical measurements contained [here](https://archive.ics.uci.edu/dataset/1/abalone) on the UC Irvine Machine Learning Repository.
 
-Abalones are a group of marine gastropod mollusks found in various cold waters across the world. Typically, the age of an abalone is determined by cutting through its shell and counting the number of rings in a microsope. This process can be time-consuming.
+Abalones are a group of marine gastropod mollusks found in various cold waters across the world. Typically, the age of an abalone is determined by cutting through its shell and counting the number of rings in a microsope. This process can be time-consuming. So, we want to use data-driven ML methods to predict the number of rings using other physical measurements that are more easily obtained.
 
-The abalone dataset contains
+Here's a picture of abalone:
 
-- 8 predictor variables: sex, length, diameter, height, etc.
-- 1 numeric response variable: `Rings`
+<p align="center">
+    <img src="https://github.com/trgrimm/trgrimm.github.io/assets/70607091/24ec8cc6-c185-4136-bf12-6f5ce6a2a8ec" width="400">
+</p>
+<p align="center" class="caption">
+Abalone
+<a href="https://asc-aqua.org/learn-about-seafood-farming/farmed-abalone/">image source</a>.
+</p>
+
+The abalone dataset contains 
+
+* 8 predictor variables: sex, length, diameter, height, etc.
+* 1 numeric response variable: `Rings`
 
 **Analysis Goal:** Predict the number of `Rings` using the easily obtained physical measurements (predictor variables).
 
@@ -33,10 +43,10 @@ $$
 
 where
 
-- $n$ = number of observations in the test set
-- $\hat{y}_i$ is the predicted value of `Rings` for observation $i$
-- $y_i$ is the observed value of `Rings` for observation $i$
-- $\log$ is the natural logarithm.
+* $n$ = number of observations in the test set
+* $\hat{y}_i$ is the predicted value of `Rings` for observation $i$
+* $y_i$ is the observed value of `Rings` for observation $i$
+* $\log$ is the natural logarithm.
 
 For this analysis, we want to be able to visualize our final results to see how well we do on testing data. However, Kaggle does not release the true values of the response variable of the test set, even after the competition has ended.
 
