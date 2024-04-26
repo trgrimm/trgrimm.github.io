@@ -56,7 +56,7 @@ First, I’ll set up a new train/test split using the `train` data provided by K
 
 First, we load in the `tidyverse` and `tidymodels` packages, which will
 be used throughout this analysis. Then, we load in the train and test
-sets. These are stored in separate .csv files.
+sets. These are stored in separate .csv files that I downloaded from the Kaggle competition.
 
 ``` r
 library(tidyverse)
