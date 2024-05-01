@@ -625,18 +625,6 @@ test_preds <- xgb_res_final |>
 write.csv(test_preds, file = 'abalone_preds.csv', row.names = FALSE)
 ```
 
-After submitting the predictions, they are assessed by Kaggle. Our RMSLE
-score for the test set and leaderboard position are then reported. Based
-on these predictions, we achieved a RMSLE score of \_\_\_\_, which put
-us in \_\_\_\_/\_\_\_\_ position in the final leaderboard standings from
-the competition. This puts us in the top \_\_\_% of participants!
-
-It’s possible to improve this RMSLE score by considering things such as
-additional feature engineering, model preprocessing, and model tuning.
-We could also consider using additional models such as deep NN’s.
-However, everything here was kept pretty simple for the sake of
-demonstrating how to perform a simple analysis with `tidymodels` to
-produce pretty good results without a lot of additional effort.
 
 ## Creating a stacked ensemble model
 
@@ -726,6 +714,26 @@ test_preds_ensemble <- blend_test_pred |>
 # save the predictions to a .csv 
 write.csv(test_preds_ensemble, file = 'abalone_preds_ensemble.csv', row.names = FALSE)
 ```
+
+## Final Kaggle competition results
+
+After submitting the predictions, they are assessed by Kaggle once the competition ends. Our RMSLE
+score for the final test set and leaderboard position are then reported. 
+
+Based on predictions from our XGBoost and ensemble models above, we achieved a RMSLE score of:
+
+* 0.14651 with just the XGBoost model, and
+* 0.14579 with the ensemble model.
+
+This places us in 379/2608 position in the final leaderboard standings from
+the competition, meaning we are in the top 14.5% of participants, or the 85.5th percentile!
+
+It’s possible to improve this RMSLE score by considering things such as
+additional feature engineering, model preprocessing, and model tuning.
+We could also consider using additional models such as deep NN’s.
+However, everything here was kept pretty simple for the sake of
+demonstrating how to perform a simple analysis with `tidymodels` to
+produce pretty good results without a lot of additional effort.
 
 \[^1\] Maron, O, and A Moore, (1994) “Hoeffding Races: Accelerating
 Model Selection Search for Classification and Function Approximation”,
