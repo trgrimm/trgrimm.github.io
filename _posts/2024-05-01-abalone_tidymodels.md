@@ -1,6 +1,6 @@
 ---
 title: 'Analysis Walkthrough: Supervised Regression with Abalone Data'
-date: 2024-05-1
+date: 2024-05-01
 permalink: /posts/2024/05/abalone_tidymodels/
 tags:
   - machine learning
