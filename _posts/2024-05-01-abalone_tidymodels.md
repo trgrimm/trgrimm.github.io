@@ -368,7 +368,7 @@ we can tune our models. Tuning is typically done by searching for the
 best model performance over a grid of tuning parameters for each model.
 However, this grid search approach can be very time-consuming.
 
-To expedite model tuning, we’ll use racing\[^1\] with the `finetune`
+To expedite model tuning, we’ll use racing[^1] with the `finetune`
 package to tune the parameters of our models. We’ll also do this in
 parallel across 3 cores with the `doParallel` package. Thankfully,
 `tidymodels` makes this easy for us; all we have to do is set up the
@@ -739,7 +739,7 @@ However, everything here was kept pretty simple for the sake of
 demonstrating how to perform a simple analysis with `tidymodels` to
 produce pretty good results without a lot of additional effort.
 
-\[^1\] Maron, O, and A Moore, (1994) “Hoeffding Races: Accelerating
+[^1] Maron, O, and A Moore, (1994) “Hoeffding Races: Accelerating
 Model Selection Search for Classification and Function Approximation”,
 *Advances in Neural Information Processing Systems*, 59–66.
 [link](https://proceedings.neurips.cc/paper/1993/file/02a32ad2669e6fe298e607fe7cc0e1a0-Paper.pdf)
