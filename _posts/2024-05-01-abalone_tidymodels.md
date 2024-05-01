@@ -12,6 +12,8 @@ This post provides a complete walkthrough of analyzing [Abalone](https://en.wiki
 
 <!-- Code to produce this blog post can be found in [this](https://github.com/trgrimm/abalone_analysis) GitHub repository}. -->
 
+------------------------------------------------------------------------
+
 # Data description
 
 Data for this analysis comes from a [Kaggle playground prediction competition](https://www.kaggle.com/competitions/playground-series-s4e4/overview) titled "Regression with an Abalone Dataset". This Kaggle data is synthetically generated from a real dataset of various physical measurements contained [here](https://archive.ics.uci.edu/dataset/1/abalone) on the UC Irvine Machine Learning Repository.
