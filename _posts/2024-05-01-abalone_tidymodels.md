@@ -739,7 +739,7 @@ However, everything here was kept pretty simple for the sake of
 demonstrating how to perform a simple analysis with `tidymodels` to
 produce pretty good results without a lot of additional effort.
 
-[^1] Maron, O, and A Moore, (1994) “Hoeffding Races: Accelerating
+[^1]: Maron, O, and A Moore, (1994) “Hoeffding Races: Accelerating
 Model Selection Search for Classification and Function Approximation”,
 *Advances in Neural Information Processing Systems*, 59–66.
 [link](https://proceedings.neurips.cc/paper/1993/file/02a32ad2669e6fe298e607fe7cc0e1a0-Paper.pdf)
