@@ -184,6 +184,9 @@ collections:
   portfolio:
     output: true
     permalink: /:collection/:path/
+  apps:
+    output: true
+    permalink: /:collection/:path/
   talks:
     output: true
     permalink: /:collection/:path/
@@ -209,6 +212,15 @@ defaults:
     values:
       layout: single
       author_profile: true
+      # _apps
+  - scope:
+      path: ""
+      type: apps
+    values:
+      layout: single
+      author_profile: true
+      share: true
+      comment: true
   # _teaching
   - scope:
       path: ""
