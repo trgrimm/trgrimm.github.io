@@ -218,7 +218,7 @@ defaults:
       type: apps
     values:
       layout: single
-      author_profile: true
+      author_profile: false
       share: true
       comment: true
   # _teaching
