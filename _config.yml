@@ -212,7 +212,7 @@ defaults:
     values:
       layout: single
       author_profile: true
-      # _apps
+  # _apps
   - scope:
       path: ""
       type: apps
