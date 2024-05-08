@@ -2,7 +2,7 @@
 title: "Shiny App: Simulation Results for Independent Multivariate Normal Data"
 excerpt: "this is shiny app indep"
 permalink: /shiny_apps/indep_sim
-author_profile: true
+author_profile: false
 collection: apps
 ---
 
