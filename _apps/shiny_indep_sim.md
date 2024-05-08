@@ -1,7 +1,7 @@
 ---
 title: "Simulation Results for Independent Multivariate Normal Data"
 permalink: /shiny_apps/indep_sim
-author_profile: false
+sidebar: false
 collection: apps
 ---
 
