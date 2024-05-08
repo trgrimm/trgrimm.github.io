@@ -1,5 +1,5 @@
 ---
-title: "Shiny App: Simulation Results for Independent Multivariate Normal Data"
+title: "Simulation Results for Independent Multivariate Normal Data"
 permalink: /shiny_apps/indep_sim
 author_profile: false
 collection: apps
