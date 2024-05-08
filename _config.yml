@@ -217,7 +217,7 @@ defaults:
       path: ""
       type: apps
     values:
-      layout: single
+      layout: single-apps
       author_profile: false
       share: true
       comment: true
