@@ -11,4 +11,6 @@ redirect_from:
 
 Here are some shiny apps I've made in R.
 
-
+{% for post in site.apps %}
+  {% include archive-single.html %}
+{% endfor %}
