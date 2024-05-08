@@ -11,3 +11,7 @@ redirect_from:
 
 Here are some shiny apps I've made in R.
 
+{% include base_path %}
+{% for app in site.apps %}
+  {% include archive-single.html %}
+{% endfor %}
