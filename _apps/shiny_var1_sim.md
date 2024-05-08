@@ -2,7 +2,7 @@
 layout: archive
 title: "Shiny App: Control Charts for VAR(1) Simulated Data"
 permalink: /shiny_apps/var1_sim
-author_profile: true
+author_profile: false
 
 ---
 
