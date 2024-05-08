@@ -219,6 +219,7 @@ defaults:
     values:
       layout: single
       author_profile: false
+      sidebar: false
       share: true
       comment: true
   # _teaching
