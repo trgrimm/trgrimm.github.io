@@ -1,5 +1,5 @@
 ---
-layout: single
+layout: archive
 title: "Simulation Results for Independent Multivariate Normal Data"
 permalink: /shiny_apps/indep_sim
 collection: apps
