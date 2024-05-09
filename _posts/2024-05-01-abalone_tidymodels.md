@@ -6,6 +6,7 @@ tags:
   - machine learning
   - regression
   - statistics
+classes: wide
 ---
 
 This post provides a complete walkthrough of analyzing [Abalone](https://en.wikipedia.org/wiki/Abalone) data from [Kaggle](https://www.kaggle.com/) and applying supervised machine learning (ML) regression methods in `R` using the `tidymodels` package. The best model is selected from a suite of candidate models, including random forests and extreme gradient boosting (XGBoost).
