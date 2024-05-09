@@ -1,5 +1,4 @@
 ---
-layout: archive
 title: "Control Charts for VAR(1) Simulated Data"
 excerpt: "This shiny app displays simulated data and fitted control charts for VAR(1) data."
 permalink: /shiny_apps/var1_sim
