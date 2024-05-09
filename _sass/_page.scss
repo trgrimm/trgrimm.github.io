@@ -18,8 +18,8 @@
 
 .page {
   @include breakpoint($large) {
-    width: 100%;
     float: left;
+    width: 100%;
     @include span(10 of 12 last);
     @include prefix(0.5 of 12);
     @include suffix(2 of 12);
@@ -51,7 +51,8 @@
 }
 
 .page__content {
-
+  float: left;
+  width: 100%;
   h2 {
     padding-bottom: 0.5em;
     border-bottom: 1px solid $border-color;
