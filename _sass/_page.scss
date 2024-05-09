@@ -18,7 +18,7 @@
 
 .page {
   @include breakpoint($large) {
-    max-width: $x-large;
+    width: 100%;
     float: left;
     @include span(10 of 12 last);
     @include prefix(0.5 of 12);
