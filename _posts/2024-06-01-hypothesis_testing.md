@@ -9,7 +9,9 @@ tags:
 
 This post explains the basics of hypothesis testing and provides a simple hypothetical pharmaceutical example of testing whether a new drug is better than an existing drug.
 
-, including a discussion type I and II errors and statistical power.
+<!-- , including a discussion type I and II errors and statistical power.-->
+
+------------------------------------------------------------------------
 
 # What is hypothesis testing?
 
@@ -29,7 +31,20 @@ Applications of hypothesis testing arise in almost every field. A few examples i
 * **Agriculture**: Testing whether a new fertilizer is better than existing fertilizers
 * **Sociology**: Assessing if there are significant differences in crime rates across different socioeconomic groups
 
-## Simple example: Comparing the efficacy of two drugs
+# Statistical significance
+
+Whenever we want to test a hypothesis, we need to determine when we should reject H<sub>0</sub> and when we fail to reject H<sub>0</sub>. This rule for rejecting or failing to reject H<sub>0</sub> needs to be statistically sound and based on the data we've observed. We define this rule by determining whether our data is **statistically significant**. 
+
+To understand statistical significance, we'll first define some important terms:
+* ***p*-value**: the probability of obtaining results as extreme or more extreme than what we've observed
+* $\boldsymbol\alpha$: the significance level, which is the probability of rejecting H<sub>0</sub> given that H<sub>0</sub> is true
+* **practical significance**: whether the observed effect is practically meaningful in real life
+
+The value of $\alpha$ is also referred to as the probability of a Type 1 error. We reject the null hypothesis when the ***p*-value** is sufficiently small (i.e., *p*-value < $\alpha$). Alternatively, when *p*-value > $\alpha$, we fail to reject H<sub>0</sub>.
+
+Sometimes, we may achieve statistical significance, but the results may not be *practically significant*. For example, we may determine that a new drug is (statistically) significantly better at helping patients lose weight over 12 months compared to an existing treatment. However, if the difference in weight loss between the new and existing drugs is only 0.5 lb, this is not practically (or *clinically*) significant, and the new drug is not *practically* better than the existing one.
+
+# Simple example: Comparing the efficacy of two drugs
 
 Let's consider a simple example where we are interested in determining whether a new drug is better than an existing drug based on data from patients in a clinical trial. As is true for any scenario, the null and alternative hypotheses should be specific statements that directly relate to a question we want to answer using the data that we have. For this example, we are interested in the following simple hypotheses:
 
@@ -37,7 +52,7 @@ H<sub>0</sub>: There is no difference in the effects of the new drug and the exi
 
 H<sub>1</sub>: The new drug is better than the existing drug.
 
-### Defining specific hypotheses
+## Defining specific hypotheses
 
 To actually perform a hypothesis test, the idea of "no difference" and one drug being "better" than the other need to be mathematically defined. Let's say that the new drug must provide a certain amount of additional benefit to patients relative than the existing drug. For example, consider a new weight-loss drug. We'll say that the new drug is considered "better" than the existing drug if the average weight loss for patients on the new drug is at least 5lb higher than for patients on the existing drug. Our specific hypotheses are now:
 
@@ -51,7 +66,7 @@ H<sub>0</sub>: $\mu_\text{new} = \mu_\text{existing}$, or $\mu_\text{new} - \mu_
 
 H<sub>1</sub>: $\mu_\text{new} - \mu_\text{existing} \ge 5$. (at least 5lb additional weight loss on the new drug)
 
-### Testing our hypothesis
+## Testing our hypothesis
 
 Now that we've defined our hypotheses, we can perform a test to determine whether our data provides sufficient evidence to reject H<sub>0</sub>. In other words, we can perform a test to decide whether our new drug is indeed better than the existing drug.
 
