@@ -36,11 +36,12 @@ Applications of hypothesis testing arise in almost every field. A few examples i
 Whenever we want to test a hypothesis, we need to determine when we should reject H<sub>0</sub> and when we fail to reject H<sub>0</sub>. This rule for rejecting or failing to reject H<sub>0</sub> needs to be statistically sound and based on the data we've observed. We define this rule by determining whether our data is **statistically significant**. 
 
 To understand statistical significance, we'll first define some important terms:
+* $\boldsymbol\alpha$: the significance level, which is the probability of rejecting H<sub>0</sub> when H<sub>0</sub> is true (incorrectly rejecting H<sub>0</sub>)
+* $\boldsymbol\beta$: the *power* of the test, which is the probability of rejecting H<sub>0</sub> when H<sub>1</sub> is true (correctly rejecting H<sub>0</sub>)
 * ***p*-value**: the probability of obtaining results as extreme or more extreme than what we've observed
-* $\boldsymbol\alpha$: the significance level, which is the probability of rejecting H<sub>0</sub> given that H<sub>0</sub> is true
 * **practical significance**: whether the observed effect is practically meaningful in real life
 
-The value of $\alpha$ is also referred to as the probability of a Type 1 error. We reject the null hypothesis when the ***p*-value** is sufficiently small (i.e., *p*-value < $\alpha$). Alternatively, when *p*-value > $\alpha$, we fail to reject H<sub>0</sub>.
+The value of $\alpha$ is also referred to as the probability of a Type 1 error. We reject the null hypothesis when the ***p*-value** is sufficiently small (i.e., *p*-value < $\alpha$). Alternatively, when *p*-value > $\alpha$, we fail to reject H<sub>0</sub>. Another important error to consider is the Type 2 error, which is equal to $(1 - \boldsymbol\beta)$ and is the probability of failing to reject H<sub>0</sub> when H<sub>1</sub> is true. Both of these errors relate to hypothesis tests that make an "incorrect" decision, both of which can have costly impacts. Therefore, it is important to properly understand the implications of each error whenever performing a hypothesis test. A more detailed discussion of Type 1 and Type 2 errors will be given in a future blog post.
 
 Sometimes, we may achieve statistical significance, but the results may not be *practically significant*. For example, we may determine that a new drug is (statistically) significantly better at helping patients lose weight over 12 months compared to an existing treatment. However, if the difference in weight loss between the new and existing drugs is only 0.5 lb, this is not practically (or *clinically*) significant, and the new drug is not *practically* better than the existing one.
 
@@ -54,11 +55,11 @@ H<sub>1</sub>: The new drug is better than the existing drug.
 
 ## Defining specific hypotheses
 
-To actually perform a hypothesis test, the idea of "no difference" and one drug being "better" than the other need to be mathematically defined. Let's say that the new drug must provide a certain amount of additional benefit to patients relative than the existing drug. For example, consider a new weight-loss drug. We'll say that the new drug is considered "better" than the existing drug if the average weight loss for patients on the new drug is at least 5lb higher than for patients on the existing drug. Our specific hypotheses are now:
+To actually perform a hypothesis test, the idea of "no difference" and one drug being "better" than the other need to be mathematically defined. Let's say that the new drug must provide a certain amount of additional benefit to patients relative than the existing drug. For example, consider a new weight-loss drug. We'll say that the new drug is considered "better" than the existing drug if the average weight loss for patients on the new drug is at least 5 lb higher than for patients on the existing drug. Our specific hypotheses are now:
 
-H<sub>0</sub>: The average weight loss for patients on the new drug is less than 5 pounds greater than that of patients on the existing drug.
+H<sub>0</sub>: The average weight loss for patients on the new drug is less than 5 lb greater than that of patients on the existing drug.
 
-H<sub>1</sub>: The average weight loss for patients on the new drug is at least 5 pounds greater than that of patients on the existing drug.
+H<sub>1</sub>: The average weight loss for patients on the new drug is at least 5 lb greater than that of patients on the existing drug.
 
 Let $\mu_\text{new}$ and $\mu_\text{existing}$ be the average weight loss for patients on the new and existing drugs, respectively. We now have the following mathematical hypotheses:
 
@@ -73,7 +74,7 @@ Now that we've defined our hypotheses, we can perform a test to determine whethe
 Suppose we observe the following:
 
 
-Because we're comparing averages of weight loss between two, we'll use a [*t*-test](https://en.wikipedia.org/wiki/Student%27s_t-test) to test our hypothesis.
+Because we're comparing averages of weight loss between two groups, we'll use a two-sample [*t*-test](https://en.wikipedia.org/wiki/Student%27s_t-test) to test our hypothesis.
 
 
 
