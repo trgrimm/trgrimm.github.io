@@ -11,7 +11,7 @@ redirect_from:
 About Me
 ======
 
-I am a PhD candidate in Statistics at Baylor University with a passion for understanding and learning from data to help others make informed decisions.
+I am a PhD candidate in Statistics at Baylor University with a passion for understanding and learning from data to help others make informed decisions. I especially love collaborating with people with different backgrounds and learning about other fields so that I can better understand and approach problems.
 
 As an undergraduate, I worked for a year as a research assistant developing Bayesian models to estimate elemental profiles and contributions of various potential pollution sources across the intermountain west. This project resulted in my first co-authored [publication](https://trgrimm.github.io/publications/).
 
