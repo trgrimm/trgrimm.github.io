@@ -41,7 +41,7 @@ To understand statistical significance, we'll first define some important terms:
 * ***p*-value**: the probability of obtaining results as extreme or more extreme than what we've observed
 * **practical significance**: whether the observed effect is practically meaningful in real life
 
-The value of $\alpha$ is also referred to as the probability of a Type 1 error. We reject the null hypothesis when the ***p*-value** is sufficiently small (i.e., *p*-value < $\alpha$). Alternatively, when *p*-value > $\alpha$, we fail to reject H<sub>0</sub>. Another important error to consider is the Type 2 error, which is equal to $(1 - \boldsymbol\beta)$ and is the probability of failing to reject H<sub>0</sub> when H<sub>1</sub> is true. Both of these errors relate to hypothesis tests that make an "incorrect" decision, which can have costly impacts. Therefore, it is important to properly understand the implications of each error whenever performing a hypothesis test. A more detailed discussion of Type 1 and Type 2 errors will be given in a future blog post.
+The value of $\alpha$ is also referred to as the probability of a Type 1 error. We reject the null hypothesis when the ***p*-value** is sufficiently small (i.e., *p*-value < $\alpha$). Alternatively, when *p*-value > $\alpha$, we fail to reject H<sub>0</sub>. Another important error to consider is the Type 2 error, which is equal to $(1 - \boldsymbol\beta)$ and is the probability of failing to reject H<sub>0</sub> when H<sub>1</sub> is true. Both of these errors relate to hypothesis tests that make an "incorrect" decision, which can have costly impacts. Therefore, it is important to properly understand the implications of each error whenever performing a hypothesis test. A more detailed discussion of Type 1 and Type 2 errors, along with power, will be given in a future blog post.
 
 Sometimes, we may achieve statistical significance, but the results may not be *practically significant*. For example, we may determine that a new drug is (statistically) significantly better at helping patients lose weight over 12 months compared to an existing treatment. However, if the difference in weight loss between the new and existing drugs is only 0.5 lb, this may not be considered practically (or *clinically*) significant, meaning that the new drug is not *practically* better than the existing one.
 
@@ -63,19 +63,83 @@ H<sub>1</sub>: The average weight loss for patients on the new drug is at least 
 
 Let $\mu_\text{new}$ and $\mu_\text{existing}$ be the average weight loss for patients on the new and existing drugs, respectively. We now have the following mathematical hypotheses:
 
-H<sub>0</sub>: $\mu_\text{new} = \mu_\text{existing}$, or $\mu_\text{new} - \mu_\text{existing} = 0$. (no difference)
+H<sub>0</sub>: $\mu_\text{new} - \mu_\text{existing} \le 5$. (difference in weight loss is less than 5 lb between the drugs)
 
 H<sub>1</sub>: $\mu_\text{new} - \mu_\text{existing} \ge 5$. (at least 5lb additional weight loss on the new drug)
 
 ## Testing our hypothesis
 
-Now that we've defined our hypotheses, we can perform a test to determine whether our data provides sufficient evidence to reject H<sub>0</sub>. In other words, we can perform a test to decide whether our new drug is indeed better than the existing drug.
+Now that we've defined our hypotheses, we can perform a test to determine whether our data provides sufficient evidence to reject H<sub>0</sub>. In other words, we can perform a test to decide whether our new drug is indeed better than the existing drug. Here, we'll use a significance level of $\alpha = 0.05$, which is common.
 
 Suppose we observe the following:
 
+* Group on the new treatment: 45 patients, average weight loss of 15 lb, weight loss standard deviation of 9 lb
+* Group on the existing treatment: 42 patients, average weight loss of 8 lb, weight loss standard deviation of 10 lb
 
-Because we're comparing averages of weight loss between two groups, we'll use a two-sample [*t*-test](https://en.wikipedia.org/wiki/Student%27s_t-test) to test our hypothesis.
+Clearly, the difference in average weight loss between groups is $15 - 8 = 7$, which is greater than 5. However, we need to use a statistical test to determine the probability of observing data such as this, at random, if the null hypothesis is true.
+
+To compare the averages of weight loss between these two groups, we'll use a special version of a two-sample [*t*-test](https://en.wikipedia.org/wiki/Student%27s_t-test), called a [Welch's *t*-test](https://en.wikipedia.org/wiki/Welch%27s_t-test) to test our hypothesis. If we had individual-level data for all $45 + 42$ patients, we could use the `t.test()` function in R. However, because we only have summary statistics for this example, we'll use the `tsum.test()` function in the `BDSA`[^1] package in R.
+
+The code and output are given below:
+
+``` r
+library(BSDA)
+
+# Let "x" be the new treatment group, and "y" be the existing treatment group.
+# mean.x, mean.y are the group means (average weight loss)
+# s.x, s.y are the group standard deviations for weight loss
+# n.x, n.y are the sample sizes for each group
+# mu is the hypothesized difference between groups (5 lb)
+
+tsum.test(mean.x = 15, s.x = 9, n.x = 45,
+          mean.y = 8, s.y = 10, n.y = 42,
+          alternative = 'greater', mu = 5)
+
+```
+
+	    Welch Modified Two-Sample t-Test
+
+    data:  Summarized x and y
+    t = 0.97812, df = 82.492, p-value = 0.1654
+    alternative hypothesis: true difference in means is greater than 5
+    95 percent confidence interval:
+     3.598506       NA
+    sample estimates:
+    mean of x mean of y 
+           15         8 
+
+Above, the *p*-value is 0.1654, which is larger than $\alpha = 0.05$. In this case, we fail to reject H<sub>0</sub> and conclude that there is insufficient evidence to say that the average weight loss for patients who take the new drug is at least 5 lb greater than the average weight loss for patients who take the existing drug.
+
+Now, let's pretend we actually have data for 300 total patients (150 on each drug) with the exact same summary statistics as above. That is, we have
+
+* Group on the new treatment: 150 patients, average weight loss of 15 lb, weight loss standard deviation of 9 lb
+* Group on the existing treatment: 150 patients, average weight loss of 8 lb, weight loss standard deviation of 10 lb
+
+Here, we can run the same test with slight modifications for the sample sizes:
+
+``` r
+tsum.test(mean.x = 15, s.x = 9, n.x = 45,
+          mean.y = 8, s.y = 10, n.y = 42,
+          alternative = 'greater', mu = 5)
+```
+    	Welch Modified Two-Sample t-Test
+    
+    data:  Summarized x and y
+    t = 1.8207, df = 294.75, p-value = 0.03483
+    alternative hypothesis: true difference in means is greater than 5
+    95 percent confidence interval:
+     5.187458       NA
+    sample estimates:
+    mean of x mean of y 
+           15         8 
+
+When we had smaller sample sizes, our *p*-value was greater than $0.05$. Now, the *p*-value is 0.035, which would cause us to reject H<sub>0</sub> and conclude that there the average weight loss for patients who take the new drug is indeed at least 5 lb greater than the average weight loss for patients who take the existing drug.
+
+Based on the results from these two scenarios, we see that the results of a hypothesis test can be affected by many factors, including the sample size, the value of $\alpha$, and the observed difference between the treatment groups. There are also other things that affect the results of a hypothesis test, but they are beyond the scope of this blog post.
+
+# Conclusion
+
+Hypothesis testing is important in many fields and is essential to data-driven decision making. There are a lot of things to consider whenever performing a hypothesis test, and in practice, many things are often not considered or are done incorrectly. This post was intended to provide a very basic introduction to hypothesis testing with a simple example to demonstrate how to interpret results of a hypothesis test. However, many important things have not been discussed here, such as selecting which statistical test to use, assessing whether a test is appropriate, and selecting the value of $\alpha$, among many other considerations.
 
 
-
-
+[^1]: Arnholt A, Evans B (2023). "BSDA: Basic Statistics and Data Analysis", R package version 1.2.2, [link](https://CRAN.R-project.org/package=BSDA).
