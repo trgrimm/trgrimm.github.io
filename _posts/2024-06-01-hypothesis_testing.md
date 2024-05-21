@@ -63,7 +63,7 @@ H<sub>1</sub>: The average weight loss for patients on the new drug is at least 
 
 Let $\mu_\text{new}$ and $\mu_\text{existing}$ be the average weight loss for patients on the new and existing drugs, respectively. We now have the following mathematical hypotheses:
 
-H<sub>0</sub>: $\mu_\text{new} - \mu_\text{existing} \le 5$. (difference in weight loss is less than 5 lb between the drugs)
+H<sub>0</sub>: $\mu_\text{new} - \mu_\text{existing} < 5$. (difference in weight loss is less than 5 lb between the drugs)
 
 H<sub>1</sub>: $\mu_\text{new} - \mu_\text{existing} \ge 5$. (at least 5lb additional weight loss on the new drug)
 
