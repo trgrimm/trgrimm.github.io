@@ -38,7 +38,7 @@ Education
 ======
 
 ### Baylor University  
-(2025) **Ph.D.** in Statistics, GPA: 3.96/4.00  
+(2025) **Ph.D.** in Statistics, GPA: 3.97/4.00  
 (2022) **M.S.** in Statistics, GPA: 3.94/4.00
 
 ### Brigham Young University
