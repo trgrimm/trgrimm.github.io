@@ -1,6 +1,6 @@
 ---
 title: 'Basics of Hypothesis Testing'
-date: 2024-06-01
+date: 2024-05-01
 permalink: /posts/2024/06/hypothesis-testing/
 tags:
   - statistics
