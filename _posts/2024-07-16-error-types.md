@@ -1,5 +1,5 @@
 ---
-title: 'Hypothesis Testing: Power, Type I and Type II Errors'
+title: 'Hypothesis Testing: Error Types and Power'
 date: 2024-07-16
 permalink: /posts/2024/07/error-types/
 tags:
@@ -7,7 +7,7 @@ tags:
   - hypothesis testing
 ---
 
-This post discusses power and type I and type II errors within the context of hypothesis testing. Basic background knowledge regarding hypothesis testing and $p$-values is assumed in this post.
+This post discusses type I and type II errors, along with power. Basic background knowledge regarding hypothesis testing and $p$-values is assumed in this post.
 
 ------------------------------------------------------------------------
 
