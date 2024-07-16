@@ -7,7 +7,7 @@ tags:
   - hypothesis testing
 ---
 
-This post discusses power and type I and type II errors within the context of hypothesis testing.
+This post discusses power and type I and type II errors within the context of hypothesis testing. Basic background knowledge regarding hypothesis testing and $p$-values is assumed in this post.
 
 ------------------------------------------------------------------------
 
