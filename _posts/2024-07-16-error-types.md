@@ -44,7 +44,7 @@ The figure below is a visual representation of the null and alternative hypothes
 As effect sizes increase, the distances between the distributions associated with H<sub>0</sub> and H<sub>1</sub> also increase, causing an overall decrease in both error probabilities and in increase in power.
 
 <p align="center">
-    <img src="error-types_fig1.png" width="400">
+    <img src="https://github.com/user-attachments/assets/2bdfb3e3-1151-4510-8d3e-c9e8233256d3" width="400">
 </p>
 <p align="center" class="caption">
 Type I and type II errors for an upper-tailed hypothesis test. The probability of a type I error is $\alpha$ and the probability of a type II error is $\beta$..
