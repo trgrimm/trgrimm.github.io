@@ -34,7 +34,7 @@ To better understand the idea of power, consider a scenario where we want to com
 
 In this situation, the power is the probability that we correctly conclude that the mean of population 2 is larger than the mean of population 1.
 
-Because we want to ensure we correctly reject H<sub>0</sub> the majority of the time, we commonly want the power to be around 80\% or 90\%, depending on the context of the problem.
+Because we want to ensure we correctly reject H<sub>0</sub> the majority of the time, we commonly want the power to be around 80% or 90%, depending on the context of the problem.
 
 
 # Vizualizing type I and II errors and power
