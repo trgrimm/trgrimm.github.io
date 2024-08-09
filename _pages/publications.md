@@ -20,3 +20,5 @@ Heiner, M., **Grimm, T.**, Smith, H., Leavitt, S. D., Christensen, W. F., Carlin
 ## In Preparation
 
 **Grimm, T. R.**, Villez, K., Newhart, K. B., and Hering, A.S. (2024+). A review of methods for handling limited or contaminated historical data in statistical process monitoring.
+
+**Grimm, T. R.**, Villez, K., Newhart, K. B., and Hering, A.S. (2024+). Robust self-starting Bayesian control charts for multivariate phase II observations.
