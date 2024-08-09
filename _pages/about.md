@@ -22,6 +22,12 @@ While at Baylor, I have had the opportunity to work on a variety of different pr
 
 Currently, I am working with my advisor, [Dr. Mandy Hering](https://statistics.artsandsciences.baylor.edu/person/dr-amanda-s-hering), to improve multivariate statistical methods for detecting anomalies (faults) in complex processes, with specific applications in water/wastewater treatment.
 
+Through my coursework and research, I have gained experience with a wide variety of methods and technologies, including
+
+* popular machine learning methods (KNN, random forests, XGBoost, neural networks, etc.)
+* statistical methods (e.g, mixed models, generalized linear models, time series analysis)
+* R (tidyverse, R Shiny, etc.), SQL, SAS, Python (sklearn, pandas, etc.)
+
 ---
 
 Research Interests
