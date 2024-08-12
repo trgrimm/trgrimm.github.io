@@ -25,7 +25,7 @@ Currently, I am working with my advisor, [Dr. Mandy Hering](https://statistics.a
 Through my coursework and research, I have gained experience with a wide variety of methods and technologies, including:
 
 * popular machine learning methods (KNN, random forests, XGBoost, neural networks, etc.)
-* statistical methods (e.g, mixed models, generalized linear models, time series analysis)
+* statistical methods (e.g., Bayesian methods, generalized linear models, time series analysis)
 * R (tidyverse, R Shiny, etc.), SQL, SAS, Python (sklearn, pandas, etc.)
 
 ---
