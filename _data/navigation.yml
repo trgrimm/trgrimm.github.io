@@ -5,6 +5,9 @@ main:
     
   - title: "Blog Posts"
     url: /blog-posts/
+
+    - title: "Shiny Apps"
+    url: /shiny-apps/
     
   - title: "CV"
     url: /files/cv.pdf # direct link to pdf of cv
