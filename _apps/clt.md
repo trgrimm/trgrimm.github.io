@@ -1,6 +1,6 @@
 ---
 layout: archive
-title: "Central Limit Theorem: Normal Approximations to the Binomial and Poisson Distributions"
+title: "Central Limit Theorem: Normal Approximation to the Binomial and Poisson Distributions"
 permalink: /shiny_apps/clt
 collection: apps
 classes: wide
