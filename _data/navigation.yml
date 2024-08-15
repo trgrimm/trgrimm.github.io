@@ -6,7 +6,7 @@ main:
   - title: "Blog Posts"
     url: /blog-posts/
 
-    - title: "Shiny Apps"
+  - title: "Shiny Apps"
     url: /shiny_apps/
     
   - title: "CV"
