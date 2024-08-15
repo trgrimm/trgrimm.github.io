@@ -11,7 +11,7 @@ This shiny app displays simulated data and fitted classical and robust control c
 Within the app, users have the ability to change the:
 * number of Phase I observations (Sample Size)
 * number of variables (Dimension)
-* percentage of contamination in the Phase I data (Contamination %)
+* percentage of contamination in the Phase I data (Contamination %). Contamination shows up as blue points in the plots.
 * size of the shift in Phase II (Shift Size), which is the same shift size applied to contaminate the Phase I data.
 
 The performance of the classical $T^2$ and multivariate exponentially weighted moving average (MEWMA) charts is shown, along with robust $T^2$ and MEWMA charts that use the reweighted minimum covariance determinant (RMCD) estimators to handle contamination.
