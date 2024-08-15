@@ -7,4 +7,4 @@ collection: apps
 classes: wide
 ---
 
-<embed src="https://taylor-grimm.shinyapps.io/clt_shiny/" style="width:100%; height: 50vw;">
+<embed src="https://taylor-grimm.shinyapps.io/clt_shiny/" style="width:100%; height: 40vw;">
