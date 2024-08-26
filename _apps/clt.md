@@ -8,4 +8,6 @@ classes: wide
 
 This shiny app visually demonstrates the effects of binomial and Poisson parameters on the normal approximation. It can be viewed in full-screen at <a href="https://taylor-grimm.shinyapps.io/clt_shiny/">this link</a>.
 
+A blog post explaining the normal approximation can be found <a href="https://trgrimm.github.io/posts/2024/08/clt/">here</a>.
+
 <embed src="https://taylor-grimm.shinyapps.io/clt_shiny/" style="width:100%; height: 40vw;">
