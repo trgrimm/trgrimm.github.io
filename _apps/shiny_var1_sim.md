@@ -20,4 +20,6 @@ The performance of the classical $T^2$ and multivariate exponentially weighted m
 
 In general, the methods perform similarly when no contamination is present, but the robust methods perform better when contamination is present. Also, MEWMA charts are better at detecting small shifts than $T^2$ charts.
 
+More details on the $T^2$ and MEWMA control charts and how they work can be found in <a href="https://trgrimm.github.io/posts/2024/03/t2_mewma/">this</a> blog post.
+
 <embed src="https://taylor-grimm.shinyapps.io/var_shiny/" style="width:100%; height: 50vw;">
