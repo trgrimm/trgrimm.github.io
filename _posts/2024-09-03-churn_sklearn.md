@@ -181,7 +181,6 @@ train.head()
     </tr>
   </tbody>
 </table>
-</div>
 
 
 
@@ -389,7 +388,6 @@ train.drop(columns=['id', 'CustomerId', 'Surname']).describe()
     </tr>
   </tbody>
 </table>
-</div>
 
 
 
@@ -496,7 +494,6 @@ train.drop(columns = ['id', 'CustomerId', 'Surname', 'Geography', 'Gender']).gro
     </tr>
   </tbody>
 </table>
-</div>
 
 
 
@@ -709,7 +706,6 @@ train.head()
     </tr>
   </tbody>
 </table>
-</div>
 
 
 
@@ -901,7 +897,6 @@ X_train.head()
     </tr>
   </tbody>
 </table>
-</div>
 
 
 
@@ -1050,7 +1045,6 @@ X_train.head()
     </tr>
   </tbody>
 </table>
-</div>
 
 
 
@@ -1140,7 +1134,6 @@ pd.concat([pd.DataFrame(knn_cv.cv_results_['params']),
     </tr>
   </tbody>
 </table>
-</div>
 
 
 
@@ -1237,7 +1230,6 @@ pd.concat([pd.DataFrame(svc_cv.cv_results_['params']),
     </tr>
   </tbody>
 </table>
-</div>
 
 
 
@@ -1313,7 +1305,6 @@ pd.concat([pd.DataFrame(rf_cv.cv_results_['params']),
     </tr>
   </tbody>
 </table>
-</div>
 
 
 
@@ -1388,7 +1379,6 @@ pd.concat([pd.DataFrame(xgb_cv.cv_results_['params']),
     </tr>
   </tbody>
 </table>
-</div>
 
 
 
@@ -1468,7 +1458,6 @@ pd.concat([pd.DataFrame(cbc_cv.cv_results_['params']),
     </tr>
   </tbody>
 </table>
-</div>
 
 
 
@@ -1664,7 +1653,6 @@ X_test.head()
     </tr>
   </tbody>
 </table>
-</div>
 
 
 
@@ -1715,7 +1703,6 @@ final_predictions.head()
     </tr>
   </tbody>
 </table>
-</div>
 
 
 
