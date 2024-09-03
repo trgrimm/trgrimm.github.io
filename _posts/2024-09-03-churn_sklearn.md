@@ -518,7 +518,7 @@ train_plot = train.astype({'Exited': 'category'})
 ```
 
 <p align="center">
-<img src="https://github.com/user-attachments/assets/10582f3d-dc7b-4eb5-8dc8-998221a7d0d8" width="500">
+<img src="https://github.com/user-attachments/assets/10582f3d-dc7b-4eb5-8dc8-998221a7d0d8" width="600">
 </p>
 
 Let's make a plot of the correlation matrix for the 6 continuous quantitative predictor variables:
@@ -536,7 +536,7 @@ Let's make a plot of the correlation matrix for the 6 continuous quantitative pr
 ```
 
 <p align="center">
-<img src="https://github.com/user-attachments/assets/b92d167b-2921-4d5c-a682-4f63495bc3e0" width="500">
+<img src="https://github.com/user-attachments/assets/b92d167b-2921-4d5c-a682-4f63495bc3e0" width="600">
 </p>
 
 
@@ -553,7 +553,7 @@ plt.show()
 
 
 <p align="center">
-<img src="https://github.com/user-attachments/assets/20429360-03a6-42b7-b422-173ed3fb7f2d" width="500">
+<img src="https://github.com/user-attachments/assets/20429360-03a6-42b7-b422-173ed3fb7f2d" width="600">
 </p>
 
 
@@ -1489,7 +1489,7 @@ plt.show()
 ```
 
 <p align="center">
-<img src="https://github.com/user-attachments/assets/809781db-c0a1-4bed-bd3f-e3b20a1759ba" width="500">
+<img src="https://github.com/user-attachments/assets/809781db-c0a1-4bed-bd3f-e3b20a1759ba" width="600">
 </p>
 
 # Prediction for the testing data
