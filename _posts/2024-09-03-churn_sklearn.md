@@ -10,9 +10,7 @@ tags:
 
 This post provides a walkthrough demonstrating how to use the `sklearn` package in Python to tune and evaluate multiple supervised classification methods, such as logistic regression and extreme gradient boosting (XGBoost) to predict whether bank customers will close their account. The dataset comes from a past [Kaggle competition](https://www.kaggle.com/competitions/playground-series-s4e1/data) and contains several variables, including credit score, gender, and age.
 
-Code to produce this blog post can be found in [this] GitHub repository.
-
-<!-- Code to produce this blog post can be found in [this](https://github.com/trgrimm/abalone_analysis) GitHub repository}. -->
+Code to produce this blog post can be found in [this](https://github.com/trgrimm/churn_analysis) GitHub repository.
 
 ------------------------------------------------------------------------
 
