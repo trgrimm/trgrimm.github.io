@@ -1465,6 +1465,7 @@ pd.concat([pd.DataFrame(cbc_cv.cv_results_['params']),
 ## Model selection
 
 The best performance of each method is given in the following table:
+
 | Method    | ROC AUC |
 | -------- | ------- |
 | LR  | 81.8%   |
