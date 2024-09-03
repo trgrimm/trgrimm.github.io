@@ -522,9 +522,9 @@ train_plot = train.astype({'Exited': 'category'})
 )
 ```
 
-![output_16_1](https://github.com/user-attachments/assets/10582f3d-dc7b-4eb5-8dc8-998221a7d0d8)
-
-
+<p align="center">
+<img src="https://github.com/user-attachments/assets/10582f3d-dc7b-4eb5-8dc8-998221a7d0d8" width="500">
+</p>
 
 Let's make a plot of the correlation matrix for the 6 continuous quantitative predictor variables:
 
@@ -540,9 +540,9 @@ Let's make a plot of the correlation matrix for the 6 continuous quantitative pr
 )
 ```
 
-
-![output_18_0](https://github.com/user-attachments/assets/b92d167b-2921-4d5c-a682-4f63495bc3e0)
-
+<p align="center">
+<img src="https://github.com/user-attachments/assets/b92d167b-2921-4d5c-a682-4f63495bc3e0" width="500">
+</p>
 
 
 In general, the shapes of the distributions of the variables is similar. However, there is a noticeable difference in `Age`, where the majority of customers with `Exited` = 0 tend to be younger, while the majority of customers with `Exited` = 1 tend to be older, which is similar to what was observed based on the summary statistics.
@@ -557,9 +557,9 @@ plt.show()
 ```
 
 
-    
-![output_20_0](https://github.com/user-attachments/assets/20429360-03a6-42b7-b422-173ed3fb7f2d)
-
+<p align="center">
+<img src="https://github.com/user-attachments/assets/20429360-03a6-42b7-b422-173ed3fb7f2d" width="500">
+</p>
 
 
 Most of the predictors are uncorrelated with one another, but there appears to be a weak linear relationship between `Balance` and `NumOfProducts`.
@@ -1501,10 +1501,9 @@ plot_importance(xgb_cv.best_estimator_)
 plt.show()
 ```
 
-
-![output_51_0](https://github.com/user-attachments/assets/809781db-c0a1-4bed-bd3f-e3b20a1759ba)
-
-
+<p align="center">
+<img src="https://github.com/user-attachments/assets/809781db-c0a1-4bed-bd3f-e3b20a1759ba" width="500">
+</p>
 
 # Prediction for the testing data
 
