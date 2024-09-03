@@ -1,6 +1,6 @@
 ---
 title: 'Analysis Walkthrough: Supervised Classification with Bank Churn Data'
-date: 2024-09-10
+date: 2024-09-03
 permalink: /posts/2024/09/churn_sklearn/
 tags:
   - machine learning
