@@ -712,12 +712,13 @@ train.head()
 # Model building, tuning, and selection
 
 
-We will evaluate the performance of 5 different classification methods on predicting `Exited` in the training data:
+We will evaluate the performance of 6 different classification methods on predicting `Exited` in the training data:
 * logistic regression (LR)
 * k-nearest neighbors (KNN)
 * support vector machine (SVM)
 * random forest (RF)
 * extreme gradient boosting (XGBoost)
+* CatBoost (CB)
 
 Below, each method will be tuned for optimal performance, and its performance will be evaluated in terms of ROC AUC. Then, the overall performance of each model will be compared, and the best model will be selected for final predictions on the testing data.
 
