@@ -41,7 +41,7 @@ Train and test datasets are provided by Kaggle, and we want to minimize
 the root mean squared logarithmic error (RMSLE), which is defined as
 
 $$
-\text{RMSLE} = \sqrt{\frac{1}{n} \sum_{i=1}^n \left(\log(1 + \hat{y}\_i) - \log(1 + y_i)\right)^2},
+\text{RMSLE} = \sqrt{\frac{1}{n} \sum_{i=1}^n \left(\log(1 + \hat{y}_i) - \log(1 + y_i)\right)^2},
 $$
 
 where
