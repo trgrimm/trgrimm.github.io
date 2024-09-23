@@ -1,5 +1,5 @@
 ---
-title: 'Neural Networks with torch: Revisiting the Abalone Data'
+title: 'Neural Networks with `torch`: Revisiting the Abalone Data'
 date: 2024-09-23
 permalink: /posts/2024/09/abalone_tidymodels/
 tags:
