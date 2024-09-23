@@ -252,7 +252,7 @@ fitted %>% evaluate(test_dl)
     loss: 0.0239
     rmse: 0.1548
 
-This model achieves a RMSLE of 0.1544 on the test set.
+This model achieves a RMSLE of 0.1548 on the test set.
 
 # Neural network with `tidymodels`
 
