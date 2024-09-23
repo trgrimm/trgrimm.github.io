@@ -104,6 +104,8 @@ train <- training(rand_split)
 test <- testing(rand_split)
 ```
 
+# Neural network with `torch`
+
 Now, I will set up the NN in `torch`. This consists of using the
 `nn_module()` function to define the architecture of our desired NN.
 We’ll keep it pretty simple here by using an input layer, two hidden
@@ -252,6 +254,8 @@ fitted %>% evaluate(test_dl)
 
 This model achieves a RMSLE of 0.1544 on the test set.
 
+# Neural network with `tidymodels`
+
 Now, we’ll perform the same model training/fitting steps for the
 `tidymodels` MLP with `brulee` as we did in the
 [previous](https://trgrimm.github.io/posts/2024/05/abalone_tidymodels/)
@@ -325,6 +329,8 @@ The 10-fold CV RMSLE for the `brulee` MLP is 0.176.
 Based on the results so far, we expect that the custom NN implemented
 through `torch` with 2 hidden layers will perform better than the
 `mlp()` model implemented through `brulee` and `tidymodels`.
+
+# Comparing NN performance on full testing set
 
 Let’s see what happens when we train both models on the full training
 set and use those to predict the values of `Rings` in the original
@@ -438,6 +444,8 @@ architecture provided additional predictive power. However, in our
 [previous](https://trgrimm.github.io/posts/2024/05/abalone_tidymodels/)
 analysis, we achieved an even better final RMSLE of 0.14602 using an
 ensemble approach.
+
+# Conclusion
 
 It’s possible that our model would improve as the amount of training
 data increased; neural networks are known to be very good when several
