@@ -1,6 +1,6 @@
 ---
 title: 'Neural Networks with `torch`: Revisiting the Abalone Data'
-date: 2024-09-23
+date: 2024-09-24
 permalink: /posts/2024/09/abalone_tidymodels/
 tags:
   - machine learning
@@ -8,12 +8,8 @@ tags:
   - statistics
 ---
 
-This post illustrates a neural network using the `torch` package in R to
-revisit the abalone [Kaggle
-competition](https://www.kaggle.com/competitions/playground-series-s4e4/overview),
-which is a supervised regression problem described and analyzed in a
-[previous](https://trgrimm.github.io/posts/2024/05/abalone_tidymodels/)
-blog post using `tidymodels`.
+This post demonstrates building and fitting a neural network using the `torch` package in R. In this post, I revisit the abalone [Kaggle competition](https://www.kaggle.com/competitions/playground-series-s4e4/overview), which is a supervised regression problem described and analyzed in a [previous](https://trgrimm.github.io/posts/2024/05/abalone_tidymodels/) blog post using `tidymodels`.
+
 
 <!-- Code to produce this blog post can be found in [this](https://github.com/trgrimm/abalone_analysis) GitHub repository. -->
 
