@@ -4,6 +4,7 @@ title: "Control Charts for VAR(1) Simulated Data"
 permalink: /shiny_apps/var1_sim
 collection: apps
 classes: wide
+date: 2024-08-26
 ---
 
 This shiny app displays simulated data and fitted classical and robust control charts for VAR(1) data, illustrating the effects of contamination during Phase I on control chart performance. It can be viewed in full-screen at <a href="https://taylor-grimm.shinyapps.io/var_shiny/">this link</a>.
