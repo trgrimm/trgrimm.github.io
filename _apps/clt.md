@@ -4,6 +4,7 @@ title: "Central Limit Theorem: Normal Approximation to the Binomial and Poisson 
 permalink: /shiny_apps/clt
 collection: apps
 classes: wide
+date: 2024-08-15
 ---
 
 This shiny app visually demonstrates the effects of binomial and Poisson parameters on the normal approximation. It can be viewed in full-screen at <a href="https://taylor-grimm.shinyapps.io/clt_shiny/">this link</a>.
