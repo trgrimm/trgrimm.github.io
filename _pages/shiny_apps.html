@@ -9,7 +9,7 @@ redirect_from:
   - /apps
 ---
 
-Here are some <a href="https://shiny.posit.co">Shiny apps</a> I've made in R. Shiny apps allow for a simple way to interactively work with data and plots built in R.
+<p>Here are some <a href="https://shiny.posit.co">Shiny apps</a> I've made in R. Shiny apps allow for a simple way to interactively work with data and plots built in R.</p>
 
 <!-- {% include base_path %}
 
@@ -19,8 +19,8 @@ Here are some <a href="https://shiny.posit.co">Shiny apps</a> I've made in R. Sh
 
 {% include base_path %}
 {% capture written_year %}'None'{% endcapture %}
-{% for app in site.apps %}
-  {% capture year %}{{ app.date | date: '%Y' }}{% endcapture %}
+{% for post in site.apps %}
+  {% capture year %}{{ post.date | date: '%Y' }}{% endcapture %}
   {% if year != written_year %}
     <h2 id="{{ year | slugify }}" class="archive__subtitle">{{ year }}</h2>
     {% capture written_year %}{{ year }}{% endcapture %}
