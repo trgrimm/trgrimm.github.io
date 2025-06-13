@@ -10,7 +10,7 @@ locale                   : "en-US"
 title                    : "Taylor Grimm"
 title_separator          : "-"
 name                     : &name "Taylor Grimm"
-description              : &description "Statistician"
+description              : &description "Data Scientist/Statistician"
 url                      : https://trgrimm.github.io # the base hostname & protocol for your site e.g. "https://mmistakes.github.io"
 baseurl                  : "" # the subpath of your site, e.g. "/blog"
 repository               : "trgrimm/trgrimm.github.io"
@@ -82,12 +82,12 @@ analytics:
 author:
   name             : "Taylor Grimm"
   avatar           : "profile3.jpg"
-  bio              : "Statistics PhD Candidate"
-  location         : "Waco, TX"
+  bio              : "Data Scientist"
+  location         : "St. Louis, MO"
   employer         :
   pubmed           : #"https://www.ncbi.nlm.nih.gov/pubmed/?term=john+snow"
   googlescholar    : #"http://yourfullgooglescholarurl.com"
-  email            : taylor_grimm1@baylor.edu
+  email            : taylorgrimm14@gmail.com
   researchgate     :  # example: "https://www.researchgate.net/profile/yourprofile"
   uri              :
   bitbucket        :
