@@ -9,6 +9,9 @@ main:
   - title: "Shiny Apps"
     url: /shiny_apps/
     
+  - title: "Resume"
+    url: /files/resume.pdf # direct link to pdf of resume
+
   - title: "CV"
     url: /files/cv.pdf # direct link to pdf of cv
     #url: /cv/
