@@ -20,6 +20,8 @@ Some features covered in this post include:
 
 <!-- Code to produce this blog post can be found in [this](https://github.com/trgrimm/) GitHub repository. -->
 
+------------------------------------------------------------------------
+
 # What is Databricks?
 
 Databricks is
