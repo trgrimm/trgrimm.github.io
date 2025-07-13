@@ -20,7 +20,10 @@ Some features covered in this post include:
 
 <!-- Code to produce this blog post can be found in [this](https://github.com/trgrimm/) GitHub repository. -->
 
-# Data description
+# What is Databricks?
 
-of neurons in the hidden layers, number of hidden layers, etc.
+Databricks is
+
+# What is Spark?
+
 
