@@ -1,5 +1,5 @@
 ---
-title: 'Modern Data Science: Getting Started with Databricks and Spark'
+title: 'Modern Data Science Tools: Getting Started with Databricks and Spark'
 date: 2025-12-31
 permalink: /posts/2025/12/databricks_spark_intro/
 tags:
@@ -24,7 +24,7 @@ Some features covered in this post include:
 
 # What is Databricks?
 
-Databricks is
+Databricks is a popular data science platform that facilitates everything from 
 
 # What is Spark?
 
