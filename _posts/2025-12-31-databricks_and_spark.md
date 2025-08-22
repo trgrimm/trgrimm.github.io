@@ -22,7 +22,9 @@ Some features covered in this post include:
 
 ------------------------------------------------------------------------
 
-# What is Databricks?
+# What is Databricks? 
+
+<img width="329" height="127" alt="databricks_logo" src="https://github.com/user-attachments/assets/cefae77a-79eb-4beb-a0dd-978c12d11466" />
 
 Databricks is a popular data science platform that facilitates everything from efficient exploratory data analysis to model building and deployment. Databricks can be hosted by popular cloud service providers, including Amazon (AWS), Microsoft (Azure), and Google (GCP), and allows for seamless connectivity to serverless and server computing, cloud storage, and a variety of IDEs (e.g., PyCharm, RStudio, VS Code).
 
