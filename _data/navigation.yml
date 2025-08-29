@@ -1,13 +1,14 @@
 # main links links
 main:
-  - title: "Publications"
-    url: /publications/
-    
+
   - title: "Blog Posts"
     url: /blog-posts/
-
+    
   - title: "Shiny Apps"
     url: /shiny_apps/
+    
+  - title: "Publications"
+    url: /publications/
     
   - title: "Resume"
     url: /files/resume.pdf # direct link to pdf of resume
