@@ -1,0 +1,1 @@
+census income data from the popular [Adult](https://archive.ics.uci.edu/dataset/2/adult) dataset, which is openly available on the [UC Irvine Machine Learning Repository](https://archive.ics.uci.edu/).
