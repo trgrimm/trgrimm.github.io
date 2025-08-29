@@ -26,7 +26,7 @@ Some features covered in this post include:
 
 <img width="329" height="127" alt="databricks_logo" src="https://github.com/user-attachments/assets/cefae77a-79eb-4beb-a0dd-978c12d11466" />
 
-Databricks is a popular data science platform that facilitates everything from efficient exploratory data analysis to model building and deployment. Databricks can be hosted by popular cloud service providers, including Amazon (AWS), Microsoft (Azure), and Google (GCP), and allows for seamless connectivity to serverless and server computing, cloud storage, and a variety of IDEs (e.g., PyCharm, RStudio, VS Code).
+Databricks is a popular data science platform that facilitates everything from efficient exploratory data analysis to model building and deployment. Databricks can be hosted by popular cloud service providers, including Amazon (AWS), Microsoft (Azure), and Google (GCP), and allows for seamless connectivity to serverless and server computing, cloud storage, and a variety of IDEs (e.g., PyCharm, RStudio, VS Code). The [Databricks Free Edition](https://www.databricks.com/learn/free-edition) of Databricks can be accessed simply by creating an account with an email, and it provides free access to many of the features available in Databricks.
 
 Databricks also has a powerful Notebook capability that supports Python, R, Scala, and SQL languages. Databricks notebooks offer similar interactivity and interface as Jupyter notebooks, but are hosted on the Databricks platform and therefore have seamless access to connected cloud services. This makes real-time analysis of data and development of complex models extremely fast and easy.
 
@@ -34,4 +34,44 @@ One of the primary benefits of Databricks is that it is built on *Spark*.
 
 # What is Spark?
 
+[Spark](https://spark.apache.org/docs/latest/index.html) is a popular framework that facilitates distributed processing for working with big data. Spark is most commonly used within Scala or Python (PySpark) and allows for lazy data manipulation and efficient processing. One great benefit of Spark is that it allows for easy processing of big datasets that do not fit in memory.
 
+# Getting Started with Databricks Notebooks
+
+Databricks notebooks are the native solution for working with data in Databricks. Inside a notebook, there are cells that can run R, Python, Scala, SQL, or Markdown code. 
+
+<img width="1217" height="303" alt="Screenshot 2025-08-28 at 8 55 14 PM" src="https://github.com/user-attachments/assets/26210883-8af3-415f-8fce-06f6726b9e4b" />
+
+Running code is as simple as typing some code in a cell and clicking the Run Cell button (or ⌘+Enter/Cmd+Enter).
+
+<img width="1038" height="124" alt="Screenshot 2025-08-28 at 8 52 52 PM" src="https://github.com/user-attachments/assets/0d83a722-4f72-4e10-9bcc-529fdf3a7217" />
+
+# Accessing the Unity Catalog
+
+The Unity Catalog (UC) is a data lakehouse where structured data is stored in Delta Tables and can easily be accessed directly in Notebooks by SQL or Spark queries.
+
+Start by navigating to the Unity Catalog:
+
+<img width="540" height="250" alt="Screenshot 2025-08-28 at 9 06 21 PM" src="https://github.com/user-attachments/assets/c42cd266-474d-4ea5-9ca8-809210913ccc" />
+
+In the Databricks Free Edition, there are some free tables that can be accessed right away. In UC, tables are organized in the following structure: `database`.`schema`.`table`. For example, `samples`.`bakehouse`.`sales_customers`. Alternatively, data can easily be uploaded to a database and schema of choice.
+
+<img width="1910" height="998" alt="image" src="https://github.com/user-attachments/assets/776cb136-c0a2-4d87-90c6-832c166b25ff" />
+
+UC tables can be directly queries within a notebook using SQL or (Py)Spark queries:
+
+<img width="2084" height="1204" alt="image" src="https://github.com/user-attachments/assets/f8c108b1-bb8d-4bb5-9db7-9bbfb7a0a3ec" />
+
+# Basics of PySpark
+
+PySpark is the Python API for Spark. Tables from UC can be accessed by referencing the table and storing it as a Spark DataFrame:
+
+<img width="2082" height="742" alt="image" src="https://github.com/user-attachments/assets/d037aefa-43b0-4d46-96f8-71f8bdfa94ec" />
+
+Once a Spark DataFrame has been created, various PySpark functions can be used to execute SQL code, compute statistics, fit models, etc. For example, we can count the number of customers in each continent using SQL code, executed by PySpark
+
+<img width="2088" height="698" alt="image" src="https://github.com/user-attachments/assets/2e813b38-5f33-4a0c-a7bd-4e477247422e" />
+
+or using the PySpark API directly
+
+<img width="2080" height="486" alt="image" src="https://github.com/user-attachments/assets/943ebb2d-2430-493b-942d-fe6d0b68d0cc" />
