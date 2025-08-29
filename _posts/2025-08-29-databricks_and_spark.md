@@ -8,7 +8,7 @@ tags:
   - big data
 ---
 
-This post gives a simple introduction to popular modern data science technologies. In this post, we will explore features of the [Databricks](https://www.databricks.com/) platform and distributed computing with [Spark](https://spark.apache.org/) using census income data from the popular [Adult](https://archive.ics.uci.edu/dataset/2/adult) dataset, which is openly available on the [UC Irvine Machine Learning Repository](https://archive.ics.uci.edu/).
+This post gives a simple introduction to popular modern data science technologies. In this post, we will explore features of the [Databricks](https://www.databricks.com/) platform and distributed computing with [Spark](https://spark.apache.org/) using data that is freely available in the Databricks Free Edition.
 
 Some features covered in this post include:
 
@@ -109,3 +109,7 @@ In the code below, I access the tables, do some filtering and joins, and perform
 <img width="2204" height="1270" alt="image" src="https://github.com/user-attachments/assets/39f7180c-3338-405d-a2e3-52d04fbf3356" />
 
 <img width="2144" height="884" alt="image" src="https://github.com/user-attachments/assets/c6b36194-e005-46ce-9315-932b240c75de" />
+
+## Conclusion
+
+As you can see, working in Databricks is straightforward, and using PySpark to work with UC is seamless. The benefits are even larger for big datasets that do not fit in memory. Databricks has even more great built-in features that will be explored in a future blog post.
