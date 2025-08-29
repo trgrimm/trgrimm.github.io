@@ -42,6 +42,8 @@ One of the primary benefits of Databricks is that it is built on *Spark*.
 
 [Spark](https://spark.apache.org/docs/latest/index.html) is a popular framework that facilitates distributed processing for working with big data. Spark is most commonly used within Scala or Python (PySpark) and allows for lazy data manipulation and efficient processing. One great benefit of Spark is that it allows for easy processing of big datasets that do not fit in memory.
 
+------------------------------------------------------------------------
+
 # Getting Started with Databricks Notebooks
 
 Databricks notebooks are the native solution for working with data in Databricks. Inside a notebook, there are cells that can run R, Python, Scala, SQL, or Markdown code. 
