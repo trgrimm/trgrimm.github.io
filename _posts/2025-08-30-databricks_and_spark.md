@@ -1,7 +1,7 @@
 ---
 title: 'Modern Data Science Tools: Getting Started with Databricks and Spark'
-date: 2025-12-31
-permalink: /posts/2025/12/databricks_spark_intro/
+date: 2025-08-30
+permalink: /posts/2025/08/databricks_spark_intro/
 tags:
   - machine learning
   - classification
@@ -75,3 +75,25 @@ Once a Spark DataFrame has been created, various PySpark functions can be used t
 or using the PySpark API directly
 
 <img width="2080" height="486" alt="image" src="https://github.com/user-attachments/assets/943ebb2d-2430-493b-942d-fe6d0b68d0cc" />
+
+## Common PySpark Functions
+
+Some common PySpark functions I use on a daily basis to manipulate Spark DataFrames (`df`) include:
+* `df.count()`: returns the number of rows in `df`
+* `df.show()`: prints `df`
+* `df.display()`: displays `df` in an interactive table
+* `df.filter()`: filter rows of `df` using SQL or PySpark syntax.
+  * `df.filter("quantity >= 15 and paymentMethod is not null")`
+  * `df.filter((col("quantity") >= 15) & (col("paymentMethod").isNotNull()))`
+  * although the syntax is different, the results are equivalent
+* `df.select()`: select columns to keep in `df`
+* `df.drop()`: choose columns to drop from `df`
+* `df.join()`: join `df` to another `df` on one or more columns. Allows for various types of joins (e.g., left, right, inner, outer, anti)
+* `df.orderBy()`: order values by one or more columns
+* `df.dropDuplicates()`: remove all duplicate rows (or rows with duplicate values of specified columns)
+* `df.dropna()`: remove all rows with missing values
+* `df.withColumnsRenamed()`: rename columns in `df` using a dictionary following `{'old_name': 'new_name'}` syntax. A version for working with one column at a time `df.withColumnRenamed()` also exists.
+* `df.withColumns()`: Create/modify columns of `df` using a dictionary with specified columns and operations. A version for working with one column at a time `df.withColumn()` also exists.
+  * `df.withColumns{'price_squared': col("totalPrice")**2, 'price_sqroot': sqrt(col("totalPrice")}`
+* `df.groupBy()`: groups `df` by one or more columns to perform aggregation (i.e., compute min, max, or other statistics)
+  * `df.groupBy("customerID").agg({"totalPrice": "sum"}).withColumnRenamed('sum(totalPrice)', 'overall_totalPrice')`
