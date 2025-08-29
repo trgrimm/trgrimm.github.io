@@ -37,7 +37,7 @@ One of the primary benefits of Databricks is that it is built on *Spark*.
 # What is Spark?
 
 <p align="center">
-    <img src="https://github.com/user-attachments/assets/c0e88422-a9e3-4dd4-811a-40701ec69789" width="300">
+    <img src="https://github.com/user-attachments/assets/c0e88422-a9e3-4dd4-811a-40701ec69789" width="200">
 </p>
 
 [Spark](https://spark.apache.org/docs/latest/index.html) is a popular framework that facilitates distributed processing for working with big data. Spark is most commonly used within Scala or Python (PySpark) and allows for lazy data manipulation and efficient processing. One great benefit of Spark is that it allows for easy processing of big datasets that do not fit in memory.
