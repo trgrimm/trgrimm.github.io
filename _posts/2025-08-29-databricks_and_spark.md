@@ -24,11 +24,9 @@ Some features covered in this post include:
 
 # What is Databricks? 
 
-<img 
-  src="https://github.com/user-attachments/assets/cefae77a-79eb-4beb-a0dd-978c12d11466" 
-  alt="databricks_logo" 
-  style="width: 40%; height: auto;" 
-/>
+<p align="center">
+    <img src="https://github.com/user-attachments/assets/cefae77a-79eb-4beb-a0dd-978c12d11466" width="300">
+</p>
 
 Databricks is a popular data science platform that facilitates everything from efficient exploratory data analysis to model building and deployment. Databricks can be hosted by popular cloud service providers, including Amazon (AWS), Microsoft (Azure), and Google (GCP), and allows for seamless connectivity to serverless and server computing, cloud storage, and a variety of IDEs (e.g., PyCharm, RStudio, VS Code). The [Databricks Free Edition](https://www.databricks.com/learn/free-edition) of Databricks can be accessed simply by creating an account with an email, and it provides free access to many of the features available in Databricks.
 
