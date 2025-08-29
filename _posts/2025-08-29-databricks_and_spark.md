@@ -68,7 +68,7 @@ PySpark is the Python API for Spark. Tables from UC can be accessed by referenci
 
 <img width="2082" height="742" alt="image" src="https://github.com/user-attachments/assets/d037aefa-43b0-4d46-96f8-71f8bdfa94ec" />
 
-Once a Spark DataFrame has been created, various PySpark functions can be used to execute SQL code, compute statistics, fit models, etc. For example, we can count the number of customers in each continent using SQL code, executed by PySpark
+Once a Spark DataFrame has been created, various PySpark functions can be used to execute SQL code, compute statistics, fit models, etc. For example, we can count the number of customers in each continent using SQL code, executed by PySpark, using `spark.sql()`
 
 <img width="2088" height="698" alt="image" src="https://github.com/user-attachments/assets/2e813b38-5f33-4a0c-a7bd-4e477247422e" />
 
