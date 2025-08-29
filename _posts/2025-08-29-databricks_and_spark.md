@@ -1,6 +1,6 @@
 ---
 title: 'Modern Data Science Tools: Getting Started with Databricks and Spark'
-date: 2025-08-30
+date: 2025-08-29
 permalink: /posts/2025/08/databricks_spark_intro/
 tags:
   - machine learning
@@ -97,3 +97,15 @@ Some common PySpark functions I use on a daily basis to manipulate Spark DataFra
   * `df.withColumns{'price_squared': col("totalPrice")**2, 'price_sqroot': sqrt(col("totalPrice")}`
 * `df.groupBy()`: groups `df` by one or more columns to perform aggregation (i.e., compute min, max, or other statistics)
   * `df.groupBy("customerID").agg({"totalPrice": "sum"}).withColumnRenamed('sum(totalPrice)', 'overall_totalPrice')`
+ 
+## Demonstrating PySpark on `Bakehouse` Data
+
+In the Databricks Free Edition, there are free `bakehouse` tables available in UC that contain customer, transaction, and franchise data. At least in my verion of those tables, there are errors in the ID columns, and those errors are resolved by downloading the free "Cookies Dataset DAIS 2024" dataset that can be found by searching in the "Marketplace" in Databricks.
+
+In the code below, I access the tables, do some filtering and joins, and perform some aggregation to determine the number of transactions, average quantity per transaction, and total amount spent by a subset of customers.
+
+<img width="2206" height="1228" alt="image" src="https://github.com/user-attachments/assets/5a32c39f-70af-4900-98b1-400ffbc6deb2" />
+
+<img width="2204" height="1270" alt="image" src="https://github.com/user-attachments/assets/39f7180c-3338-405d-a2e3-52d04fbf3356" />
+
+<img width="2144" height="884" alt="image" src="https://github.com/user-attachments/assets/c6b36194-e005-46ce-9315-932b240c75de" />
