@@ -15,7 +15,8 @@ I am a PhD data scientist and statistician with a passion for understanding and 
 
 Throughout my career, I have gained experience with a wide variety of methods and technologies, including:
 
-* popular machine learning methods (KNN, random forests, XGBoost, neural networks, etc.)
+* popular classical machine learning methods (KNN, random forests, XGBoost, neural networks, etc.)
+* deep learning methods and transformers (TensorFlow/Keras, PyTorch, HuggingFace)
 * statistical methods (e.g., Bayesian methods, generalized linear models, time series)
 * R (tidyverse, R Shiny, etc.), Python (sklearn, pandas, Dash, etc.), SQL, SAS, Spark, MLflow, Databricks, etc.
 
