@@ -11,7 +11,7 @@ redirect_from:
 About Me
 ======
 
-I am a PhD data scientist and statistician with a passion for understanding and learning from data to help others make informed decisions. I especially love collaborating with people with different backgrounds and learning about other fields so that I can better understand and approach problems.
+I am a data scientist and statistician with a passion for understanding and learning from data to help others make informed decisions. I especially love collaborating with people with different backgrounds and learning about other fields so that I can better understand and approach problems.
 
 Throughout my career, I have gained experience with a wide variety of methods and technologies, including:
 
