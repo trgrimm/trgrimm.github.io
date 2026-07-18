@@ -9,11 +9,14 @@ main:
     
   - title: "Publications"
     url: /publications/
+
+  # - title: "Misc. Projects"
+    # url: /projects/
     
   - title: "Resume"
     url: /files/resume.pdf # direct link to pdf of resume
 
-  - title: "CV"
-    url: /files/cv.pdf # direct link to pdf of cv
+  # - title: "CV"
+    # url: /files/cv.pdf # direct link to pdf of cv
     #url: /cv/
     
