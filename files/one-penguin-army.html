@@ -151,6 +151,11 @@ canvas {
   text-align: center;
   pointer-events: auto;
   max-width: 90vw;
+  /* On short viewports (phones in portrait) a panel's content can be taller
+     than the screen itself. Without this, it overflows past both edges with
+     no way to scroll to it — e.g. the map-select panel's START button. */
+  max-height: 92vh;
+  overflow-y: auto;
 }
 
 #map-select-panel #map-preview {
@@ -225,6 +230,30 @@ canvas {
 }
 #penguin-choices button.is-selected .label {
   color: #ffdd00;
+}
+#penguin-choices button.is-locked .label {
+  color: #888;
+}
+#penguin-choices button .desc {
+  display: block;
+  margin-top: 4px;
+}
+#penguin-choices button .cost {
+  display: block;
+  margin-top: 6px;
+  font-size: 12px;
+  font-weight: bold;
+  color: #ffdd00;
+}
+#penguin-choices button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+#penguin-choices button:disabled:hover {
+  transform: none;
+  border-color: #555;
+  background: rgba(30, 30, 50, 0.9);
+  color: #ddd;
 }
 #game-over {
   position: absolute;
@@ -361,6 +390,7 @@ canvas {
 <button id="mute-button" class="mute-btn" aria-label="Toggle sound">🔊</button>
 <button id="pause-button" class="mute-btn" aria-label="Pause" style="right: 60px;">⏸️</button>
 <button id="auto-avoid-button" class="mute-btn" aria-label="Toggle auto-avoid" style="right: 108px; font-size: 14px;">🎯</button>
+<button id="ability-button" class="mute-btn" aria-label="Trigger species ability" style="right: 156px; display:none;">✨</button>
 
 <div id="overlay" class="active">
   <h1>🐧 ONE PENGUIN ARMY</h1>
@@ -586,6 +616,21 @@ canvas {
     for (const u of PERMANENT_UPGRADES) obj[u.key] = 0;
     return obj;
   }
+  var ALLY_MAX_COUNT = 3;
+  var ALLY_HP = 30;
+  var ALLY_SPEED = 1.8;
+  var ALLY_R = 9;
+  var ALLY_DMG = 6;
+  var ALLY_ATTACK_INTERVAL = 600;
+  var ALLY_HIT_COOLDOWN = 500;
+  var EMPEROR_ABILITY_COOLDOWN = 18e3;
+  var EMPEROR_SUMMON_COUNT = 2;
+  var CHINSTRAP_ABILITY_COOLDOWN = 1e4;
+  var CHINSTRAP_CHARGE_DIST = 90;
+  var CHINSTRAP_CHARGE_RADIUS = 70;
+  var CHINSTRAP_CHARGE_DMG = 20;
+  var CHINSTRAP_CHARGE_INVINCIBLE = 0.4;
+  var GENTOO_SWIM_MULT = 1.55;
 
   // js/utils.js
   function dist(a, b) {
@@ -758,23 +803,32 @@ canvas {
   // js/penguins.js
   var PENGUIN_TYPES = [
     {
-      key: "emperor",
-      name: "\u{1F427} Emperor",
-      desc: "The largest penguin \u2014 bold black back, white belly, golden neck patches.",
-      colors: { body: "#1a1a1a", belly: "#f5f5f0", beak: "#e8a23a", flipper: "#0d0d0d", accent: "#f0c020" },
-      accentStyle: "earPatch"
+      key: "macaroni",
+      name: "\u{1F427} Macaroni",
+      desc: "The most common penguin species in the world \u2014 recognizable by its wild spray of yellow head feathers.",
+      ability: "No special ability \u2014 just a reliable, always-available penguin.",
+      triggerable: false,
+      cost: 0,
+      colors: { body: "#141414", belly: "#f4f0e0", beak: "#d9601a", flipper: "#0a0a0a", accent: "#ffcc00" },
+      accentStyle: "crest"
     },
     {
-      key: "king",
-      name: "\u{1F427} King",
-      desc: "Emperor's smaller cousin, with vivid orange ear patches.",
-      colors: { body: "#1c1c1c", belly: "#fdf6e8", beak: "#ff8c1a", flipper: "#0d0d0d", accent: "#ff9d00" },
-      accentStyle: "earPatch"
+      key: "rockhopper",
+      name: "\u{1F427} Rockhopper",
+      desc: "Small and spry, with spiky yellow head feathers.",
+      ability: "Sure-Footed (passive): hops right over obstacles other penguins get pushed off of.",
+      triggerable: false,
+      cost: 150,
+      colors: { body: "#161616", belly: "#f2f0e8", beak: "#e8722a", flipper: "#0a0a0a", accent: "#ffdd33" },
+      accentStyle: "crest"
     },
     {
       key: "gentoo",
       name: "\u{1F427} Gentoo",
       desc: "Recognizable by the white stripe swept across its head.",
+      ability: "Aquatic Grace (passive): swims dramatically faster than other species.",
+      triggerable: false,
+      cost: 200,
       colors: { body: "#111111", belly: "#f4f6f0", beak: "#ff6a3d", flipper: "#0d0d0d", accent: "#ffffff" },
       accentStyle: "stripe"
     },
@@ -782,15 +836,23 @@ canvas {
       key: "chinstrap",
       name: "\u{1F427} Chinstrap",
       desc: "Named for the thin black line strapped under its chin.",
+      ability: "Fearless Charge (active \u2014 button/E): dash forward, damaging enemies near the landing point and briefly becoming invincible.",
+      triggerable: true,
+      icon: "\u{1F4A8}",
+      cost: 275,
       colors: { body: "#141414", belly: "#f7f7f2", beak: "#4a4a4a", flipper: "#0a0a0a", accent: "#000000" },
       accentStyle: "chinStrap"
     },
     {
-      key: "rockhopper",
-      name: "\u{1F427} Rockhopper",
-      desc: "Small and spry, with spiky yellow head feathers.",
-      colors: { body: "#161616", belly: "#f2f0e8", beak: "#e8722a", flipper: "#0a0a0a", accent: "#ffdd33" },
-      accentStyle: "crest"
+      key: "emperor",
+      name: "\u{1F427} Emperor",
+      desc: "The largest penguin \u2014 bold black back, white belly, golden neck patches.",
+      ability: "Command (active \u2014 button/E): summon 2 ally penguins to fight by your side (up to 3 at once).",
+      triggerable: true,
+      icon: "\u{1F4E3}",
+      cost: 400,
+      colors: { body: "#1a1a1a", belly: "#f5f5f0", beak: "#e8a23a", flipper: "#0d0d0d", accent: "#f0c020" },
+      accentStyle: "earPatch"
     }
   ];
   var DEFAULT_PENGUIN = PENGUIN_TYPES[0];
@@ -814,6 +876,10 @@ canvas {
     gems: [],
     powerups: [],
     particles: [],
+    allies: [],
+    // Emperor's summoned penguin allies (see abilities.js)
+    abilityPulses: [],
+    // cosmetic expanding-ring effects for active abilities (e.g. Chinstrap's charge)
     screenShake: { x: 0, y: 0, intensity: 0 },
     autoAvoid: true,
     // settings toggle: nudge the player away from the nearest close enemy; persisted
@@ -833,7 +899,9 @@ canvas {
     weapon: "barrage",
     // selected on the weapon-select screen before each run
     penguinType: DEFAULT_PENGUIN.key,
-    // aesthetic species choice, persisted across sessions
+    // species choice, persisted across sessions
+    penguinUnlocks: defaultPenguinUnlocks(),
+    // { [speciesKey]: boolean } — which species have been bought with XP
     // Game mode + active map. `mode` is 'endless' (survive on one chosen map)
     // or 'expedition' (progress through a sequence of maps). `currentMap` is
     // the active map def (null on the menu → render falls back to the default
@@ -891,8 +959,10 @@ canvas {
       // 0 = normal pose, 1 = fully swimming; eases between the two
       powerWeapon: null,
       // key into POWER_WEAPON_DEFS while a rare temporary weapon-override powerup is active
-      gemPickupRadius: PLAYER_R
+      gemPickupRadius: PLAYER_R,
       // radius for collecting XG gems
+      abilityCooldown: 0
+      // ms remaining until the equipped species' active ability (if any) can fire again
     };
     Object.assign(player, defaultWeaponStats(G.weapon));
     for (const upg of PERMANENT_UPGRADES) {
@@ -902,6 +972,11 @@ canvas {
     player.hp = player.maxHp;
     player.gemPickupRadius = PLAYER_R;
     return player;
+  }
+  function defaultPenguinUnlocks() {
+    const obj = {};
+    for (const p of PENGUIN_TYPES) obj[p.key] = p.cost === 0;
+    return obj;
   }
   var MAX_RUN_HISTORY = 15;
   var TOP_RUNS_KEPT = 5;
@@ -922,8 +997,19 @@ canvas {
       if (savedHistory) G.runHistory = JSON.parse(savedHistory);
       const savedPenguin = localStorage.getItem("penguin_species");
       if (savedPenguin) G.penguinType = savedPenguin;
+      const savedUnlocks = localStorage.getItem("penguin_unlocks");
+      if (savedUnlocks) {
+        const parsed = JSON.parse(savedUnlocks);
+        for (const key in G.penguinUnlocks) {
+          if (typeof parsed[key] === "boolean") G.penguinUnlocks[key] = parsed[key];
+        }
+      }
       const savedAutoAvoid = localStorage.getItem("penguin_autoAvoid");
       if (savedAutoAvoid !== null) G.autoAvoid = savedAutoAvoid === "1";
+      if (!G.penguinUnlocks[G.penguinType]) {
+        G.penguinType = DEFAULT_PENGUIN.key;
+        savePenguinType();
+      }
     } catch (e) {
     }
   }
@@ -942,6 +1028,12 @@ canvas {
     } catch (e) {
     }
   }
+  function savePenguinUnlocks() {
+    try {
+      localStorage.setItem("penguin_unlocks", JSON.stringify(G.penguinUnlocks));
+    } catch (e) {
+    }
+  }
   function saveAutoAvoidPref() {
     try {
       localStorage.setItem("penguin_autoAvoid", G.autoAvoid ? "1" : "0");
@@ -953,11 +1045,17 @@ canvas {
     G.permanentUpgrades = defaultPermanentUpgrades();
     G.highScore = 0;
     G.runHistory = [];
+    G.penguinUnlocks = defaultPenguinUnlocks();
+    if (!G.penguinUnlocks[G.penguinType]) {
+      G.penguinType = DEFAULT_PENGUIN.key;
+      savePenguinType();
+    }
     try {
       localStorage.removeItem("penguin_xpBank");
       localStorage.removeItem("penguin_permanentUpgrades");
       localStorage.removeItem("penguin_highScore");
       localStorage.removeItem("penguin_runHistory");
+      localStorage.removeItem("penguin_unlocks");
     } catch (e) {
     }
   }
@@ -997,6 +1095,8 @@ canvas {
     G.powerups = [];
     G.activePowerups = [];
     G.particles = [];
+    G.allies = [];
+    G.abilityPulses = [];
     G.powerupTimer = 0;
     G.xpEarnedThisGame = 0;
     G.pendingSpawns = [];
@@ -2219,6 +2319,22 @@ canvas {
         ctx2.fillRect(bx, by, bw * (e.hp / e.maxHp), bh);
       }
     }
+    const heroPenguinType = getPenguinType(G.penguinType);
+    for (const a of G.allies) {
+      ctx2.beginPath();
+      ctx2.ellipse(a.x + 1, a.y + ALLY_R + 1, ALLY_R * 0.8, 3, 0, 0, Math.PI * 2);
+      ctx2.fillStyle = "rgba(0,0,0,0.3)";
+      ctx2.fill();
+      drawPenguin(a.x, a.y, ALLY_R, heroPenguinType.colors, a.facing, false, 0, heroPenguinType.accentStyle);
+      if (a.hp < a.maxHp) {
+        const bw = ALLY_R * 2;
+        const bh = 3;
+        ctx2.fillStyle = "rgba(0,0,0,0.6)";
+        ctx2.fillRect(a.x - bw / 2, a.y - ALLY_R - 7, bw, bh);
+        ctx2.fillStyle = "#7ed957";
+        ctx2.fillRect(a.x - bw / 2, a.y - ALLY_R - 7, bw * (a.hp / a.maxHp), bh);
+      }
+    }
     for (const p of G.projectiles) {
       if (p.aoe) {
         const t = 1 - p.life / p.maxLife;
@@ -2290,13 +2406,28 @@ canvas {
       ctx2.fillStyle = "rgba(20, 0, 0, 0.6)";
       ctx2.fill();
     }
+    for (const p of G.abilityPulses) {
+      const t = p.age / p.maxAge;
+      const rad = 20 + 60 * t;
+      ctx2.globalAlpha = 1 - t;
+      ctx2.beginPath();
+      ctx2.arc(p.x, p.y, rad, 0, Math.PI * 2);
+      ctx2.strokeStyle = "rgba(255,255,255,0.6)";
+      ctx2.lineWidth = 6;
+      ctx2.stroke();
+      ctx2.beginPath();
+      ctx2.arc(p.x, p.y, rad, 0, Math.PI * 2);
+      ctx2.strokeStyle = "#4a4a4a";
+      ctx2.lineWidth = 3;
+      ctx2.stroke();
+      ctx2.globalAlpha = 1;
+    }
     if (!blinkOff) {
       ctx2.beginPath();
       ctx2.ellipse(player.x + 2, player.y + PLAYER_R + 2, PLAYER_R * 0.8, 4, 0, 0, Math.PI * 2);
       ctx2.fillStyle = "rgba(0,0,0,0.3)";
       ctx2.fill();
-      const penguinType = getPenguinType(G.penguinType);
-      drawPenguin(player.x, player.y, PLAYER_R, penguinType.colors, player.facing, flash, player.swimT, penguinType.accentStyle);
+      drawPenguin(player.x, player.y, PLAYER_R, heroPenguinType.colors, player.facing, flash, player.swimT, heroPenguinType.accentStyle);
     }
     for (const p of G.particles) {
       if (p.isText) {
@@ -2480,6 +2611,185 @@ canvas {
     canvas2.addEventListener("touchcancel", endTouch, { passive: false });
   }
 
+  // js/upgrades.js
+  function getUpgradeChoices() {
+    let pool = [...UPGRADE_OPTIONS, ...WEAPON_TYPES[G.weapon].upgrades];
+    if (G.weapon === "nova") {
+      pool = pool.filter((u) => u.key !== "dmg");
+    }
+    const shuffled = pool.sort(() => Math.random() - 0.5);
+    return shuffled.slice(0, 3);
+  }
+  function showUpgradeScreen() {
+    G.state = "upgrading";
+    const panel = document.getElementById("upgrade-panel");
+    panel.style.display = "block";
+    const choices = document.getElementById("upgrade-choices");
+    choices.innerHTML = "";
+    const upgrades = getUpgradeChoices();
+    const buttons = [];
+    let cleanupNav = () => {
+    };
+    upgrades.forEach((u) => {
+      const btn = document.createElement("button");
+      btn.innerHTML = '<span class="label">' + u.label + '</span><span class="desc">' + u.desc + "</span>";
+      btn.onclick = () => {
+        cleanupNav();
+        u.apply(G.player);
+        panel.style.display = "none";
+        G.state = "playing";
+        spawnParticles(G.player.x, G.player.y, "#ffdd00", 20, 4);
+        spawnFloatingText(G.player.x, G.player.y - 30, u.label, "#ffdd00");
+      };
+      choices.appendChild(btn);
+      buttons.push(btn);
+    });
+    cleanupNav = enableArrowNav(buttons);
+  }
+
+  // js/gems.js
+  function spawnGem(x, y, value) {
+    const pos = pushOutOfObstacles(x, y, 8);
+    G.gems.push({ x: pos.x, y: pos.y, value: value || 1, r: 8, bobOffset: Math.random() * Math.PI * 2 });
+  }
+  function updateGems(dt) {
+    const player = G.player;
+    for (let i = G.gems.length - 1; i >= 0; i--) {
+      const g = G.gems[i];
+      g.bobOffset += dt * 4;
+      if (dist(g, player) < g.r + player.gemPickupRadius) {
+        G.xpEarnedThisGame += g.value;
+        player.xp += g.value;
+        spawnParticles(g.x, g.y, "#ffdd00", 6, 2);
+        spawnFloatingText(g.x, g.y, "+" + g.value + " XP", "#ffdd00");
+        playGem();
+        G.gems.splice(i, 1);
+        const needed = XP_PER_LEVEL * Math.pow(XP_LEVEL_GROWTH, player.level - 1);
+        if (player.xp >= needed) {
+          player.xp -= needed;
+          player.level++;
+          player.maxHp += 25;
+          player.hp = Math.min(player.hp, player.maxHp);
+          playLevelUp();
+          showUpgradeScreen();
+        }
+      }
+    }
+  }
+
+  // js/abilities.js
+  function clamp(v, min, max) {
+    return Math.max(min, Math.min(max, v));
+  }
+  function killEnemy(e, index) {
+    G.score += e.score;
+    spawnFloatingText(e.x, e.y, "+" + e.score, "#ffaa00");
+    spawnParticles(e.x, e.y, e.color, 12, 3);
+    G.screenShake.intensity = Math.min(G.screenShake.intensity + 3, 8);
+    playKill();
+    const gemVal = Math.floor(e.score / 10) + (Math.random() < 0.3 ? 1 : 0);
+    spawnGem(e.x, e.y, gemVal);
+    G.enemies.splice(index, 1);
+  }
+  function summonAlly(player) {
+    const angle = Math.random() * Math.PI * 2;
+    G.allies.push({
+      x: player.x + Math.cos(angle) * 30,
+      y: player.y + Math.sin(angle) * 30,
+      hp: ALLY_HP,
+      maxHp: ALLY_HP,
+      facing: 0,
+      attackCooldown: 0,
+      hitCooldown: 0
+    });
+    spawnParticles(player.x, player.y, "#f0c020", 10, 2.5);
+  }
+  function triggerEmperor(player) {
+    if (G.allies.length >= ALLY_MAX_COUNT) return false;
+    const count = Math.min(EMPEROR_SUMMON_COUNT, ALLY_MAX_COUNT - G.allies.length);
+    for (let i = 0; i < count; i++) summonAlly(player);
+    return true;
+  }
+  function triggerChinstrap(player) {
+    player.x += Math.cos(player.facing) * CHINSTRAP_CHARGE_DIST;
+    player.y += Math.sin(player.facing) * CHINSTRAP_CHARGE_DIST;
+    player.x = clamp(player.x, PLAYER_R, WORLD_W - PLAYER_R);
+    player.y = clamp(player.y, PLAYER_R, WORLD_H - PLAYER_R);
+    resolveObstacleCollision(player, PLAYER_R);
+    player.x = clamp(player.x, PLAYER_R, WORLD_W - PLAYER_R);
+    player.y = clamp(player.y, PLAYER_R, WORLD_H - PLAYER_R);
+    for (let i = G.enemies.length - 1; i >= 0; i--) {
+      const e = G.enemies[i];
+      if (dist(e, player) < CHINSTRAP_CHARGE_RADIUS + e.r) {
+        e.hp -= CHINSTRAP_CHARGE_DMG;
+        e.flashTimer = 5;
+        if (e.hp <= 0) killEnemy(e, i);
+      }
+    }
+    player.invincible = Math.max(player.invincible, CHINSTRAP_CHARGE_INVINCIBLE);
+    G.abilityPulses.push({ x: player.x, y: player.y, age: 0, maxAge: 450 });
+    return true;
+  }
+  function triggerSpeciesAbility() {
+    if (G.state !== "playing") return;
+    const player = G.player;
+    const species = getPenguinType(G.penguinType);
+    if (!species.triggerable || player.abilityCooldown > 0) return;
+    let fired = false;
+    if (species.key === "emperor") fired = triggerEmperor(player);
+    else if (species.key === "chinstrap") fired = triggerChinstrap(player);
+    if (fired) {
+      player.abilityCooldown = species.key === "emperor" ? EMPEROR_ABILITY_COOLDOWN : CHINSTRAP_ABILITY_COOLDOWN;
+    }
+  }
+  function updateAllies(dt) {
+    for (let i = G.allies.length - 1; i >= 0; i--) {
+      const a = G.allies[i];
+      let nearest = null, nearestDist = Infinity;
+      for (const e of G.enemies) {
+        const d = dist(a, e);
+        if (d < nearestDist) {
+          nearestDist = d;
+          nearest = e;
+        }
+      }
+      if (a.attackCooldown > 0) a.attackCooldown -= dt * 1e3;
+      if (a.hitCooldown > 0) a.hitCooldown -= dt * 1e3;
+      if (nearest) {
+        const angle = Math.atan2(nearest.y - a.y, nearest.x - a.x);
+        a.facing = angle;
+        const touching = nearestDist < ALLY_R + nearest.r;
+        if (!touching) {
+          a.x += Math.cos(angle) * ALLY_SPEED * dt * 60;
+          a.y += Math.sin(angle) * ALLY_SPEED * dt * 60;
+        } else {
+          if (a.attackCooldown <= 0) {
+            nearest.hp -= ALLY_DMG;
+            nearest.flashTimer = 5;
+            a.attackCooldown = ALLY_ATTACK_INTERVAL;
+            if (nearest.hp <= 0) {
+              const idx = G.enemies.indexOf(nearest);
+              if (idx !== -1) killEnemy(nearest, idx);
+            }
+          }
+          if (a.hitCooldown <= 0) {
+            a.hp -= nearest.dmg;
+            a.hitCooldown = ALLY_HIT_COOLDOWN;
+          }
+        }
+      }
+      if (a.hp <= 0) {
+        spawnParticles(a.x, a.y, "#f0c020", 8, 2);
+        G.allies.splice(i, 1);
+      }
+    }
+    for (let i = G.abilityPulses.length - 1; i >= 0; i--) {
+      const p = G.abilityPulses[i];
+      p.age += dt * 1e3;
+      if (p.age > p.maxAge) G.abilityPulses.splice(i, 1);
+    }
+  }
+
   // js/ui.js
   function hideOverlay() {
     document.getElementById("overlay").classList.remove("active");
@@ -2546,6 +2856,33 @@ canvas {
       saveAutoAvoidPref();
       sync();
     };
+  }
+  function syncAbilityButton() {
+    const btn = document.getElementById("ability-button");
+    if (!btn) return;
+    const species = getPenguinType(G.penguinType);
+    if (species.triggerable) {
+      btn.style.display = "";
+      btn.dataset.icon = species.icon || "\u2728";
+      btn.textContent = species.icon || "\u2728";
+      btn.title = species.ability;
+    } else {
+      btn.style.display = "none";
+    }
+  }
+  function initAbilityButton() {
+    const btn = document.getElementById("ability-button");
+    if (!btn) return;
+    btn.onclick = () => triggerSpeciesAbility();
+    syncAbilityButton();
+  }
+  function updateAbilityButtonUI() {
+    const btn = document.getElementById("ability-button");
+    if (!btn || btn.style.display === "none") return;
+    const cooldown = G.player.abilityCooldown;
+    const onCooldown = cooldown > 0;
+    btn.classList.toggle("is-off", onCooldown);
+    btn.textContent = onCooldown ? String(Math.ceil(cooldown / 1e3)) : btn.dataset.icon || "\u2728";
   }
   function onStart(handler) {
     const btn = document.getElementById("start-button");
@@ -2697,13 +3034,30 @@ canvas {
     let cleanupNav = () => {
     };
     PENGUIN_TYPES.forEach((p) => {
-      const selected = G.penguinType === p.key;
+      const unlocked = G.penguinUnlocks[p.key];
+      const selected = unlocked && G.penguinType === p.key;
+      const canAfford = G.xpBank >= p.cost;
       const btn = document.createElement("button");
-      btn.className = selected ? "is-selected" : "";
-      btn.innerHTML = '<span class="label">' + p.name + (selected ? " \u2713" : "") + '</span><span class="desc">' + p.desc + "</span>";
+      btn.className = selected ? "is-selected" : unlocked ? "" : "is-locked";
+      btn.disabled = !unlocked && !canAfford;
+      let html = '<span class="label">' + p.name + (selected ? " \u2713" : "") + '</span><span class="desc">' + p.desc + '</span><span class="desc">' + p.ability + "</span>";
+      if (!unlocked) html += '<span class="cost">\u{1F512} Unlock \u2014 ' + p.cost + " XP</span>";
+      btn.innerHTML = html;
       btn.onclick = () => {
-        G.penguinType = p.key;
-        savePenguinType();
+        if (unlocked) {
+          G.penguinType = p.key;
+          savePenguinType();
+        } else {
+          if (G.xpBank < p.cost) return;
+          G.xpBank -= p.cost;
+          G.penguinUnlocks[p.key] = true;
+          G.penguinType = p.key;
+          savePenguinType();
+          savePenguinUnlocks();
+          saveProgress();
+          updateMenuXpDisplay();
+        }
+        syncAbilityButton();
         cleanupNav();
         renderPenguinChoices();
       };
@@ -2729,7 +3083,7 @@ canvas {
   }
 
   // js/player.js
-  function clamp(v, min, max) {
+  function clamp2(v, min, max) {
     return Math.max(min, Math.min(max, v));
   }
   function handleInput() {
@@ -2751,11 +3105,12 @@ canvas {
       dy /= len;
       player.facing = Math.atan2(dy, dx);
     }
-    const speedMult = wasInWater ? WATER_SPEED_MULT : 1;
+    const swimMult = G.penguinType === "gentoo" ? GENTOO_SWIM_MULT : WATER_SPEED_MULT;
+    const speedMult = wasInWater ? swimMult : 1;
     player.x += dx * player.speed * speedMult;
     player.y += dy * player.speed * speedMult;
-    player.x = clamp(player.x, PLAYER_R, WORLD_W - PLAYER_R);
-    player.y = clamp(player.y, PLAYER_R, WORLD_H - PLAYER_R);
+    player.x = clamp2(player.x, PLAYER_R, WORLD_W - PLAYER_R);
+    player.y = clamp2(player.y, PLAYER_R, WORLD_H - PLAYER_R);
     if (G.autoAvoid) {
       let nearest = null, nearestDist = Infinity;
       for (const e of G.enemies) {
@@ -2770,13 +3125,15 @@ canvas {
         const dodgeForce = 0.4;
         player.x += Math.cos(dodgeAngle) * dodgeForce;
         player.y += Math.sin(dodgeAngle) * dodgeForce;
-        player.x = clamp(player.x, PLAYER_R, WORLD_W - PLAYER_R);
-        player.y = clamp(player.y, PLAYER_R, WORLD_H - PLAYER_R);
+        player.x = clamp2(player.x, PLAYER_R, WORLD_W - PLAYER_R);
+        player.y = clamp2(player.y, PLAYER_R, WORLD_H - PLAYER_R);
       }
     }
-    resolveObstacleCollision(player, PLAYER_R);
-    player.x = clamp(player.x, PLAYER_R, WORLD_W - PLAYER_R);
-    player.y = clamp(player.y, PLAYER_R, WORLD_H - PLAYER_R);
+    if (G.penguinType !== "rockhopper") {
+      resolveObstacleCollision(player, PLAYER_R);
+      player.x = clamp2(player.x, PLAYER_R, WORLD_W - PLAYER_R);
+      player.y = clamp2(player.y, PLAYER_R, WORLD_H - PLAYER_R);
+    }
     player.inWater = isPointInWater(player.x, player.y);
     if (player.inWater !== wasInWater) {
       spawnParticles(player.x, player.y, "#bfe8ff", 14, 3);
@@ -2786,72 +3143,6 @@ canvas {
     player.swimT = player.inWater ? Math.min(1, player.swimT + swimRate * G.dt) : Math.max(0, player.swimT - swimRate * G.dt);
     if (player.regen > 0) {
       player.hp = Math.min(player.maxHp, player.hp + player.regen * G.dt);
-    }
-  }
-
-  // js/upgrades.js
-  function getUpgradeChoices() {
-    let pool = [...UPGRADE_OPTIONS, ...WEAPON_TYPES[G.weapon].upgrades];
-    if (G.weapon === "nova") {
-      pool = pool.filter((u) => u.key !== "dmg");
-    }
-    const shuffled = pool.sort(() => Math.random() - 0.5);
-    return shuffled.slice(0, 3);
-  }
-  function showUpgradeScreen() {
-    G.state = "upgrading";
-    const panel = document.getElementById("upgrade-panel");
-    panel.style.display = "block";
-    const choices = document.getElementById("upgrade-choices");
-    choices.innerHTML = "";
-    const upgrades = getUpgradeChoices();
-    const buttons = [];
-    let cleanupNav = () => {
-    };
-    upgrades.forEach((u) => {
-      const btn = document.createElement("button");
-      btn.innerHTML = '<span class="label">' + u.label + '</span><span class="desc">' + u.desc + "</span>";
-      btn.onclick = () => {
-        cleanupNav();
-        u.apply(G.player);
-        panel.style.display = "none";
-        G.state = "playing";
-        spawnParticles(G.player.x, G.player.y, "#ffdd00", 20, 4);
-        spawnFloatingText(G.player.x, G.player.y - 30, u.label, "#ffdd00");
-      };
-      choices.appendChild(btn);
-      buttons.push(btn);
-    });
-    cleanupNav = enableArrowNav(buttons);
-  }
-
-  // js/gems.js
-  function spawnGem(x, y, value) {
-    const pos = pushOutOfObstacles(x, y, 8);
-    G.gems.push({ x: pos.x, y: pos.y, value: value || 1, r: 8, bobOffset: Math.random() * Math.PI * 2 });
-  }
-  function updateGems(dt) {
-    const player = G.player;
-    for (let i = G.gems.length - 1; i >= 0; i--) {
-      const g = G.gems[i];
-      g.bobOffset += dt * 4;
-      if (dist(g, player) < g.r + player.gemPickupRadius) {
-        G.xpEarnedThisGame += g.value;
-        player.xp += g.value;
-        spawnParticles(g.x, g.y, "#ffdd00", 6, 2);
-        spawnFloatingText(g.x, g.y, "+" + g.value + " XP", "#ffdd00");
-        playGem();
-        G.gems.splice(i, 1);
-        const needed = XP_PER_LEVEL * Math.pow(XP_LEVEL_GROWTH, player.level - 1);
-        if (player.xp >= needed) {
-          player.xp -= needed;
-          player.level++;
-          player.maxHp += 25;
-          player.hp = Math.min(player.hp, player.maxHp);
-          playLevelUp();
-          showUpgradeScreen();
-        }
-      }
     }
   }
 
@@ -3532,6 +3823,8 @@ canvas {
     updateProjectiles(dt);
     updateEnemies(dt);
     updateEnemyProjectiles(dt);
+    updateAllies(dt);
+    updateAbilityButtonUI();
     updateGems(dt);
     updatePowerups(dt);
     updateActivePowerups(dt);
@@ -3565,6 +3858,7 @@ canvas {
     const player = G.player;
     if (player.invincible > 0) player.invincible -= dt;
     if (player.flashTimer > 0) player.flashTimer -= dt * 60;
+    if (player.abilityCooldown > 0) player.abilityCooldown -= dt * 1e3;
   }
 
   // js/main.js
@@ -3576,9 +3870,13 @@ canvas {
   initPenguinSelect();
   initMuteButton();
   initAutoAvoidButton();
+  initAbilityButton();
   updateMenuXpDisplay();
   updateMenuHighScoreDisplay();
   window.addEventListener("pointerdown", initAudio, { once: true });
+  window.addEventListener("keydown", (e) => {
+    if (e.code === "KeyE") triggerSpeciesAbility();
+  });
   onStart(openModeSelect);
   onRestart(openModeSelect);
   onResume(togglePause);
