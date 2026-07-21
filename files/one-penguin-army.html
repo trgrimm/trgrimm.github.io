@@ -80,10 +80,11 @@ canvas {
 }
 #overlay p {
   font-size: 18px;
-  color: #aaa;
+  color: #24333d; /* dark slate — the grey #aaa was hard to read on the bright icy menu backdrop */
   margin-bottom: 20px;
   text-align: center;
   padding: 0 12px;
+  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.5);
 }
 
 /* Narrow (phone-width) viewports: the 48px title is wider than the screen
@@ -94,8 +95,10 @@ canvas {
 }
 #overlay .menu-xp {
   font-size: 14px;
-  color: #ffdd00;
+  color: #9a5b00; /* dark amber — the bright #ffdd00 gold washed out on the light menu backdrop */
+  font-weight: bold;
   margin-top: -10px;
+  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.5);
 }
 #overlay button, #game-over button, #pause-panel button, #history-panel button {
   display: block;
@@ -156,6 +159,15 @@ canvas {
      no way to scroll to it — e.g. the map-select panel's START button. */
   max-height: 92vh;
   overflow-y: auto;
+}
+
+/* All the panels above sit at the same default stacking level (no z-index),
+   so with two open at once they'd paint in DOM order — #penguin-panel comes
+   BEFORE #weapon-select-panel in the markup, so without this it would end up
+   BEHIND it when opened mid-flow via the "Change Penguin" button. Below
+   #shop-panel's z-index:100, above everything else. */
+#penguin-panel {
+  z-index: 60;
 }
 
 #map-select-panel #map-preview {
@@ -224,6 +236,15 @@ canvas {
   font-size: 12px;
   color: #999;
 }
+/* Rarity tag on level-up upgrade cards (color set inline per rarity). */
+#upgrade-choices button .rarity-tag {
+  display: block;
+  font-size: 10px;
+  font-weight: bold;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
 #penguin-choices button.is-selected {
   border-color: #ffdd00;
   background: rgba(60, 50, 10, 0.9);
@@ -280,12 +301,15 @@ canvas {
 #game-over button + button {
   margin-top: 12px;
 }
+/* #shop-scroll (the upgrades+penguins wrapper) is plain now — the panel
+   itself scrolls as ONE unit instead (see #shop-panel's overflow-y below).
+   A separate max-height/overflow here would leave Close/Reset Progress
+   stranded past the panel's own 92vh cap whenever this content is tall —
+   exactly what made Reset Progress go missing/unreachable before. */
 #shop-upgrades {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  max-height: 50vh;
-  overflow-y: auto;
 }
 .shop-row {
   display: flex;
@@ -418,11 +442,14 @@ canvas {
 <div id="mode-select-panel" style="display:none;">
   <h2>Choose a Mode</h2>
   <div id="mode-choices"></div>
+  <button id="mode-back-button" class="menu-btn menu-btn-secondary" style="margin-top:16px;">◀ Back</button>
 </div>
 
 <div id="weapon-select-panel" style="display:none;">
   <h2>Choose Your Weapon</h2>
   <div id="weapon-choices"></div>
+  <button id="change-penguin-button" class="menu-btn menu-btn-secondary" style="margin-top:16px;">🐧 Change Penguin</button>
+  <button id="weapon-back-button" class="menu-btn menu-btn-secondary" style="margin-top:8px;">◀ Back</button>
 </div>
 
 <div id="map-select-panel" style="display:none;">
@@ -430,6 +457,7 @@ canvas {
   <canvas id="map-preview" class="preview-canvas" width="360" height="270"></canvas>
   <div id="map-choices"></div>
   <button id="map-start-btn" class="menu-btn" style="margin-top:16px;">▶ START</button>
+  <button id="map-back-button" class="menu-btn menu-btn-secondary" style="margin-top:8px;">◀ Back</button>
 </div>
 
 <div id="boon-panel" style="display:none;">
@@ -442,6 +470,7 @@ canvas {
   <p id="expedition-newhigh" style="display:none; color:#ffdd00; font-weight:bold; margin-bottom:8px; text-shadow:0 0 10px #ffdd00;">🎉 NEW HIGH SCORE! 🎉</p>
   <p id="expedition-final-score">Final Score: 0</p>
   <button id="expedition-again-button" class="menu-btn">PLAY AGAIN</button>
+  <button id="expedition-menu-button" class="menu-btn menu-btn-secondary">🏠 RETURN TO MENU</button>
 </div>
 
 <div id="upgrade-panel" style="display:none;">
@@ -461,13 +490,18 @@ canvas {
   <p id="new-highscore-banner" style="display:none; color:#ffdd00; font-weight:bold; margin-bottom:8px; text-shadow:0 0 10px #ffdd00;">🎉 NEW HIGH SCORE! 🎉</p>
   <p id="final-score">Score: 0</p>
   <button id="restart-button" class="menu-btn">PLAY AGAIN</button>
+  <button id="menu-button-gameover" class="menu-btn menu-btn-secondary">🏠 RETURN TO MENU</button>
   <button id="shop-button-gameover" class="menu-btn menu-btn-secondary">🏪 SHOP</button>
 </div>
 
-<div id="shop-panel" style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:rgba(10,10,20,0.97); border:2px solid #ff3366; border-radius:8px; padding:24px; text-align:center; pointer-events:auto; max-width:520px; width:90%; z-index:100;">
+<div id="shop-panel" style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:rgba(10,10,20,0.97); border:2px solid #ff3366; border-radius:8px; padding:24px; text-align:center; pointer-events:auto; max-width:520px; width:90%; max-height:92vh; overflow-y:auto; z-index:100;">
   <h2 style="color:#ff3366; font-size:24px; margin-bottom:8px;">🏪 PERMANENT SHOP</h2>
   <p style="color:#aaa; margin-bottom:16px;">You have <span id="shop-xp-display" style="color:#ffdd00; font-weight:bold">0</span> XP</p>
-  <div id="shop-upgrades"></div>
+  <div id="shop-scroll">
+    <div id="shop-upgrades"></div>
+    <h2 style="color:#ff3366; font-size:20px; margin:20px 0 8px;">🐧 Penguins</h2>
+    <div id="shop-species"></div>
+  </div>
   <button id="shop-close-btn" style="margin-top:16px; padding:8px 24px; font-family:'Courier New',monospace; background:#333; color:#aaa; border:none; border-radius:4px; cursor:pointer;">Close</button>
   <div style="margin-top:20px; padding-top:12px; border-top:1px solid #333;">
     <button id="reset-progress-btn" style="padding:6px 16px; font-family:'Courier New',monospace; font-size:12px; background:transparent; color:#884444; border:1px solid #663333; border-radius:4px; cursor:pointer;">🗑️ Reset Progress</button>
@@ -497,7 +531,9 @@ canvas {
   var SPECIAL_POWERUP_MIN_LEVEL = 5;
   var SPECIAL_POWERUP_CHANCE = 0.15;
   var PROJECTILE_RANGE = Math.round(W * 2 / 3);
-  var ENEMY_PROJECTILE_RANGE = Math.round(W * 0.25);
+  var ENEMY_FIRE_RANGE = Math.round(W * 0.36);
+  var ENEMY_PROJECTILE_RANGE = Math.round(W * 0.45);
+  var ENEMY_PROJECTILE_SPEED = 4.8;
   var ENEMY_RANGED_FIRE_RATE = 2200;
   var WAVE_SCALE_STEP = 2;
   var WAVE_SCALE_PER_TIER = 0.02;
@@ -517,35 +553,178 @@ canvas {
   var BASE_DMG = 10;
   var BASE_PROJ_COUNT = 8;
   var ENEMY_TYPES = {
-    basic: { hp: 25 * (2 / 3), speed: 1.2, r: 14, dmg: 7, color: "#c2a878", score: 10, species: "walrus" },
-    fast: { hp: 15 * (2 / 3), speed: 2.8, r: 10, dmg: 9, color: "#7089a0", score: 15, species: "seal" },
-    tank: { hp: 80 * (2 / 3), speed: 0.759, r: 20, dmg: 16, color: "#e2edf2", score: 25, species: "polarbear" },
+    basic: { hp: 25 * (2 / 3), speed: 1.2, r: 14, dmg: 7, color: "#c2a878", score: 10, species: "walrus", tier: "weak" },
+    fast: { hp: 15 * (2 / 3), speed: 2.8, r: 10, dmg: 9, color: "#7089a0", score: 15, species: "seal", tier: "fast" },
+    tank: { hp: 80 * (2 / 3), speed: 0.759, r: 20, dmg: 16, color: "#e2edf2", score: 25, species: "polarbear", tier: "strong" },
     // +10% on top of the earlier +15%
-    zombie: { hp: 40 * (2 / 3), speed: 1.1, r: 16, dmg: 13, color: "#6b8f5a", score: 12, species: "zombie" },
+    zombie: { hp: 40 * (2 / 3), speed: 1.1, r: 16, dmg: 13, color: "#6b8f5a", score: 12, species: "zombie", tier: "weak" },
     // +10%, one of the "slow" types
-    bat: { hp: 20 * (2 / 3), speed: 2.2, r: 9, dmg: 9, color: "#f2ecd8", score: 8, species: "owl" },
-    demon: { hp: 60 * (2 / 3), speed: 1.5, r: 18, dmg: 13, color: "#9fa8c9", score: 20, species: "yeti", ranged: true },
+    bat: { hp: 20 * (2 / 3), speed: 2.2, r: 9, dmg: 9, color: "#f2ecd8", score: 8, species: "owl", tier: "fast" },
+    demon: { hp: 60 * (2 / 3), speed: 1.5, r: 18, dmg: 13, color: "#9fa8c9", score: 20, species: "yeti", tier: "moderate", ranged: true },
     // New high-wave-milestone types (see enemies.js's MILESTONE_ENEMIES) — reuse
     // existing creature silhouettes with a distinct recolor so they read as
     // "tougher variant" at a glance, rather than needing brand-new art.
-    brute: { hp: 130 * (2 / 3), speed: 0.65, r: 22, dmg: 22, color: "#7a2530", score: 35, species: "polarbear" },
+    brute: { hp: 130 * (2 / 3), speed: 0.65, r: 22, dmg: 22, color: "#7a2530", score: 35, species: "polarbear", tier: "strong" },
     // unlocks wave 7+
-    wraith: { hp: 70 * (2 / 3), speed: 1.9, r: 17, dmg: 18, color: "#3a1a4a", score: 40, species: "yeti", ranged: true }
+    wraith: { hp: 70 * (2 / 3), speed: 1.9, r: 17, dmg: 18, color: "#3a1a4a", score: 40, species: "yeti", tier: "strong", ranged: true }
     // unlocks wave 15+
   };
-  var UPGRADE_OPTIONS = [
-    { label: "\u{1F52B} +Damage", desc: "+1 damage per attack", apply: (player) => player.dmg += 1 },
-    { label: "\u26A1 +Fire Rate", desc: "+10% faster shooting", apply: (player) => player.fireRate = Math.max(8, player.fireRate * 0.9) },
-    { label: "\u{1F3C3} +Speed", desc: "+10% movement speed", apply: (player) => player.speed = Math.min(4, player.speed * 1.1) },
-    { label: "\u{1F6E1}\uFE0F +HP", desc: "+25 max HP, heals 25", apply: (player) => {
-      player.maxHp += 25;
-      player.hp = Math.min(player.hp + 25, player.maxHp);
-    } },
-    { label: "\u2764\uFE0F Regen", desc: "+0.5 HP/sec regen", apply: (player) => {
-      player.regen = (player.regen || 0) + 0.5;
-    } },
-    { label: "\u{1F525} +Dmg/Level", desc: "+0.5 dmg per level", apply: (player) => player.dmgPerLevel = (player.dmgPerLevel || 0) + 0.5 },
-    { label: "\u{1F48E} +Gem Pickup", desc: "+10% XG pickup radius", apply: (player) => player.gemPickupRadius = Math.min(32, player.gemPickupRadius * 1.1) }
+  var GEM_PICKUP_BASE = 45;
+  var GEM_PICKUP_MAX = 170;
+  var UPGRADE_DEFS = [
+    {
+      key: "dmg",
+      icon: "\u{1F52B}",
+      name: "Damage",
+      weight: 1,
+      weapons: "all",
+      mags: { common: 1, rare: 2, epic: 4 },
+      desc: (m) => `+${m} damage per attack`,
+      apply: (p, m) => {
+        p.dmg += m;
+      }
+    },
+    {
+      key: "fireRate",
+      icon: "\u26A1",
+      name: "Fire Rate",
+      weight: 1,
+      weapons: "all",
+      mags: { common: 0.08, rare: 0.15, epic: 0.25 },
+      desc: (m) => `+${Math.round(m * 100)}% faster attacks`,
+      apply: (p, m) => {
+        p.fireRate = Math.max(8, p.fireRate * (1 - m));
+      }
+    },
+    {
+      key: "speed",
+      icon: "\u{1F3C3}",
+      name: "Speed",
+      weight: 1,
+      weapons: "all",
+      mags: { common: 0.08, rare: 0.15, epic: 0.25 },
+      desc: (m) => `+${Math.round(m * 100)}% movement speed`,
+      apply: (p, m) => {
+        p.speed = Math.min(4, p.speed * (1 + m));
+      }
+    },
+    {
+      key: "hp",
+      icon: "\u{1F6E1}\uFE0F",
+      name: "Max HP",
+      weight: 1,
+      weapons: "all",
+      mags: { common: 25, rare: 50, epic: 100 },
+      desc: (m) => `+${m} max HP, heal ${m}`,
+      apply: (p, m) => {
+        p.maxHp += m;
+        p.hp = Math.min(p.hp + m, p.maxHp);
+      }
+    },
+    {
+      key: "regen",
+      icon: "\u2764\uFE0F",
+      name: "Regen",
+      weight: 0.9,
+      weapons: "all",
+      mags: { common: 0.5, rare: 1, epic: 2 },
+      desc: (m) => `+${m} HP/sec regeneration`,
+      apply: (p, m) => {
+        p.regen = (p.regen || 0) + m;
+      }
+    },
+    {
+      key: "gemPickup",
+      icon: "\u{1F48E}",
+      name: "Gem Pickup",
+      weight: 1.6,
+      weapons: "all",
+      mags: { common: 12, rare: 24, epic: 45 },
+      desc: (m) => `+${m} gem pickup radius`,
+      apply: (p, m) => {
+        p.gemPickupRadius = Math.min(GEM_PICKUP_MAX, p.gemPickupRadius + m);
+      }
+    },
+    // Barrage
+    {
+      key: "projCount",
+      icon: "\u{1F3AF}",
+      name: "Projectiles",
+      weight: 1,
+      weapons: ["barrage"],
+      mags: { common: 1, rare: 2, epic: 3 },
+      desc: (m) => `+${m} snowball${m > 1 ? "s" : ""} (max 16)`,
+      apply: (p, m) => {
+        p.projCount = Math.min(16, p.projCount + m);
+      }
+    },
+    {
+      key: "projSpeed",
+      icon: "\u{1F4A8}",
+      name: "Snowball Speed",
+      weight: 1,
+      weapons: ["barrage"],
+      mags: { common: 0.1, rare: 0.18, epic: 0.3 },
+      desc: (m) => `+${Math.round(m * 100)}% snowball speed`,
+      apply: (p, m) => {
+        p.projSpeed *= 1 + m;
+      }
+    },
+    // Harpoon
+    {
+      key: "pierce",
+      icon: "\u{1F517}",
+      name: "Pierce",
+      weight: 1,
+      weapons: ["harpoon"],
+      mags: { common: 1, rare: 2, epic: 3 },
+      desc: (m) => `Harpoon hits +${m} more enem${m > 1 ? "ies" : "y"}`,
+      apply: (p, m) => {
+        p.pierceCount += m;
+      }
+    },
+    {
+      key: "harpoonSpeed",
+      icon: "\u26A1",
+      name: "Harpoon Speed",
+      weight: 1,
+      weapons: ["harpoon"],
+      mags: { common: 0.12, rare: 0.2, epic: 0.32 },
+      desc: (m) => `+${Math.round(m * 100)}% harpoon speed`,
+      apply: (p, m) => {
+        p.projSpeed *= 1 + m;
+      }
+    },
+    // Nova
+    {
+      key: "novaRadius",
+      icon: "\u{1F300}",
+      name: "Nova Radius",
+      weight: 1,
+      weapons: ["nova"],
+      mags: { common: 0.15, rare: 0.25, epic: 0.4 },
+      desc: (m) => `+${Math.round(m * 100)}% nova radius`,
+      apply: (p, m) => {
+        p.novaRadius *= 1 + m;
+      }
+    },
+    {
+      key: "novaFreq",
+      icon: "\u23F1\uFE0F",
+      name: "Nova Frequency",
+      weight: 1,
+      weapons: ["nova"],
+      mags: { common: 0.1, rare: 0.18, epic: 0.28 },
+      desc: (m) => `+${Math.round(m * 100)}% faster pulses`,
+      apply: (p, m) => {
+        p.fireRate = Math.max(300, p.fireRate * (1 - m));
+      }
+    }
+  ];
+  var RARITY_TABLE = [
+    { key: "common", label: "Common", color: "#cfd8e3", prob: 0.75 },
+    { key: "rare", label: "Rare", color: "#33bbff", prob: 0.2 },
+    { key: "epic", label: "Epic", color: "#b84dff", prob: 0.05 }
   ];
   var PERMANENT_UPGRADES = [
     {
@@ -604,10 +783,10 @@ canvas {
       key: "gemPickupRadius",
       label: "\u{1F48E} Gem Pickup",
       maxLevel: 5,
-      desc: (level) => `+${level * 5}% XG pickup radius`,
+      desc: (level) => `+${level * 10} gem pickup radius`,
       cost: (level) => Math.round(40 * Math.pow(1.7, level)),
       effect: (player, level) => {
-        player.gemPickupRadius = Math.min(32, player.gemPickupRadius * (1 + 0.05 * level));
+        player.gemPickupRadius = Math.min(GEM_PICKUP_MAX, player.gemPickupRadius + level * 10);
       }
     }
   ];
@@ -710,16 +889,8 @@ canvas {
       desc: "Auto-fires snowballs in a ring around you. Reliable and simple.",
       fireMode: "radial",
       color: "#ff3366",
-      baseStats: { dmg: 10, fireRate: 690, projSpeed: 8, projCount: 8 },
+      baseStats: { dmg: 10, fireRate: 690, projSpeed: 8, projCount: 8 }
       // fireRate +15%: slower base attack speed
-      upgrades: [
-        { label: "\u{1F3AF} +Projectiles", desc: "+1 extra snowball (max 16)", apply: (p) => p.projCount = Math.min(16, p.projCount + 1) },
-        { label: "\u{1F4A8} +Proj Speed", desc: "+10% snowball speed", apply: (p) => p.projSpeed *= 1.1 },
-        { label: "\u2744\uFE0F +Wide Spread", desc: "+2 snowballs, -5% dmg", apply: (p) => {
-          p.projCount = Math.min(16, p.projCount + 2);
-          p.dmg *= 0.95;
-        } }
-      ]
     },
     harpoon: {
       key: "harpoon",
@@ -727,12 +898,7 @@ canvas {
       desc: "Fires a single piercing harpoon at the nearest enemy. High damage, rewards aim.",
       fireMode: "pierce",
       color: "#0c7fd6",
-      baseStats: { dmg: 24, fireRate: 850, projSpeed: 13, pierceCount: 2 },
-      upgrades: [
-        { label: "\u{1F517} +Pierce", desc: "Harpoon hits +1 more enemy", apply: (p) => p.pierceCount += 1 },
-        { label: "\u26A1 +Harpoon Speed", desc: "+15% harpoon speed", apply: (p) => p.projSpeed *= 1.15 },
-        { label: "\u{1F3A3} +Barbs", desc: "+20% harpoon damage", apply: (p) => p.dmg *= 1.2 }
-      ]
+      baseStats: { dmg: 24, fireRate: 850, projSpeed: 13, pierceCount: 2 }
     },
     nova: {
       key: "nova",
@@ -740,13 +906,8 @@ canvas {
       desc: "Periodic icy shockwave that damages everything nearby. No aiming needed.",
       fireMode: "aoe",
       color: "#0f4fb0",
-      baseStats: { dmg: 10, fireRate: 1170, novaRadius: 84 },
+      baseStats: { dmg: 10, fireRate: 1170, novaRadius: 84 }
       // fireRate -10%: faster base attack speed
-      upgrades: [
-        { label: "\u{1F300} +Nova Radius", desc: "+15% nova radius", apply: (p) => p.novaRadius *= 1.15 },
-        { label: "\u23F1\uFE0F +Nova Frequency", desc: "10% faster pulses", apply: (p) => p.fireRate = Math.max(300, p.fireRate * 0.9) },
-        { label: "\u{1F9CA} +Nova Damage", desc: "+25% nova damage", apply: (p) => p.dmg *= 1.25 }
-      ]
     }
   };
   function defaultWeaponStats(weaponKey) {
@@ -773,6 +934,20 @@ canvas {
       dmgMult: 1.5,
       radius: 120
       // fixed — independent of player.novaRadius, which may be unset for non-Nova players
+    },
+    thundersquall: {
+      key: "thundersquall",
+      label: "\u26A1 Thundersquall",
+      fireMode: "chain",
+      color: "#8fd8ff",
+      fireRate: 338,
+      // 450 * 0.75 — 25% faster firing
+      dmgMult: 1.875,
+      // 1.5 * 1.25 — 25% more damage
+      chainCount: 4,
+      // total enemies a single bolt can strike
+      chainRange: 220
+      // max px a bolt jumps between enemies
     }
   };
   function renderWeaponChoices(onSelect) {
@@ -792,6 +967,7 @@ canvas {
       buttons.push(btn);
     });
     cleanupNav = enableArrowNav(buttons);
+    return () => cleanupNav();
   }
   function showWeaponSelectPanel() {
     document.getElementById("weapon-select-panel").style.display = "block";
@@ -880,6 +1056,8 @@ canvas {
     // Emperor's summoned penguin allies (see abilities.js)
     abilityPulses: [],
     // cosmetic expanding-ring effects for active abilities (e.g. Chinstrap's charge)
+    lightningArcs: [],
+    // cosmetic fading bolt paths for the Thundersquall power weapon (see projectiles.js)
     screenShake: { x: 0, y: 0, intensity: 0 },
     autoAvoid: true,
     // settings toggle: nudge the player away from the nearest close enemy; persisted
@@ -950,7 +1128,6 @@ canvas {
       invincible: 0,
       flashTimer: 0,
       regen: 0,
-      dmgPerLevel: 0,
       facing: 0,
       // radians; direction the player is currently facing/moving
       inWater: false,
@@ -959,8 +1136,8 @@ canvas {
       // 0 = normal pose, 1 = fully swimming; eases between the two
       powerWeapon: null,
       // key into POWER_WEAPON_DEFS while a rare temporary weapon-override powerup is active
-      gemPickupRadius: PLAYER_R,
-      // radius for collecting XG gems
+      gemPickupRadius: GEM_PICKUP_BASE,
+      // magnet radius: gems within this drift toward the player (see gems.js)
       abilityCooldown: 0
       // ms remaining until the equipped species' active ability (if any) can fire again
     };
@@ -970,7 +1147,6 @@ canvas {
       if (level > 0) upg.effect(player, level, G.weapon);
     }
     player.hp = player.maxHp;
-    player.gemPickupRadius = PLAYER_R;
     return player;
   }
   function defaultPenguinUnlocks() {
@@ -1097,6 +1273,7 @@ canvas {
     G.particles = [];
     G.allies = [];
     G.abilityPulses = [];
+    G.lightningArcs = [];
     G.powerupTimer = 0;
     G.xpEarnedThisGame = 0;
     G.pendingSpawns = [];
@@ -1132,7 +1309,6 @@ canvas {
     const AudioCtx = window.AudioContext || window.webkitAudioContext;
     if (!AudioCtx) return;
     ctx = new AudioCtx();
-    startAmbient();
   }
   function ensureCtx() {
     if (!ctx) return null;
@@ -1158,34 +1334,6 @@ canvas {
     osc.start(t0);
     osc.stop(t0 + duration + 0.02);
   }
-  function startAmbient() {
-    const c = ensureCtx();
-    if (!c || ambient) return;
-    const osc1 = c.createOscillator();
-    const osc2 = c.createOscillator();
-    osc1.type = "sine";
-    osc1.frequency.value = 45;
-    osc2.type = "sine";
-    osc2.frequency.value = 48;
-    const windGain = c.createGain();
-    const muteGain = c.createGain();
-    windGain.gain.value = 0.03;
-    muteGain.gain.value = muted ? 0 : 1;
-    const lfo = c.createOscillator();
-    const lfoGain = c.createGain();
-    lfo.frequency.value = 0.05;
-    lfoGain.gain.value = 0.015;
-    lfo.connect(lfoGain);
-    lfoGain.connect(windGain.gain);
-    osc1.connect(windGain);
-    osc2.connect(windGain);
-    windGain.connect(muteGain);
-    muteGain.connect(c.destination);
-    osc1.start();
-    osc2.start();
-    lfo.start();
-    ambient = { gain: muteGain };
-  }
   function toggleMute() {
     muted = !muted;
     if (ambient) ambient.gain.gain.value = muted ? 0 : 1;
@@ -1200,6 +1348,7 @@ canvas {
     else if (weapon === "nova") tone({ startFreq: 300, endFreq: 700, duration: 0.25, type: "sine", gain: 0.08 });
     else if (weapon === "flamingSnowballs") tone({ startFreq: 900, endFreq: 300, duration: 0.08, type: "sawtooth", gain: 0.05 });
     else if (weapon === "ringOfFire") tone({ startFreq: 200, endFreq: 900, duration: 0.22, type: "sawtooth", gain: 0.1 });
+    else if (weapon === "thundersquall") tone({ startFreq: 1400, endFreq: 400, duration: 0.1, type: "sawtooth", gain: 0.07 });
     else tone({ startFreq: 700, endFreq: 500, duration: 0.06, type: "square", gain: 0.04 });
   }
   function playKill() {
@@ -1395,10 +1544,22 @@ canvas {
       revert: (p) => {
         p.powerWeapon = null;
       }
+    },
+    thundersquall: {
+      label: POWER_WEAPON_DEFS.thundersquall.label,
+      color: POWER_WEAPON_DEFS.thundersquall.color,
+      duration: 8,
+      isWeaponOverride: true,
+      apply: (p) => {
+        p.powerWeapon = "thundersquall";
+      },
+      revert: (p) => {
+        p.powerWeapon = null;
+      }
     }
   };
   var WEAPON_POWERUP_TYPE = { barrage: "proj", harpoon: "pierce", nova: "radius" };
-  var SPECIAL_POWERUP_TYPES = ["flamingSnowballs", "ringOfFire"];
+  var SPECIAL_POWERUP_TYPES = ["flamingSnowballs", "ringOfFire", "thundersquall"];
   function getPowerupLabel(type) {
     return POWERUP_DEFS[type] ? POWERUP_DEFS[type].label : type;
   }
@@ -1589,8 +1750,8 @@ canvas {
     { label: "\u{1F4A7} Meltwater", desc: "+1.5 HP/sec regeneration", apply: (p) => {
       p.regen = (p.regen || 0) + 1.5;
     } },
-    { label: "\u{1F525} Ascendant", desc: "+0.8 damage per level", apply: (p) => {
-      p.dmgPerLevel = (p.dmgPerLevel || 0) + 0.8;
+    { label: "\u{1FA78} Frenzy", desc: "+30% damage", apply: (p) => {
+      p.dmg *= 1.3;
     } }
   ];
 
@@ -2193,6 +2354,23 @@ canvas {
     ctx2.fillStyle = "rgba(255,255,255,0.5)";
     ctx2.fill();
   }
+  function buildJaggedPath(anchors) {
+    const out = [anchors[0]];
+    for (let i = 1; i < anchors.length; i++) {
+      const a = anchors[i - 1], b = anchors[i];
+      const dx = b.x - a.x, dy = b.y - a.y;
+      const len = Math.hypot(dx, dy) || 1;
+      const nx = -dy / len, ny = dx / len;
+      const kinks = 2;
+      for (let k = 1; k <= kinks; k++) {
+        const t = k / (kinks + 1);
+        const off = (Math.random() - 0.5) * Math.min(24, len * 0.35);
+        out.push({ x: a.x + dx * t + nx * off, y: a.y + dy * t + ny * off });
+      }
+      out.push(b);
+    }
+    return out;
+  }
   function render() {
     const player = G.player;
     const { camX, camY } = getCameraOffset(player);
@@ -2422,6 +2600,26 @@ canvas {
       ctx2.stroke();
       ctx2.globalAlpha = 1;
     }
+    for (const arc of G.lightningArcs) {
+      const alpha = 1 - arc.age / arc.maxAge;
+      const jag = buildJaggedPath(arc.points);
+      ctx2.globalAlpha = alpha * 0.5;
+      ctx2.beginPath();
+      ctx2.moveTo(jag[0].x, jag[0].y);
+      for (let i = 1; i < jag.length; i++) ctx2.lineTo(jag[i].x, jag[i].y);
+      ctx2.strokeStyle = arc.color;
+      ctx2.lineWidth = 7;
+      ctx2.lineJoin = "round";
+      ctx2.stroke();
+      ctx2.globalAlpha = alpha;
+      ctx2.beginPath();
+      ctx2.moveTo(jag[0].x, jag[0].y);
+      for (let i = 1; i < jag.length; i++) ctx2.lineTo(jag[i].x, jag[i].y);
+      ctx2.strokeStyle = "#ffffff";
+      ctx2.lineWidth = 2;
+      ctx2.stroke();
+      ctx2.globalAlpha = 1;
+    }
     if (!blinkOff) {
       ctx2.beginPath();
       ctx2.ellipse(player.x + 2, player.y + PLAYER_R + 2, PLAYER_R * 0.8, 4, 0, 0, Math.PI * 2);
@@ -2468,6 +2666,31 @@ canvas {
       ctx2.strokeStyle = "#fff";
       ctx2.lineWidth = 1;
       ctx2.strokeRect(xpX - 1, xpY - 1, xpW + 2, xpH + 2);
+      if (heroPenguinType.triggerable) {
+        const badgeR = 15;
+        const badgeX = hpX - 24;
+        const badgeY = (xpY + hpY + hpH) / 2;
+        const cooldown = player.abilityCooldown;
+        const ready = cooldown <= 0;
+        ctx2.beginPath();
+        ctx2.arc(badgeX, badgeY, badgeR, 0, Math.PI * 2);
+        ctx2.fillStyle = "rgba(0,0,0,0.55)";
+        ctx2.fill();
+        ctx2.strokeStyle = ready ? "#ffdd00" : "#555";
+        ctx2.lineWidth = 2;
+        ctx2.stroke();
+        ctx2.textAlign = "center";
+        ctx2.textBaseline = "middle";
+        if (ready) {
+          ctx2.font = "16px Courier New";
+          ctx2.fillText(heroPenguinType.icon || "\u2728", badgeX, badgeY + 1);
+        } else {
+          ctx2.font = "bold 12px Courier New";
+          ctx2.fillStyle = "#999";
+          ctx2.fillText(String(Math.ceil(cooldown / 1e3)), badgeX, badgeY + 1);
+        }
+        ctx2.textBaseline = "alphabetic";
+      }
       ctx2.fillStyle = "#fff";
       ctx2.font = "bold 14px Courier New";
       ctx2.textAlign = "center";
@@ -2492,12 +2715,6 @@ canvas {
         ctx2.font = "12px Courier New";
         ctx2.textAlign = "left";
         ctx2.fillText("\u2764\uFE0F +" + player.regen.toFixed(1) + "/s", 16, 42);
-      }
-      if (player.dmgPerLevel > 0) {
-        ctx2.fillStyle = "#ffaa00";
-        ctx2.font = "12px Courier New";
-        ctx2.textAlign = "left";
-        ctx2.fillText("\u2694\uFE0F +" + player.dmgPerLevel.toFixed(1) + "/lvl", 16, 58);
       }
       let puY = 72;
       for (const ap of G.activePowerups) {
@@ -2612,13 +2829,49 @@ canvas {
   }
 
   // js/upgrades.js
-  function getUpgradeChoices() {
-    let pool = [...UPGRADE_OPTIONS, ...WEAPON_TYPES[G.weapon].upgrades];
-    if (G.weapon === "nova") {
-      pool = pool.filter((u) => u.key !== "dmg");
+  function rollRarity() {
+    let r = Math.random();
+    for (const rarity of RARITY_TABLE) {
+      r -= rarity.prob;
+      if (r <= 0) return rarity;
     }
-    const shuffled = pool.sort(() => Math.random() - 0.5);
-    return shuffled.slice(0, 3);
+    return RARITY_TABLE[0];
+  }
+  function applicableDefs() {
+    return UPGRADE_DEFS.filter((d) => d.weapons === "all" || d.weapons.includes(G.weapon));
+  }
+  function pickDefs(n) {
+    const pool = applicableDefs();
+    const chosen = [];
+    const remaining = [...pool];
+    while (chosen.length < n && remaining.length > 0) {
+      let total = 0;
+      for (const d of remaining) total += d.weight;
+      let r = Math.random() * total;
+      let idx = 0;
+      for (let i = 0; i < remaining.length; i++) {
+        r -= remaining[i].weight;
+        if (r <= 0) {
+          idx = i;
+          break;
+        }
+      }
+      chosen.push(remaining.splice(idx, 1)[0]);
+    }
+    return chosen;
+  }
+  function getUpgradeChoices() {
+    return pickDefs(3).map((def) => {
+      const rarity = rollRarity();
+      const mag = def.mags[rarity.key];
+      return {
+        def,
+        rarity,
+        mag,
+        label: def.icon + " " + def.name,
+        desc: def.desc(mag)
+      };
+    });
   }
   function showUpgradeScreen() {
     G.state = "upgrading";
@@ -2632,14 +2885,15 @@ canvas {
     };
     upgrades.forEach((u) => {
       const btn = document.createElement("button");
-      btn.innerHTML = '<span class="label">' + u.label + '</span><span class="desc">' + u.desc + "</span>";
+      btn.style.borderColor = u.rarity.color;
+      btn.innerHTML = '<span class="rarity-tag" style="color:' + u.rarity.color + '">' + u.rarity.label + '</span><span class="label">' + u.label + '</span><span class="desc">' + u.desc + "</span>";
       btn.onclick = () => {
         cleanupNav();
-        u.apply(G.player);
+        u.def.apply(G.player, u.mag);
         panel.style.display = "none";
         G.state = "playing";
-        spawnParticles(G.player.x, G.player.y, "#ffdd00", 20, 4);
-        spawnFloatingText(G.player.x, G.player.y - 30, u.label, "#ffdd00");
+        spawnParticles(G.player.x, G.player.y, u.rarity.color, 20, 4);
+        spawnFloatingText(G.player.x, G.player.y - 30, u.label, u.rarity.color);
       };
       choices.appendChild(btn);
       buttons.push(btn);
@@ -2657,7 +2911,16 @@ canvas {
     for (let i = G.gems.length - 1; i >= 0; i--) {
       const g = G.gems[i];
       g.bobOffset += dt * 4;
-      if (dist(g, player) < g.r + player.gemPickupRadius) {
+      const d = dist(g, player);
+      if (d < player.gemPickupRadius) g.attracting = true;
+      if (g.attracting) {
+        const angle = Math.atan2(player.y - g.y, player.x - g.x);
+        const closeness = 1 - Math.min(1, d / player.gemPickupRadius);
+        const speed = 5 + closeness * 9;
+        g.x += Math.cos(angle) * speed * dt * 60;
+        g.y += Math.sin(angle) * speed * dt * 60;
+      }
+      if (d < g.r + PLAYER_R) {
         G.xpEarnedThisGame += g.value;
         player.xp += g.value;
         spawnParticles(g.x, g.y, "#ffdd00", 6, 2);
@@ -2919,6 +3182,65 @@ canvas {
     if (btn) btn.onclick = handler;
   }
 
+  // js/penguinSelect.js
+  function selectOrUnlockPenguin(p) {
+    const unlocked = G.penguinUnlocks[p.key];
+    if (unlocked) {
+      G.penguinType = p.key;
+      savePenguinType();
+    } else {
+      if (G.xpBank < p.cost) return;
+      G.xpBank -= p.cost;
+      G.penguinUnlocks[p.key] = true;
+      G.penguinType = p.key;
+      savePenguinType();
+      savePenguinUnlocks();
+      saveProgress();
+      updateMenuXpDisplay();
+    }
+    syncAbilityButton();
+  }
+  function renderPenguinChoices() {
+    const container = document.getElementById("penguin-choices");
+    container.innerHTML = "";
+    const buttons = [];
+    let cleanupNav = () => {
+    };
+    PENGUIN_TYPES.forEach((p) => {
+      const unlocked = G.penguinUnlocks[p.key];
+      const selected = unlocked && G.penguinType === p.key;
+      const canAfford = G.xpBank >= p.cost;
+      const btn = document.createElement("button");
+      btn.className = selected ? "is-selected" : unlocked ? "" : "is-locked";
+      btn.disabled = !unlocked && !canAfford;
+      let html = '<span class="label">' + p.name + (selected ? " \u2713" : "") + '</span><span class="desc">' + p.desc + '</span><span class="desc">' + p.ability + "</span>";
+      if (!unlocked) html += '<span class="cost">\u{1F512} Unlock \u2014 ' + p.cost + " XP</span>";
+      btn.innerHTML = html;
+      btn.onclick = () => {
+        selectOrUnlockPenguin(p);
+        cleanupNav();
+        renderPenguinChoices();
+      };
+      container.appendChild(btn);
+      buttons.push(btn);
+    });
+    cleanupNav = enableArrowNav(buttons);
+  }
+  function openPenguinPanel() {
+    renderPenguinChoices();
+    document.getElementById("penguin-panel").style.display = "block";
+  }
+  function initPenguinSelect() {
+    const openBtn = document.getElementById("penguin-button");
+    const closeBtn = document.getElementById("penguin-close-btn");
+    const panel = document.getElementById("penguin-panel");
+    if (!panel) return;
+    if (openBtn) openBtn.onclick = openPenguinPanel;
+    if (closeBtn) closeBtn.onclick = () => {
+      panel.style.display = "none";
+    };
+  }
+
   // js/shop.js
   function renderShop() {
     document.getElementById("shop-xp-display").textContent = G.xpBank;
@@ -2955,11 +3277,49 @@ canvas {
       container.appendChild(row);
     }
   }
+  function renderSpeciesShop() {
+    const container = document.getElementById("shop-species");
+    if (!container) return;
+    container.innerHTML = "";
+    for (const p of PENGUIN_TYPES) {
+      const unlocked = G.penguinUnlocks[p.key];
+      const equipped = unlocked && G.penguinType === p.key;
+      const row = document.createElement("div");
+      row.className = "shop-row";
+      const info = document.createElement("div");
+      info.className = "shop-row-info";
+      info.innerHTML = '<span class="shop-label">' + p.name + '</span><span class="shop-level">' + (equipped ? "Equipped" : unlocked ? "Owned" : "Locked") + '</span><span class="shop-desc">' + p.ability + "</span>";
+      const btn = document.createElement("button");
+      btn.className = "shop-buy-btn";
+      if (equipped) {
+        btn.textContent = "EQUIPPED";
+        btn.disabled = true;
+      } else if (unlocked) {
+        btn.textContent = "EQUIP";
+        btn.disabled = false;
+        btn.onclick = () => {
+          selectOrUnlockPenguin(p);
+          renderSpeciesShop();
+        };
+      } else {
+        btn.textContent = p.cost + " XP";
+        btn.disabled = G.xpBank < p.cost;
+        btn.onclick = () => {
+          selectOrUnlockPenguin(p);
+          renderSpeciesShop();
+        };
+      }
+      row.appendChild(info);
+      row.appendChild(btn);
+      container.appendChild(row);
+    }
+  }
   function openShop(origin) {
     G.shopOrigin = origin;
     if (origin === "gameover") hideGameOverPanel();
     else hideOverlay();
     renderShop();
+    renderSpeciesShop();
     showShopPanel();
   }
   function closeShop() {
@@ -3024,62 +3384,6 @@ canvas {
       showHistoryPanel();
     });
     onHistoryClose(hideHistoryPanel);
-  }
-
-  // js/penguinSelect.js
-  function renderPenguinChoices() {
-    const container = document.getElementById("penguin-choices");
-    container.innerHTML = "";
-    const buttons = [];
-    let cleanupNav = () => {
-    };
-    PENGUIN_TYPES.forEach((p) => {
-      const unlocked = G.penguinUnlocks[p.key];
-      const selected = unlocked && G.penguinType === p.key;
-      const canAfford = G.xpBank >= p.cost;
-      const btn = document.createElement("button");
-      btn.className = selected ? "is-selected" : unlocked ? "" : "is-locked";
-      btn.disabled = !unlocked && !canAfford;
-      let html = '<span class="label">' + p.name + (selected ? " \u2713" : "") + '</span><span class="desc">' + p.desc + '</span><span class="desc">' + p.ability + "</span>";
-      if (!unlocked) html += '<span class="cost">\u{1F512} Unlock \u2014 ' + p.cost + " XP</span>";
-      btn.innerHTML = html;
-      btn.onclick = () => {
-        if (unlocked) {
-          G.penguinType = p.key;
-          savePenguinType();
-        } else {
-          if (G.xpBank < p.cost) return;
-          G.xpBank -= p.cost;
-          G.penguinUnlocks[p.key] = true;
-          G.penguinType = p.key;
-          savePenguinType();
-          savePenguinUnlocks();
-          saveProgress();
-          updateMenuXpDisplay();
-        }
-        syncAbilityButton();
-        cleanupNav();
-        renderPenguinChoices();
-      };
-      container.appendChild(btn);
-      buttons.push(btn);
-    });
-    cleanupNav = enableArrowNav(buttons);
-  }
-  function initPenguinSelect() {
-    const openBtn = document.getElementById("penguin-button");
-    const closeBtn = document.getElementById("penguin-close-btn");
-    const panel = document.getElementById("penguin-panel");
-    if (!panel) return;
-    if (openBtn) {
-      openBtn.onclick = () => {
-        renderPenguinChoices();
-        panel.style.display = "block";
-      };
-    }
-    if (closeBtn) closeBtn.onclick = () => {
-      panel.style.display = "none";
-    };
   }
 
   // js/player.js
@@ -3156,6 +3460,7 @@ canvas {
     player.lastShot = now;
     if (powerDef) {
       if (powerDef.fireMode === "aoe") fireRingOfFire(player, powerDef);
+      else if (powerDef.fireMode === "chain") fireChainLightning(player, powerDef);
       else fireFlamingSnowballs(player, powerDef);
       playShoot(powerDef.key);
       return;
@@ -3266,7 +3571,60 @@ canvas {
       hitSet: /* @__PURE__ */ new Set()
     });
   }
+  function fireChainLightning(player, powerDef) {
+    if (G.enemies.length === 0) return;
+    const dmg = player.dmg * powerDef.dmgMult;
+    let current = null, best = Infinity;
+    for (const e of G.enemies) {
+      const d = dist(player, e);
+      if (d < best) {
+        best = d;
+        current = e;
+      }
+    }
+    const hit = /* @__PURE__ */ new Set();
+    const points = [{ x: player.x, y: player.y }];
+    for (let hop = 0; hop < powerDef.chainCount && current; hop++) {
+      points.push({ x: current.x, y: current.y });
+      hit.add(current);
+      spawnParticles(current.x, current.y, powerDef.color, 6, 3);
+      damageEnemy(current, dmg, powerDef.color);
+      const from = current;
+      let next = null, nBest = powerDef.chainRange;
+      for (const e of G.enemies) {
+        if (hit.has(e)) continue;
+        const d = dist(from, e);
+        if (d < nBest) {
+          nBest = d;
+          next = e;
+        }
+      }
+      current = next;
+    }
+    G.lightningArcs.push({ points, color: powerDef.color, age: 0, maxAge: 140 });
+  }
+  function damageEnemy(e, dmg, color) {
+    e.hp -= dmg;
+    e.flashTimer = 5;
+    if (e.hp <= 0) {
+      const idx = G.enemies.indexOf(e);
+      if (idx === -1) return;
+      G.score += e.score;
+      spawnFloatingText(e.x, e.y, "+" + e.score, "#ffaa00");
+      spawnParticles(e.x, e.y, e.color, 12, 3);
+      G.screenShake.intensity = Math.min(G.screenShake.intensity + 3, 8);
+      playKill();
+      const gemVal = Math.floor(e.score / 10) + (Math.random() < 0.3 ? 1 : 0);
+      spawnGem(e.x, e.y, gemVal);
+      G.enemies.splice(idx, 1);
+    }
+  }
   function updateProjectiles(dt) {
+    for (let i = G.lightningArcs.length - 1; i >= 0; i--) {
+      const arc = G.lightningArcs[i];
+      arc.age += dt * 1e3;
+      if (arc.age >= arc.maxAge) G.lightningArcs.splice(i, 1);
+    }
     for (let i = G.projectiles.length - 1; i >= 0; i--) {
       const p = G.projectiles[i];
       p.x += p.vx * dt * 60;
@@ -3383,6 +3741,36 @@ canvas {
     { type: "brute", wave: 7 },
     { type: "wraith", wave: 15 }
   ];
+  function tierWeight(tier, wave) {
+    switch (tier) {
+      case "weak":
+        return 10;
+      case "fast":
+        return 2;
+      // kept rare so groups aren't fast swarms
+      case "moderate":
+        return 3 + wave * 0.6;
+      case "strong":
+        return Math.max(0, wave - 2) * 0.7;
+      default:
+        return 4;
+    }
+  }
+  function pickWeightedType(types, wave) {
+    let total = 0;
+    const weights = types.map((t) => {
+      const w = tierWeight(ENEMY_TYPES[t].tier, wave);
+      total += w;
+      return w;
+    });
+    if (total <= 0) return types[Math.floor(Math.random() * types.length)];
+    let r = Math.random() * total;
+    for (let i = 0; i < types.length; i++) {
+      r -= weights[i];
+      if (r <= 0) return types[i];
+    }
+    return types[types.length - 1];
+  }
   function getWaveEnemies() {
     const roster = G.currentMap && G.currentMap.roster || DEFAULT_ROSTER;
     const types = roster.filter((_, k) => G.wave >= unlockWave(k));
@@ -3390,11 +3778,10 @@ canvas {
     for (const m of MILESTONE_ENEMIES) {
       if (G.wave >= m.wave) types.push(m.type);
     }
-    const count = G.mode === "expedition" ? 5 + G.wavesThisLevel * 4 + G.levelIndex * 4 : 5 + Math.floor(G.wave * 3.8);
+    const count = G.mode === "expedition" ? 10 + G.wavesThisLevel * 7 + G.levelIndex * 7 : 10 + Math.floor(G.wave * 6.5);
     const result = [];
     for (let i = 0; i < count; i++) {
-      const t = types[Math.floor(Math.random() * types.length)];
-      result.push(t);
+      result.push(pickWeightedType(types, G.wave));
     }
     return result;
   }
@@ -3457,11 +3844,12 @@ canvas {
     G.wave++;
     const entries = getWaveEnemies().map((type) => ({ type, hpBoost: 1 }));
     entries.push(...getEliteInjection(G.currentMap));
+    const groupSize = Math.min(8, 3 + Math.floor(G.wave / 3));
     let delay = 0;
     G.pendingSpawns = [];
-    for (const entry of entries) {
-      G.pendingSpawns.push({ type: entry.type, hpBoost: entry.hpBoost, at: delay / 1e3 });
-      delay += 400 + Math.random() * 300;
+    for (let i = 0; i < entries.length; i++) {
+      G.pendingSpawns.push({ type: entries[i].type, hpBoost: entries[i].hpBoost, at: delay / 1e3 });
+      if ((i + 1) % groupSize === 0) delay += 350 + Math.random() * 200;
     }
     G.waveSpawnTimer = 0;
   }
@@ -3483,17 +3871,16 @@ canvas {
       if (e.flashTimer > 0) e.flashTimer -= dt * 60;
       if (e.ranged) {
         e.shotCooldown -= dt * 1e3;
-        if (e.shotCooldown <= 0 && dist(e, player) <= ENEMY_PROJECTILE_RANGE) {
+        if (e.shotCooldown <= 0 && dist(e, player) <= ENEMY_FIRE_RANGE) {
           e.shotCooldown = ENEMY_RANGED_FIRE_RATE;
           const angle2 = Math.atan2(player.y - e.y, player.x - e.x);
-          const speed = 6;
           G.enemyProjectiles.push({
             x: e.x,
             y: e.y,
             originX: e.x,
             originY: e.y,
-            vx: Math.cos(angle2) * speed,
-            vy: Math.sin(angle2) * speed,
+            vx: Math.cos(angle2) * ENEMY_PROJECTILE_SPEED,
+            vy: Math.sin(angle2) * ENEMY_PROJECTILE_SPEED,
             dmg: e.dmg,
             r: 6,
             color: e.color
@@ -3557,6 +3944,7 @@ canvas {
     G.mode = "expedition";
     G.expeditionMaps = MAP_DEFS.slice();
     resetGameState();
+    syncAbilityButton();
     startLevel(0);
   }
   function startLevel(i) {
@@ -3567,6 +3955,9 @@ canvas {
     G.enemyProjectiles = [];
     G.gems = [];
     G.powerups = [];
+    G.allies = [];
+    G.abilityPulses = [];
+    G.lightningArcs = [];
     G.pendingSpawns = [];
     G.waveTimer = 0;
     G.waveSpawnTimer = 0;
@@ -3697,32 +4088,45 @@ canvas {
     });
     document.getElementById(panelId).style.display = "block";
     cleanupNav = enableArrowNav(buttons);
+    return () => cleanupNav();
   }
   function openModeSelect() {
     hideAllRunPanels();
-    renderChoicePanel("mode-select-panel", "mode-choices", [
+    const cleanup = renderChoicePanel("mode-select-panel", "mode-choices", [
       { key: "endless", label: "\u267E\uFE0F Endless", desc: "Pick one map and survive escalating waves as long as you can." },
       { key: "expedition", label: "\u{1F5FA}\uFE0F Expedition", desc: "Fight through a sequence of maps, each ending in a boss. Beat them all to win." }
     ], (m) => openWeaponSelect(m.key));
+    const backBtn = document.getElementById("mode-back-button");
+    if (backBtn) backBtn.onclick = () => {
+      cleanup();
+      backToMenu();
+    };
   }
   function openWeaponSelect(mode = "endless") {
     pendingMode = mode;
     hideOverlay();
     hideGameOverPanel();
     hidePausePanel();
-    renderWeaponChoices((weaponKey) => {
+    const cleanup = renderWeaponChoices((weaponKey) => {
       G.weapon = weaponKey;
       hideWeaponSelectPanel();
       if (pendingMode === "expedition") startExpedition();
       else openMapSelect();
     });
     showWeaponSelectPanel();
+    const backBtn = document.getElementById("weapon-back-button");
+    if (backBtn) backBtn.onclick = () => {
+      cleanup();
+      hideWeaponSelectPanel();
+      openModeSelect();
+    };
   }
   function openMapSelect() {
     const panel = document.getElementById("map-select-panel");
     const container = document.getElementById("map-choices");
     const previewCanvas = document.getElementById("map-preview");
     const startBtn = document.getElementById("map-start-btn");
+    const backBtn = document.getElementById("map-back-button");
     container.innerHTML = "";
     let selected = MAP_DEFS[0];
     const buttons = [];
@@ -3754,6 +4158,13 @@ canvas {
       hidePanel("map-select-panel");
       startRun("endless", selected);
     };
+    if (backBtn) {
+      backBtn.onclick = () => {
+        cleanupNav();
+        hidePanel("map-select-panel");
+        openWeaponSelect(pendingMode);
+      };
+    }
   }
   function hideAllRunPanels() {
     hideOverlay();
@@ -3772,6 +4183,7 @@ canvas {
     G.currentMap = mapDef;
     resetGameState();
     generateTerrain(mapDef);
+    syncAbilityButton();
     startWave();
   }
   function endRun() {
@@ -3805,10 +4217,13 @@ canvas {
   }
   function quitToMenu() {
     endRun();
+    backToMenu();
+  }
+  function backToMenu() {
     G.state = "menu";
     G.mode = "endless";
     G.currentMap = null;
-    hidePausePanel();
+    hideAllRunPanels();
     showOverlay();
   }
   function update() {
@@ -3884,6 +4299,12 @@ canvas {
   onQuit(quitToMenu);
   var expeditionAgainBtn = document.getElementById("expedition-again-button");
   if (expeditionAgainBtn) expeditionAgainBtn.onclick = openModeSelect;
+  var menuButtonGameover = document.getElementById("menu-button-gameover");
+  if (menuButtonGameover) menuButtonGameover.onclick = backToMenu;
+  var expeditionMenuBtn = document.getElementById("expedition-menu-button");
+  if (expeditionMenuBtn) expeditionMenuBtn.onclick = backToMenu;
+  var changePenguinBtn = document.getElementById("change-penguin-button");
+  if (changePenguinBtn) changePenguinBtn.onclick = openPenguinPanel;
   var pauseBtn = document.getElementById("pause-button");
   if (pauseBtn) pauseBtn.onclick = togglePause;
   function loop() {
