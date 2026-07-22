@@ -178,6 +178,7 @@ canvas {
 #map-choices button.is-selected {
   border-color: #ffdd00;
   background: rgba(60, 50, 10, 0.9);
+  box-shadow: 0 0 0 2px rgba(255, 221, 0, 0.9), 0 0 14px 3px rgba(255, 221, 0, 0.45);
 }
 #map-choices button.is-selected .label {
   color: #ffdd00;
@@ -211,16 +212,31 @@ canvas {
 #weapon-choices button, #mode-choices button, #map-choices button, #penguin-choices button {
   max-width: 220px;
 }
+/* Mouse hover: a lighter cue that the pointer is over this option. */
 #upgrade-choices button:hover, #weapon-choices button:hover,
-#upgrade-choices button:focus, #weapon-choices button:focus,
 #mode-choices button:hover, #map-choices button:hover, #boon-choices button:hover,
-#mode-choices button:focus, #map-choices button:focus, #boon-choices button:focus,
-#penguin-choices button:hover, #penguin-choices button:focus {
+#penguin-choices button:hover {
   outline: none;
   border-color: #ff3366;
   background: rgba(50, 20, 40, 0.9);
   color: #fff;
   transform: translateY(-2px);
+}
+/* Keyboard/gamepad focus: this is THE currently-selected option (arrow keys
+   move it, Enter picks it) — previously it shared hover's subtle styling and
+   was easy to lose track of. Made unmistakable with a bold gold glow, using
+   the same gold already used elsewhere for "selected/best" (e.g. the map and
+   penguin panels' .is-selected, run history's .is-best) so it reads
+   consistently as "this one is chosen," not just "moused over." */
+#upgrade-choices button:focus, #weapon-choices button:focus,
+#mode-choices button:focus, #map-choices button:focus, #boon-choices button:focus,
+#penguin-choices button:focus {
+  outline: none;
+  border-color: #ffdd00;
+  background: rgba(60, 50, 10, 0.9);
+  color: #fff;
+  transform: translateY(-2px) scale(1.03);
+  box-shadow: 0 0 0 2px rgba(255, 221, 0, 0.9), 0 0 18px 4px rgba(255, 221, 0, 0.55);
 }
 #upgrade-choices button .label, #weapon-choices button .label,
 #mode-choices button .label, #map-choices button .label, #boon-choices button .label,
@@ -248,6 +264,7 @@ canvas {
 #penguin-choices button.is-selected {
   border-color: #ffdd00;
   background: rgba(60, 50, 10, 0.9);
+  box-shadow: 0 0 0 2px rgba(255, 221, 0, 0.9), 0 0 14px 3px rgba(255, 221, 0, 0.45);
 }
 #penguin-choices button.is-selected .label {
   color: #ffdd00;
@@ -367,6 +384,17 @@ canvas {
   overflow-y: auto;
   min-width: 280px;
   margin-bottom: 16px;
+}
+.history-section {
+  color: #ff3366;
+  font-weight: bold;
+  font-size: 13px;
+  letter-spacing: 0.5px;
+  text-align: left;
+  margin-top: 6px;
+}
+#history-list .history-section:first-child {
+  margin-top: 0;
 }
 .history-row {
   display: flex;
@@ -540,6 +568,11 @@ canvas {
   var WAVE_SCALE_MAX_WAVE = 40;
   var ELITE_WAVE_INTERVAL = 5;
   var ELITE_BIG_WAVE_INTERVAL = 10;
+  var MINIBOSS_MIN_WAVE = 8;
+  var MINIBOSS_INTERVAL = 3;
+  var MINIBOSS_HP_BOOST = 4;
+  var MINIBOSS_R_MULT = 1.7;
+  var MINIBOSS_DMG_MULT = 1.6;
   var PLAYER_R = 14;
   var BASE_SPEED = 2.25;
   var BASE_FIRE_RATE = 600;
@@ -564,6 +597,8 @@ canvas {
     // New high-wave-milestone types (see enemies.js's MILESTONE_ENEMIES) — reuse
     // existing creature silhouettes with a distinct recolor so they read as
     // "tougher variant" at a glance, rather than needing brand-new art.
+    leopardseal: { hp: 55 * (2 / 3), speed: 1.35, r: 17, dmg: 15, color: "#5c5a4a", score: 20, species: "seal", tier: "moderate" },
+    // unlocks wave 4+ — demon's melee counterpart
     brute: { hp: 130 * (2 / 3), speed: 0.65, r: 22, dmg: 22, color: "#7a2530", score: 35, species: "polarbear", tier: "strong" },
     // unlocks wave 7+
     wraith: { hp: 70 * (2 / 3), speed: 1.9, r: 17, dmg: 18, color: "#3a1a4a", score: 40, species: "yeti", tier: "strong", ranged: true }
@@ -948,6 +983,30 @@ canvas {
       // total enemies a single bolt can strike
       chainRange: 220
       // max px a bolt jumps between enemies
+    },
+    // A defensive weapon unlike the other three: a ring of icicles orbits the
+    // player, shredding anything that gets close. Deals continuous contact
+    // damage (see projectiles.js's updateOrbitals) instead of firing shots, so
+    // it has no fire pattern — fireRate is only the harmless tick shoot() uses
+    // before no-oping on the 'orbit' mode.
+    glacialOrbit: {
+      key: "glacialOrbit",
+      label: "\u{1F9CA} Glacial Orbit",
+      fireMode: "orbit",
+      color: "#bfeaff",
+      fireRate: 500,
+      // unused for damage; shoot() no-ops orbit mode
+      dmgMult: 1.5,
+      orbitCount: 3,
+      // icicles in the ring
+      orbitRadius: 74,
+      // px from the player
+      orbitSpeed: 3.2,
+      // radians/sec
+      orbitHitR: 12,
+      // collision radius of each icicle
+      hitInterval: 300
+      // ms before the same enemy can be struck again
     }
   };
   function renderWeaponChoices(onSelect) {
@@ -1058,6 +1117,10 @@ canvas {
     // cosmetic expanding-ring effects for active abilities (e.g. Chinstrap's charge)
     lightningArcs: [],
     // cosmetic fading bolt paths for the Thundersquall power weapon (see projectiles.js)
+    orbitals: [],
+    // icicle positions for the Glacial Orbit power weapon (recomputed each frame)
+    orbitAngle: 0,
+    // current rotation of the orbital ring (advances while Glacial Orbit is active)
     screenShake: { x: 0, y: 0, intensity: 0 },
     autoAvoid: true,
     // settings toggle: nudge the player away from the nearest close enemy; persisted
@@ -1274,6 +1337,8 @@ canvas {
     G.allies = [];
     G.abilityPulses = [];
     G.lightningArcs = [];
+    G.orbitals = [];
+    G.orbitAngle = 0;
     G.powerupTimer = 0;
     G.xpEarnedThisGame = 0;
     G.pendingSpawns = [];
@@ -1556,10 +1621,22 @@ canvas {
       revert: (p) => {
         p.powerWeapon = null;
       }
+    },
+    glacialOrbit: {
+      label: POWER_WEAPON_DEFS.glacialOrbit.label,
+      color: POWER_WEAPON_DEFS.glacialOrbit.color,
+      duration: 8,
+      isWeaponOverride: true,
+      apply: (p) => {
+        p.powerWeapon = "glacialOrbit";
+      },
+      revert: (p) => {
+        p.powerWeapon = null;
+      }
     }
   };
   var WEAPON_POWERUP_TYPE = { barrage: "proj", harpoon: "pierce", nova: "radius" };
-  var SPECIAL_POWERUP_TYPES = ["flamingSnowballs", "ringOfFire", "thundersquall"];
+  var SPECIAL_POWERUP_TYPES = ["flamingSnowballs", "ringOfFire", "thundersquall", "glacialOrbit"];
   function getPowerupLabel(type) {
     return POWERUP_DEFS[type] ? POWERUP_DEFS[type].label : type;
   }
@@ -2371,6 +2448,12 @@ canvas {
     }
     return out;
   }
+  function getAbilityBadgeRect() {
+    const hpW = 120, hpH = 8;
+    const hpX = W / 2 - hpW / 2, hpY = H - 30;
+    const xpY = H - 42;
+    return { x: hpX - 24, y: (xpY + hpY + hpH) / 2, r: 15 };
+  }
   function render() {
     const player = G.player;
     const { camX, camY } = getCameraOffset(player);
@@ -2486,7 +2569,15 @@ canvas {
       ctx2.fill();
       const faceAngle = Math.atan2(player.y - e.y, player.x - e.x);
       drawEnemy(e, faceAngle);
-      if (e.hp < e.maxHp) {
+      if (e.isMiniBoss) {
+        const pulse = 1 + Math.sin(performance.now() / 180) * 0.06;
+        ctx2.beginPath();
+        ctx2.arc(e.x, e.y, e.r * pulse + 5, 0, Math.PI * 2);
+        ctx2.strokeStyle = "rgba(255, 60, 60, 0.85)";
+        ctx2.lineWidth = 3;
+        ctx2.stroke();
+      }
+      if (e.hp < e.maxHp || e.isMiniBoss) {
         const bw = e.r * 2;
         const bh = 3;
         const bx = e.x - bw / 2;
@@ -2627,6 +2718,27 @@ canvas {
       ctx2.fill();
       drawPenguin(player.x, player.y, PLAYER_R, heroPenguinType.colors, player.facing, flash, player.swimT, heroPenguinType.accentStyle);
     }
+    for (const o of G.orbitals) {
+      ctx2.save();
+      ctx2.translate(o.x, o.y);
+      ctx2.rotate(o.angle);
+      ctx2.beginPath();
+      ctx2.ellipse(0, 0, 13, 7, 0, 0, Math.PI * 2);
+      ctx2.fillStyle = "rgba(191, 234, 255, 0.35)";
+      ctx2.fill();
+      ctx2.beginPath();
+      ctx2.moveTo(12, 0);
+      ctx2.lineTo(0, 5);
+      ctx2.lineTo(-9, 0);
+      ctx2.lineTo(0, -5);
+      ctx2.closePath();
+      ctx2.fillStyle = "#bfeaff";
+      ctx2.fill();
+      ctx2.strokeStyle = "#ffffff";
+      ctx2.lineWidth = 1.5;
+      ctx2.stroke();
+      ctx2.restore();
+    }
     for (const p of G.particles) {
       if (p.isText) {
         ctx2.globalAlpha = Math.min(p.life, 1);
@@ -2667,9 +2779,7 @@ canvas {
       ctx2.lineWidth = 1;
       ctx2.strokeRect(xpX - 1, xpY - 1, xpW + 2, xpH + 2);
       if (heroPenguinType.triggerable) {
-        const badgeR = 15;
-        const badgeX = hpX - 24;
-        const badgeY = (xpY + hpY + hpH) / 2;
+        const { x: badgeX, y: badgeY, r: badgeR } = getAbilityBadgeRect();
         const cooldown = player.abilityCooldown;
         const ready = cooldown <= 0;
         ctx2.beginPath();
@@ -2695,17 +2805,21 @@ canvas {
       ctx2.font = "bold 14px Courier New";
       ctx2.textAlign = "center";
       ctx2.fillText("LV " + player.level, W / 2, H - 50);
+      let leftY = 24;
+      const lineHeight = 16;
       const elapsed = Math.floor((performance.now() - G.startTime) / 1e3);
       const mins = Math.floor(elapsed / 60).toString().padStart(2, "0");
       const secs = (elapsed % 60).toString().padStart(2, "0");
       ctx2.fillStyle = "#aaa";
       ctx2.font = "14px Courier New";
       ctx2.textAlign = "left";
-      ctx2.fillText("Time: " + mins + ":" + secs, 16, 24);
+      ctx2.fillText("Time: " + mins + ":" + secs, 16, leftY);
+      leftY += lineHeight;
       ctx2.fillStyle = "#aaa";
       ctx2.font = "14px Courier New";
       ctx2.textAlign = "left";
-      ctx2.fillText("Score: " + G.score, 16, 40);
+      ctx2.fillText("Score: " + G.score, 16, leftY);
+      leftY += lineHeight;
       ctx2.fillStyle = "#888";
       ctx2.font = "12px Courier New";
       ctx2.textAlign = "right";
@@ -2714,9 +2828,10 @@ canvas {
         ctx2.fillStyle = "#33ff66";
         ctx2.font = "12px Courier New";
         ctx2.textAlign = "left";
-        ctx2.fillText("\u2764\uFE0F +" + player.regen.toFixed(1) + "/s", 16, 42);
+        ctx2.fillText("\u2764\uFE0F +" + player.regen.toFixed(1) + "/s", 16, leftY);
+        leftY += lineHeight;
       }
-      let puY = 72;
+      let puY = leftY + 8;
       for (const ap of G.activePowerups) {
         const secs2 = Math.ceil(ap.remaining);
         const label = getPowerupLabel(ap.type);
@@ -2725,7 +2840,7 @@ canvas {
         ctx2.font = "12px Courier New";
         ctx2.textAlign = "left";
         ctx2.fillText(label + " (" + secs2 + "s)", 16, puY);
-        puY += 16;
+        puY += lineHeight;
       }
     }
     const vig = getPalette().vignette;
@@ -2750,82 +2865,6 @@ canvas {
       ctx2.fill();
     }
     ctx2.restore();
-  }
-
-  // js/input.js
-  var keys = {};
-  var touchMove = { active: false, dx: 0, dy: 0 };
-  var JOYSTICK_MAX_RADIUS = 50;
-  var JOYSTICK_DEADZONE = 8;
-  var activeTouchId = null;
-  var originX = 0;
-  var originY = 0;
-  var joystickEl;
-  var knobEl;
-  function attachInputListeners(onEscape) {
-    window.addEventListener("keydown", (e) => {
-      keys[e.code] = true;
-      if (e.code === "Escape" && onEscape) onEscape();
-    });
-    window.addEventListener("keyup", (e) => {
-      keys[e.code] = false;
-    });
-    attachTouchControls();
-  }
-  function findTouch(touchList, id) {
-    for (let i = 0; i < touchList.length; i++) {
-      if (touchList[i].identifier === id) return touchList[i];
-    }
-    return null;
-  }
-  function attachTouchControls() {
-    const canvas2 = document.getElementById("game");
-    joystickEl = document.getElementById("touch-joystick");
-    knobEl = document.getElementById("touch-joystick-knob");
-    if (!canvas2 || !joystickEl || !knobEl) return;
-    canvas2.addEventListener("touchstart", (e) => {
-      if (activeTouchId !== null) return;
-      const t = e.changedTouches[0];
-      activeTouchId = t.identifier;
-      originX = t.clientX;
-      originY = t.clientY;
-      joystickEl.style.left = originX + "px";
-      joystickEl.style.top = originY + "px";
-      joystickEl.style.display = "block";
-      knobEl.style.transform = "translate(0px, 0px)";
-      e.preventDefault();
-    }, { passive: false });
-    canvas2.addEventListener("touchmove", (e) => {
-      const t = findTouch(e.changedTouches, activeTouchId);
-      if (!t) return;
-      const dx = t.clientX - originX;
-      const dy = t.clientY - originY;
-      const dist2 = Math.hypot(dx, dy);
-      const knobDist = Math.min(dist2, JOYSTICK_MAX_RADIUS);
-      const angle = Math.atan2(dy, dx);
-      knobEl.style.transform = `translate(${Math.cos(angle) * knobDist}px, ${Math.sin(angle) * knobDist}px)`;
-      if (dist2 > JOYSTICK_DEADZONE) {
-        touchMove.active = true;
-        touchMove.dx = dx / dist2;
-        touchMove.dy = dy / dist2;
-      } else {
-        touchMove.active = false;
-        touchMove.dx = 0;
-        touchMove.dy = 0;
-      }
-      e.preventDefault();
-    }, { passive: false });
-    function endTouch(e) {
-      const t = findTouch(e.changedTouches, activeTouchId);
-      if (!t) return;
-      activeTouchId = null;
-      touchMove.active = false;
-      touchMove.dx = 0;
-      touchMove.dy = 0;
-      joystickEl.style.display = "none";
-    }
-    canvas2.addEventListener("touchend", endTouch, { passive: false });
-    canvas2.addEventListener("touchcancel", endTouch, { passive: false });
   }
 
   // js/upgrades.js
@@ -3053,6 +3092,101 @@ canvas {
     }
   }
 
+  // js/input.js
+  var keys = {};
+  var touchMove = { active: false, dx: 0, dy: 0 };
+  var JOYSTICK_MAX_RADIUS = 50;
+  var JOYSTICK_DEADZONE = 8;
+  var activeTouchId = null;
+  var originX = 0;
+  var originY = 0;
+  var joystickEl;
+  var knobEl;
+  function attachInputListeners(onEscape) {
+    window.addEventListener("keydown", (e) => {
+      keys[e.code] = true;
+      if (e.code === "Escape" && onEscape) onEscape();
+    });
+    window.addEventListener("keyup", (e) => {
+      keys[e.code] = false;
+    });
+    attachTouchControls();
+  }
+  function findTouch(touchList, id) {
+    for (let i = 0; i < touchList.length; i++) {
+      if (touchList[i].identifier === id) return touchList[i];
+    }
+    return null;
+  }
+  function hitsAbilityBadge(canvas2, clientX, clientY) {
+    const rect = canvas2.getBoundingClientRect();
+    const scaleX = canvas2.width / rect.width;
+    const scaleY = canvas2.height / rect.height;
+    const x = (clientX - rect.left) * scaleX;
+    const y = (clientY - rect.top) * scaleY;
+    const badge = getAbilityBadgeRect();
+    const hitPadding = 8;
+    return Math.hypot(x - badge.x, y - badge.y) <= badge.r + hitPadding;
+  }
+  function attachTouchControls() {
+    const canvas2 = document.getElementById("game");
+    joystickEl = document.getElementById("touch-joystick");
+    knobEl = document.getElementById("touch-joystick-knob");
+    if (!canvas2 || !joystickEl || !knobEl) return;
+    canvas2.addEventListener("click", (e) => {
+      if (hitsAbilityBadge(canvas2, e.clientX, e.clientY)) triggerSpeciesAbility();
+    });
+    canvas2.addEventListener("touchstart", (e) => {
+      const t0 = e.changedTouches[0];
+      if (hitsAbilityBadge(canvas2, t0.clientX, t0.clientY)) {
+        triggerSpeciesAbility();
+        e.preventDefault();
+        return;
+      }
+      if (activeTouchId !== null) return;
+      const t = e.changedTouches[0];
+      activeTouchId = t.identifier;
+      originX = t.clientX;
+      originY = t.clientY;
+      joystickEl.style.left = originX + "px";
+      joystickEl.style.top = originY + "px";
+      joystickEl.style.display = "block";
+      knobEl.style.transform = "translate(0px, 0px)";
+      e.preventDefault();
+    }, { passive: false });
+    canvas2.addEventListener("touchmove", (e) => {
+      const t = findTouch(e.changedTouches, activeTouchId);
+      if (!t) return;
+      const dx = t.clientX - originX;
+      const dy = t.clientY - originY;
+      const dist2 = Math.hypot(dx, dy);
+      const knobDist = Math.min(dist2, JOYSTICK_MAX_RADIUS);
+      const angle = Math.atan2(dy, dx);
+      knobEl.style.transform = `translate(${Math.cos(angle) * knobDist}px, ${Math.sin(angle) * knobDist}px)`;
+      if (dist2 > JOYSTICK_DEADZONE) {
+        touchMove.active = true;
+        touchMove.dx = dx / dist2;
+        touchMove.dy = dy / dist2;
+      } else {
+        touchMove.active = false;
+        touchMove.dx = 0;
+        touchMove.dy = 0;
+      }
+      e.preventDefault();
+    }, { passive: false });
+    function endTouch(e) {
+      const t = findTouch(e.changedTouches, activeTouchId);
+      if (!t) return;
+      activeTouchId = null;
+      touchMove.active = false;
+      touchMove.dx = 0;
+      touchMove.dy = 0;
+      joystickEl.style.display = "none";
+    }
+    canvas2.addEventListener("touchend", endTouch, { passive: false });
+    canvas2.addEventListener("touchcancel", endTouch, { passive: false });
+  }
+
   // js/ui.js
   function hideOverlay() {
     document.getElementById("overlay").classList.remove("active");
@@ -3137,6 +3271,10 @@ canvas {
     const btn = document.getElementById("ability-button");
     if (!btn) return;
     btn.onclick = () => triggerSpeciesAbility();
+    btn.addEventListener("touchstart", (e) => {
+      e.preventDefault();
+      triggerSpeciesAbility();
+    }, { passive: false });
     syncAbilityButton();
   }
   function updateAbilityButtonUI() {
@@ -3354,6 +3492,25 @@ canvas {
     const d = new Date(ts);
     return d.toLocaleDateString(void 0, { month: "short", day: "numeric" }) + " " + d.toLocaleTimeString(void 0, { hour: "numeric", minute: "2-digit" });
   }
+  function makeRow(run) {
+    const row = document.createElement("div");
+    row.className = "history-row" + (run.score > 0 && run.score === G.highScore ? " is-best" : "");
+    const weaponName = WEAPON_TYPES[run.weapon] && WEAPON_TYPES[run.weapon].name || run.weapon;
+    const info = document.createElement("div");
+    info.innerHTML = '<div class="history-score">' + run.score + ' pts</div><div class="history-meta">Wave ' + run.wave + " \xB7 Lv " + run.level + " \xB7 " + weaponName + "</div>";
+    const date = document.createElement("div");
+    date.className = "history-meta";
+    date.textContent = formatDate(run.date);
+    row.appendChild(info);
+    row.appendChild(date);
+    return row;
+  }
+  function sectionHeader(text) {
+    const h = document.createElement("div");
+    h.className = "history-section";
+    h.textContent = text;
+    return h;
+  }
   function renderHistoryList() {
     const list = document.getElementById("history-list");
     list.innerHTML = "";
@@ -3364,19 +3521,15 @@ canvas {
       list.appendChild(empty);
       return;
     }
-    G.runHistory.forEach((run) => {
-      const row = document.createElement("div");
-      row.className = "history-row" + (run.score > 0 && run.score === G.highScore ? " is-best" : "");
-      const weaponName = WEAPON_TYPES[run.weapon] && WEAPON_TYPES[run.weapon].name || run.weapon;
-      const info = document.createElement("div");
-      info.innerHTML = '<div class="history-score">' + run.score + ' pts</div><div class="history-meta">Wave ' + run.wave + " \xB7 Lv " + run.level + " \xB7 " + weaponName + "</div>";
-      const date = document.createElement("div");
-      date.className = "history-meta";
-      date.textContent = formatDate(run.date);
-      row.appendChild(info);
-      row.appendChild(date);
-      list.appendChild(row);
-    });
+    const topRuns = [...G.runHistory].sort((a, b) => b.score - a.score).slice(0, 5);
+    const topSet = new Set(topRuns);
+    const rest = G.runHistory.filter((r) => !topSet.has(r));
+    list.appendChild(sectionHeader("\u{1F3C6} Top Scores"));
+    topRuns.forEach((run) => list.appendChild(makeRow(run)));
+    if (rest.length) {
+      list.appendChild(sectionHeader("\u{1F552} Recent"));
+      rest.forEach((run) => list.appendChild(makeRow(run)));
+    }
   }
   function initHistory() {
     onHistoryOpen(() => {
@@ -3455,10 +3608,11 @@ canvas {
     const player = G.player;
     const now = performance.now();
     const powerDef = player.powerWeapon && POWER_WEAPON_DEFS[player.powerWeapon];
-    const fireRate = powerDef ? powerDef.fireRate : player.fireRate;
+    const fireRate = powerDef ? Math.min(powerDef.fireRate, player.fireRate) : player.fireRate;
     if (now - player.lastShot < fireRate) return;
     player.lastShot = now;
     if (powerDef) {
+      if (powerDef.fireMode === "orbit") return;
       if (powerDef.fireMode === "aoe") fireRingOfFire(player, powerDef);
       else if (powerDef.fireMode === "chain") fireChainLightning(player, powerDef);
       else fireFlamingSnowballs(player, powerDef);
@@ -3619,6 +3773,38 @@ canvas {
       G.enemies.splice(idx, 1);
     }
   }
+  function updateOrbitals(dt) {
+    const player = G.player;
+    const def = player.powerWeapon && POWER_WEAPON_DEFS[player.powerWeapon];
+    if (!def || def.fireMode !== "orbit") {
+      if (G.orbitals.length) G.orbitals = [];
+      return;
+    }
+    G.orbitAngle = (G.orbitAngle + def.orbitSpeed * dt) % (Math.PI * 2);
+    G.orbitals = [];
+    for (let i = 0; i < def.orbitCount; i++) {
+      const a = G.orbitAngle + Math.PI * 2 / def.orbitCount * i;
+      G.orbitals.push({
+        x: player.x + Math.cos(a) * def.orbitRadius,
+        y: player.y + Math.sin(a) * def.orbitRadius,
+        angle: a
+      });
+    }
+    const dmg = player.dmg * def.dmgMult;
+    for (let j = G.enemies.length - 1; j >= 0; j--) {
+      const e = G.enemies[j];
+      e.orbitHitCd = (e.orbitHitCd || 0) - dt * 1e3;
+      if (e.orbitHitCd > 0) continue;
+      for (const o of G.orbitals) {
+        if (dist(o, e) < e.r + def.orbitHitR) {
+          e.orbitHitCd = def.hitInterval;
+          spawnParticles(e.x, e.y, def.color, 3, 2);
+          damageEnemy(e, dmg, def.color);
+          break;
+        }
+      }
+    }
+  }
   function updateProjectiles(dt) {
     for (let i = G.lightningArcs.length - 1; i >= 0; i--) {
       const arc = G.lightningArcs[i];
@@ -3693,9 +3879,10 @@ canvas {
     const tier = Math.min(Math.floor(G.wave / WAVE_SCALE_STEP), maxTier);
     return 1 + tier * WAVE_SCALE_PER_TIER;
   }
-  function spawnEnemy(type, hpBoost = 1) {
+  function spawnEnemy(type, hpBoost = 1, opts = {}) {
     const t = ENEMY_TYPES[type];
-    const margin = t.r + 10;
+    const rMult = opts.rMult || 1;
+    const margin = t.r * rMult + 10;
     const { camX, camY } = getCameraOffset(G.player);
     let x, y;
     const side = Math.floor(Math.random() * 4);
@@ -3714,19 +3901,21 @@ canvas {
     }
     const waveScale = getWaveScaleMult();
     const hpMult = waveScale * hpBoost;
+    const score = opts.isMiniBoss ? t.score * 5 : t.score;
     G.enemies.push({
       x,
       y,
       hp: Math.round(t.hp * hpMult),
       maxHp: Math.round(t.hp * hpMult),
       speed: t.speed * waveScale,
-      r: t.r,
-      dmg: t.dmg,
+      r: t.r * rMult,
+      dmg: Math.round(t.dmg * (opts.dmgMult || 1)),
       color: t.color,
       type,
       species: t.species,
-      score: t.score,
+      score,
       flashTimer: 0,
+      isMiniBoss: opts.isMiniBoss || false,
       // Ranged enemies fire a straight-line shot at the player periodically;
       // staggered start so a pack doesn't all fire in perfect unison.
       ranged: t.ranged || false,
@@ -3738,6 +3927,7 @@ canvas {
     return k === 0 ? 0 : 2 * k - 1;
   }
   var MILESTONE_ENEMIES = [
+    { type: "leopardseal", wave: 4 },
     { type: "brute", wave: 7 },
     { type: "wraith", wave: 15 }
   ];
@@ -3771,14 +3961,22 @@ canvas {
     }
     return types[types.length - 1];
   }
-  function getWaveEnemies() {
+  function getUnlockedTypes() {
     const roster = G.currentMap && G.currentMap.roster || DEFAULT_ROSTER;
     const types = roster.filter((_, k) => G.wave >= unlockWave(k));
     if (types.length === 0) types.push(roster[0]);
     for (const m of MILESTONE_ENEMIES) {
       if (G.wave >= m.wave) types.push(m.type);
     }
-    const count = G.mode === "expedition" ? 10 + G.wavesThisLevel * 7 + G.levelIndex * 7 : 10 + Math.floor(G.wave * 6.5);
+    return types;
+  }
+  function shouldSpawnMiniBoss() {
+    return G.wave >= MINIBOSS_MIN_WAVE && (G.wave - MINIBOSS_MIN_WAVE) % MINIBOSS_INTERVAL === 0;
+  }
+  function getWaveEnemies() {
+    const types = getUnlockedTypes();
+    const effectiveWave = G.mode === "expedition" ? G.levelIndex * G.wavesPerLevel + G.wavesThisLevel : G.wave;
+    const count = 10 + Math.floor(effectiveWave * 6.5 + effectiveWave * effectiveWave * 0.1);
     const result = [];
     for (let i = 0; i < count; i++) {
       result.push(pickWeightedType(types, G.wave));
@@ -3851,6 +4049,24 @@ canvas {
       G.pendingSpawns.push({ type: entries[i].type, hpBoost: entries[i].hpBoost, at: delay / 1e3 });
       if ((i + 1) % groupSize === 0) delay += 350 + Math.random() * 200;
     }
+    const burstEnd = delay;
+    if (G.mode !== "expedition" && shouldSpawnMiniBoss()) {
+      const { strongType } = pickEscortTypes(G.currentMap);
+      G.pendingSpawns.push({
+        type: strongType,
+        hpBoost: MINIBOSS_HP_BOOST,
+        opts: { rMult: MINIBOSS_R_MULT, dmgMult: MINIBOSS_DMG_MULT, isMiniBoss: true },
+        at: burstEnd * (0.5 + Math.random() * 0.35) / 1e3
+      });
+    }
+    const tailTypes = getUnlockedTypes();
+    const tailCount = 3 + Math.floor(G.wave / 6);
+    let tailDelay = delay;
+    for (let i = 0; i < tailCount; i++) {
+      tailDelay += 700 + Math.random() * 600;
+      G.pendingSpawns.push({ type: pickWeightedType(tailTypes, G.wave), hpBoost: 1, at: tailDelay / 1e3 });
+    }
+    G.pendingSpawns.sort((a, b) => a.at - b.at);
     G.waveSpawnTimer = 0;
   }
   function updateSpawns(dt) {
@@ -3858,7 +4074,7 @@ canvas {
     G.waveSpawnTimer += dt;
     while (G.pendingSpawns.length && G.pendingSpawns[0].at <= G.waveSpawnTimer) {
       const next = G.pendingSpawns.shift();
-      spawnEnemy(next.type, (_a = next.hpBoost) != null ? _a : 1);
+      spawnEnemy(next.type, (_a = next.hpBoost) != null ? _a : 1, next.opts);
     }
   }
   function updateEnemies(dt) {
@@ -3958,6 +4174,7 @@ canvas {
     G.allies = [];
     G.abilityPulses = [];
     G.lightningArcs = [];
+    G.orbitals = [];
     G.pendingSpawns = [];
     G.waveTimer = 0;
     G.waveSpawnTimer = 0;
@@ -4239,6 +4456,7 @@ canvas {
     updateEnemies(dt);
     updateEnemyProjectiles(dt);
     updateAllies(dt);
+    updateOrbitals(dt);
     updateAbilityButtonUI();
     updateGems(dt);
     updatePowerups(dt);
