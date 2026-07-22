@@ -143,7 +143,8 @@ canvas {
   border: 1px solid #555 !important;
 }
 #upgrade-panel, #pause-panel, #weapon-select-panel, #history-panel,
-#mode-select-panel, #map-select-panel, #boon-panel, #expedition-complete, #penguin-panel {
+#mode-select-panel, #map-select-panel, #boon-panel, #expedition-complete, #penguin-panel,
+#compendium-panel {
   position: fixed;
   top: 50%; left: 50%;
   transform: translate(-50%, -50%);
@@ -159,6 +160,124 @@ canvas {
      no way to scroll to it — e.g. the map-select panel's START button. */
   max-height: 92vh;
   overflow-y: auto;
+}
+
+/* The Compendium is deliberately themed as a light parchment field journal,
+   distinct from every other panel's dark neon look — these overrides come
+   AFTER the shared block above so they win the cascade for just these
+   properties while still inheriting the shared geometry/scroll behavior. */
+#compendium-panel {
+  max-width: 720px;
+  width: 92vw;
+  background: linear-gradient(135deg, #e8d9b5, #d4c19a);
+  border: 3px double #6b4a2a;
+  color: #3a2a1a;
+}
+#compendium-panel h2 {
+  color: #7a2f10;
+  font-size: 26px;
+  margin-bottom: 8px;
+  text-shadow: none;
+}
+#compendium-panel .compendium-intro {
+  color: #5a4326;
+  font-size: 13px;
+  font-style: italic;
+  margin-bottom: 16px;
+}
+#compendium-nav {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px dashed #8b6f47;
+}
+#compendium-nav button {
+  font-family: 'Courier New', monospace;
+  font-size: 11px;
+  padding: 4px 10px;
+  background: rgba(255, 250, 235, 0.6);
+  color: #6b4a2a;
+  border: 1px solid #a9895f;
+  border-radius: 12px;
+  cursor: pointer;
+}
+#compendium-nav button:hover {
+  background: #fff6e0;
+  border-color: #7a2f10;
+  color: #7a2f10;
+}
+#compendium-list {
+  text-align: left;
+}
+.compendium-section {
+  margin-bottom: 22px;
+}
+.compendium-section h3 {
+  color: #7a2f10;
+  font-size: 16px;
+  border-bottom: 1px dashed #8b6f47;
+  padding-bottom: 4px;
+  margin-bottom: 10px;
+}
+.compendium-section-note {
+  color: #5a4326;
+  font-size: 12px;
+  font-style: italic;
+  margin-bottom: 10px;
+}
+.compendium-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.compendium-card {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  background: rgba(255, 250, 235, 0.55);
+  border: 1px solid #a9895f;
+  border-radius: 4px;
+  padding: 8px 10px;
+  width: 100%;
+  max-width: 320px;
+}
+.compendium-card canvas {
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: #16222c;
+}
+.compendium-card-body {
+  min-width: 0;
+}
+.compendium-card-name {
+  font-weight: bold;
+  color: #4a2f10;
+  font-size: 13px;
+}
+.compendium-card-tag {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: bold;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: #7a2f10;
+  background: rgba(122, 47, 16, 0.12);
+  border: 1px solid rgba(122, 47, 16, 0.35);
+  border-radius: 3px;
+  padding: 1px 5px;
+  margin: 3px 4px 3px 0;
+}
+.compendium-card-stats {
+  font-size: 11px;
+  color: #6b4a2a;
+  margin: 3px 0;
+}
+.compendium-card-desc {
+  font-size: 12px;
+  color: #4a2f10;
 }
 
 /* All the panels above sit at the same default stacking level (no z-index),
@@ -453,10 +572,12 @@ canvas {
   <button id="shop-button" class="menu-btn menu-btn-secondary">🏪 SHOP</button>
   <button id="history-button" class="menu-btn menu-btn-secondary">📜 HISTORY</button>
   <button id="penguin-button" class="menu-btn menu-btn-secondary">🐧 PENGUIN</button>
+  <button id="compendium-button" class="menu-btn menu-btn-secondary">📖 JOURNAL</button>
 </div>
 
 <div id="penguin-panel" style="display:none;">
   <h2>Choose Your Penguin</h2>
+  <p style="color:#aaa; margin-bottom:16px;">You have <span id="penguin-xp-display" style="color:#ffdd00; font-weight:bold">0</span> XP</p>
   <div id="penguin-choices"></div>
   <button id="penguin-close-btn" class="menu-btn menu-btn-secondary" style="margin-top:16px;">Close</button>
 </div>
@@ -465,6 +586,14 @@ canvas {
   <h2>📜 Run History</h2>
   <div id="history-list"></div>
   <button id="history-close-btn" class="menu-btn menu-btn-secondary">Close</button>
+</div>
+
+<div id="compendium-panel" style="display:none;">
+  <h2>📖 Explorer's Journal</h2>
+  <p class="compendium-intro">Field notes on every creature, weapon, and technique encountered in the ice.</p>
+  <div id="compendium-nav"></div>
+  <div id="compendium-list"></div>
+  <button id="compendium-close-btn" class="menu-btn menu-btn-secondary">Close</button>
 </div>
 
 <div id="mode-select-panel" style="display:none;">
@@ -557,7 +686,7 @@ canvas {
   var POWERUP_SPAWN_RADIUS = 420;
   var SPECIAL_POWERUP_MIN_WAVE = 6;
   var SPECIAL_POWERUP_MIN_LEVEL = 5;
-  var SPECIAL_POWERUP_CHANCE = 0.15;
+  var SPECIAL_POWERUP_CHANCE = 0.1725;
   var PROJECTILE_RANGE = Math.round(W * 2 / 3);
   var ENEMY_FIRE_RANGE = Math.round(W * 0.36);
   var ENEMY_PROJECTILE_RANGE = Math.round(W * 0.45);
@@ -577,7 +706,7 @@ canvas {
   var BASE_SPEED = 2.25;
   var BASE_FIRE_RATE = 600;
   var BASE_PROJECTILE_SPEED = 8;
-  var BASE_MAX_HP = 100;
+  var BASE_MAX_HP = 75;
   var POWERUP_INTERVAL_MIN = 12;
   var POWERUP_INTERVAL_MAX = 30;
   var POWERUP_PICKUP_DURATION = 8;
@@ -586,26 +715,137 @@ canvas {
   var BASE_DMG = 10;
   var BASE_PROJ_COUNT = 8;
   var ENEMY_TYPES = {
-    basic: { hp: 25 * (2 / 3), speed: 1.2, r: 14, dmg: 7, color: "#c2a878", score: 10, species: "walrus", tier: "weak" },
-    fast: { hp: 15 * (2 / 3), speed: 2.8, r: 10, dmg: 9, color: "#7089a0", score: 15, species: "seal", tier: "fast" },
-    tank: { hp: 80 * (2 / 3), speed: 0.759, r: 20, dmg: 16, color: "#e2edf2", score: 25, species: "polarbear", tier: "strong" },
+    basic: {
+      hp: 25 * (2 / 3),
+      speed: 1.2,
+      r: 14,
+      dmg: 7,
+      color: "#c2a878",
+      score: 10,
+      species: "walrus",
+      tier: "weak",
+      name: "Walrus Grunt",
+      icon: "\u{1F9A3}",
+      desc: "A slow but steady arctic walrus. The backbone of every wave."
+    },
+    fast: {
+      hp: 15 * (2 / 3),
+      speed: 2.8,
+      r: 10,
+      dmg: 9,
+      color: "#7089a0",
+      score: 15,
+      species: "seal",
+      tier: "fast",
+      name: "Snow Seal",
+      icon: "\u{1F9AD}",
+      desc: "Quick and slippery \u2014 outruns most penguins but hits like a wet noodle."
+    },
+    tank: {
+      hp: 80 * (2 / 3),
+      speed: 0.759,
+      r: 20,
+      dmg: 16,
+      color: "#e2edf2",
+      score: 25,
+      species: "polarbear",
+      tier: "strong",
+      name: "Polar Bruiser",
+      icon: "\u{1F43B}\u200D\u2744\uFE0F",
+      desc: "A hulking polar bear. Slow, but absorbs a lot of punishment."
+    },
     // +10% on top of the earlier +15%
-    zombie: { hp: 40 * (2 / 3), speed: 1.1, r: 16, dmg: 13, color: "#6b8f5a", score: 12, species: "zombie", tier: "weak" },
+    zombie: {
+      hp: 40 * (2 / 3),
+      speed: 1.1,
+      r: 16,
+      dmg: 13,
+      color: "#6b8f5a",
+      score: 12,
+      species: "zombie",
+      tier: "weak",
+      name: "Frost Zombie",
+      icon: "\u{1F9DF}",
+      desc: "Undead and relentless. Shambles forward no matter how much damage it takes."
+    },
     // +10%, one of the "slow" types
-    bat: { hp: 20 * (2 / 3), speed: 2.2, r: 9, dmg: 9, color: "#f2ecd8", score: 8, species: "owl", tier: "fast" },
-    demon: { hp: 60 * (2 / 3), speed: 1.5, r: 18, dmg: 13, color: "#9fa8c9", score: 20, species: "yeti", tier: "moderate", ranged: true },
+    bat: {
+      hp: 20 * (2 / 3),
+      speed: 2.2,
+      r: 9,
+      dmg: 9,
+      color: "#f2ecd8",
+      score: 8,
+      species: "owl",
+      tier: "fast",
+      name: "Snow Owl",
+      icon: "\u{1F989}",
+      desc: "Erratic and swift, darting in for quick hits before wheeling away."
+    },
+    demon: {
+      hp: 60 * (2 / 3),
+      speed: 1.5,
+      r: 18,
+      dmg: 13,
+      color: "#9fa8c9",
+      score: 20,
+      species: "yeti",
+      tier: "moderate",
+      ranged: true,
+      name: "Yeti Stalker",
+      icon: "\u{1F976}",
+      desc: "Hurls icy bolts from a distance. Keep moving or take chip damage."
+    },
     // New high-wave-milestone types (see enemies.js's MILESTONE_ENEMIES) — reuse
     // existing creature silhouettes with a distinct recolor so they read as
     // "tougher variant" at a glance, rather than needing brand-new art.
-    leopardseal: { hp: 55 * (2 / 3), speed: 1.35, r: 17, dmg: 15, color: "#5c5a4a", score: 20, species: "seal", tier: "moderate" },
+    leopardseal: {
+      hp: 55 * (2 / 3),
+      speed: 1.35,
+      r: 17,
+      dmg: 15,
+      color: "#5c5a4a",
+      score: 20,
+      species: "seal",
+      tier: "moderate",
+      name: "Leopard Seal",
+      icon: "\u{1F9AD}",
+      desc: "A tougher seal variant with a vicious bite \u2014 Yeti Stalker's melee counterpart. Appears wave 4+."
+    },
     // unlocks wave 4+ — demon's melee counterpart
-    brute: { hp: 130 * (2 / 3), speed: 0.65, r: 22, dmg: 22, color: "#7a2530", score: 35, species: "polarbear", tier: "strong" },
+    brute: {
+      hp: 130 * (2 / 3),
+      speed: 0.65,
+      r: 22,
+      dmg: 22,
+      color: "#7a2530",
+      score: 35,
+      species: "polarbear",
+      tier: "strong",
+      name: "Bear Brute",
+      icon: "\u{1F43B}\u200D\u2744\uFE0F",
+      desc: "An elite polar bear bred for war. Hits hard and shrugs off hits. Appears wave 7+."
+    },
     // unlocks wave 7+
-    wraith: { hp: 70 * (2 / 3), speed: 1.9, r: 17, dmg: 18, color: "#3a1a4a", score: 40, species: "yeti", tier: "strong", ranged: true }
+    wraith: {
+      hp: 70 * (2 / 3),
+      speed: 1.9,
+      r: 17,
+      dmg: 18,
+      color: "#3a1a4a",
+      score: 40,
+      species: "yeti",
+      tier: "strong",
+      ranged: true,
+      name: "Frost Wraith",
+      icon: "\u{1F976}",
+      desc: "A spectral yeti wreathed in cold. Fires from range and closes fast. Appears wave 15+."
+    }
     // unlocks wave 15+
   };
   var GEM_PICKUP_BASE = 45;
   var GEM_PICKUP_MAX = 170;
+  var NOVA_BASE_RADIUS = 84;
   var UPGRADE_DEFS = [
     {
       key: "dmg",
@@ -617,7 +857,8 @@ canvas {
       desc: (m) => `+${m} damage per attack`,
       apply: (p, m) => {
         p.dmg += m;
-      }
+      },
+      isMaxed: (p) => p.dmg >= 80
     },
     {
       key: "fireRate",
@@ -629,7 +870,8 @@ canvas {
       desc: (m) => `+${Math.round(m * 100)}% faster attacks`,
       apply: (p, m) => {
         p.fireRate = Math.max(8, p.fireRate * (1 - m));
-      }
+      },
+      isMaxed: (p) => p.fireRate <= 8
     },
     {
       key: "speed",
@@ -641,7 +883,8 @@ canvas {
       desc: (m) => `+${Math.round(m * 100)}% movement speed`,
       apply: (p, m) => {
         p.speed = Math.min(4, p.speed * (1 + m));
-      }
+      },
+      isMaxed: (p) => p.speed >= 4
     },
     {
       key: "hp",
@@ -654,7 +897,8 @@ canvas {
       apply: (p, m) => {
         p.maxHp += m;
         p.hp = Math.min(p.hp + m, p.maxHp);
-      }
+      },
+      isMaxed: (p) => p.maxHp >= 500
     },
     {
       key: "regen",
@@ -666,7 +910,8 @@ canvas {
       desc: (m) => `+${m} HP/sec regeneration`,
       apply: (p, m) => {
         p.regen = (p.regen || 0) + m;
-      }
+      },
+      isMaxed: (p) => (p.regen || 0) >= 8
     },
     {
       key: "gemPickup",
@@ -678,7 +923,8 @@ canvas {
       desc: (m) => `+${m} gem pickup radius`,
       apply: (p, m) => {
         p.gemPickupRadius = Math.min(GEM_PICKUP_MAX, p.gemPickupRadius + m);
-      }
+      },
+      isMaxed: (p) => p.gemPickupRadius >= GEM_PICKUP_MAX
     },
     // Barrage
     {
@@ -691,7 +937,8 @@ canvas {
       desc: (m) => `+${m} snowball${m > 1 ? "s" : ""} (max 16)`,
       apply: (p, m) => {
         p.projCount = Math.min(16, p.projCount + m);
-      }
+      },
+      isMaxed: (p) => p.projCount >= 16
     },
     {
       key: "projSpeed",
@@ -703,7 +950,8 @@ canvas {
       desc: (m) => `+${Math.round(m * 100)}% snowball speed`,
       apply: (p, m) => {
         p.projSpeed *= 1 + m;
-      }
+      },
+      isMaxed: (p) => p.projSpeed >= 30
     },
     // Harpoon
     {
@@ -716,7 +964,8 @@ canvas {
       desc: (m) => `Harpoon hits +${m} more enem${m > 1 ? "ies" : "y"}`,
       apply: (p, m) => {
         p.pierceCount += m;
-      }
+      },
+      isMaxed: (p) => p.pierceCount >= 8
     },
     {
       key: "harpoonSpeed",
@@ -728,7 +977,8 @@ canvas {
       desc: (m) => `+${Math.round(m * 100)}% harpoon speed`,
       apply: (p, m) => {
         p.projSpeed *= 1 + m;
-      }
+      },
+      isMaxed: (p) => p.projSpeed >= 30
     },
     // Nova
     {
@@ -740,8 +990,9 @@ canvas {
       mags: { common: 0.15, rare: 0.25, epic: 0.4 },
       desc: (m) => `+${Math.round(m * 100)}% nova radius`,
       apply: (p, m) => {
-        p.novaRadius *= 1 + m;
-      }
+        p.novaRadius = Math.min(NOVA_BASE_RADIUS * 2, p.novaRadius * (1 + m));
+      },
+      isMaxed: (p) => p.novaRadius >= NOVA_BASE_RADIUS * 2
     },
     {
       key: "novaFreq",
@@ -753,6 +1004,70 @@ canvas {
       desc: (m) => `+${Math.round(m * 100)}% faster pulses`,
       apply: (p, m) => {
         p.fireRate = Math.max(300, p.fireRate * (1 - m));
+      },
+      isMaxed: (p) => p.fireRate <= 300
+    },
+    // Species-ability upgrades, gated by `species` (parallel to `weapons`, which
+    // stays 'all' so the weapon-filter clause in upgrades.js always passes —
+    // only the species clause restricts these). See abilities.js.
+    {
+      key: "allyPower",
+      icon: "\u{1F4AA}",
+      name: "Ally Power",
+      weight: 1,
+      weapons: "all",
+      species: ["emperor"],
+      mags: { common: 0.25, rare: 0.45, epic: 0.7 },
+      desc: (m) => `+${Math.round(m * 100)}% ally health and damage`,
+      apply: (p, m) => {
+        p.allyPowerMult = (p.allyPowerMult || 1) + m;
+      },
+      isMaxed: (p) => (p.allyPowerMult || 1) >= 3
+    },
+    {
+      key: "allyCount",
+      icon: "\u{1F427}",
+      name: "More Allies",
+      weight: 0.8,
+      weapons: "all",
+      species: ["emperor"],
+      mags: { common: 1, rare: 1, epic: 2 },
+      desc: (m) => `+${m} max/summoned ally penguin${m > 1 ? "s" : ""}`,
+      apply: (p, m) => {
+        p.allyMaxCountBonus = (p.allyMaxCountBonus || 0) + m;
+      },
+      isMaxed: (p) => (p.allyMaxCountBonus || 0) >= 3
+    },
+    {
+      key: "chargeDamage",
+      icon: "\u{1F4A5}",
+      name: "Charge Damage",
+      weight: 1,
+      weapons: "all",
+      species: ["chinstrap"],
+      mags: { common: 0.25, rare: 0.45, epic: 0.7 },
+      desc: (m) => `+${Math.round(m * 100)}% Fearless Charge damage`,
+      apply: (p, m) => {
+        p.chinstrapDmgMult = (p.chinstrapDmgMult || 1) + m;
+      },
+      isMaxed: (p) => (p.chinstrapDmgMult || 1) >= 3
+    },
+    {
+      key: "chargeCooldown",
+      icon: "\u23F1\uFE0F",
+      name: "Shorter Charge Cooldown",
+      weight: 1,
+      weapons: "all",
+      species: ["chinstrap"],
+      mags: { common: 0.1, rare: 0.18, epic: 0.28 },
+      desc: (m) => `+${Math.round(m * 100)}% faster Fearless Charge cooldown`,
+      apply: (p, m) => {
+        var _a;
+        p.chinstrapCooldownMult = Math.max(0.4, ((_a = p.chinstrapCooldownMult) != null ? _a : 1) * (1 - m));
+      },
+      isMaxed: (p) => {
+        var _a;
+        return ((_a = p.chinstrapCooldownMult) != null ? _a : 1) <= 0.4;
       }
     }
   ];
@@ -844,11 +1159,18 @@ canvas {
   var CHINSTRAP_CHARGE_RADIUS = 70;
   var CHINSTRAP_CHARGE_DMG = 20;
   var CHINSTRAP_CHARGE_INVINCIBLE = 0.4;
+  var CHINSTRAP_CHARGE_DURATION = 0.18;
   var GENTOO_SWIM_MULT = 1.55;
 
   // js/utils.js
   function dist(a, b) {
     return Math.hypot(a.x - b.x, a.y - b.y);
+  }
+  function formatTime(totalSeconds) {
+    const s = Math.max(0, Math.floor(totalSeconds));
+    const mins = Math.floor(s / 60).toString().padStart(2, "0");
+    const secs = (s % 60).toString().padStart(2, "0");
+    return mins + ":" + secs;
   }
   function spawnParticles(x, y, color, count, speed) {
     for (let i = 0; i < count; i++) {
@@ -1104,6 +1426,8 @@ canvas {
     waveTimer: 0,
     waveDelay: 3e3,
     startTime: 0,
+    frozenElapsed: 0,
+    // elapsed seconds captured once by recordRun(); the HUD timer reads this once G.state isn't 'playing' so it stops ticking after the run ends
     enemies: [],
     projectiles: [],
     enemyProjectiles: [],
@@ -1114,7 +1438,9 @@ canvas {
     allies: [],
     // Emperor's summoned penguin allies (see abilities.js)
     abilityPulses: [],
-    // cosmetic expanding-ring effects for active abilities (e.g. Chinstrap's charge)
+    // cosmetic expanding-ring effects for active abilities (e.g. Chinstrap's charge landing)
+    chargeTrail: [],
+    // cosmetic fading ghost-positions left behind during Chinstrap's Fearless Charge dash (see abilities.js's updateChinstrapCharge)
     lightningArcs: [],
     // cosmetic fading bolt paths for the Thundersquall power weapon (see projectiles.js)
     orbitals: [],
@@ -1163,7 +1489,7 @@ canvas {
     highScore: 0,
     // best score ever, saved to localStorage
     runHistory: [],
-    // most recent runs: { score, wave, level, weapon, date }
+    // most recent runs: { score, wave, level, weapon, date, mode, time }
     // Terrain (regenerated per run by terrain.js's generateTerrain()). Must
     // exist here, not just after generateTerrain() runs — render() reads
     // these every frame starting from the main menu, before any run exists.
@@ -1201,8 +1527,18 @@ canvas {
       // key into POWER_WEAPON_DEFS while a rare temporary weapon-override powerup is active
       gemPickupRadius: GEM_PICKUP_BASE,
       // magnet radius: gems within this drift toward the player (see gems.js)
-      abilityCooldown: 0
+      abilityCooldown: 0,
       // ms remaining until the equipped species' active ability (if any) can fire again
+      allyPowerMult: 1,
+      // Emperor: multiplies ally HP (at summon) and damage (live) — see abilities.js
+      allyMaxCountBonus: 0,
+      // Emperor: added to both ALLY_MAX_COUNT and the per-trigger summon count
+      chinstrapDmgMult: 1,
+      // Chinstrap: multiplies Fearless Charge landing damage
+      chinstrapCooldownMult: 1,
+      // Chinstrap: multiplies Fearless Charge's ability cooldown (floor 0.4)
+      chargeState: null
+      // non-null while a Fearless Charge dash is animating — see abilities.js's updateChinstrapCharge
     };
     Object.assign(player, defaultWeaponStats(G.weapon));
     for (const upg of PERMANENT_UPGRADES) {
@@ -1300,14 +1636,22 @@ canvas {
   }
   function pruneRunHistory(history) {
     if (history.length <= MAX_RUN_HISTORY) return history;
-    const topRuns = [...history].sort((a, b) => b.score - a.score).slice(0, TOP_RUNS_KEPT);
-    const topRunSet = new Set(topRuns);
-    const recentSlots = Math.max(0, MAX_RUN_HISTORY - topRuns.length);
-    const recentNonTop = history.filter((r) => !topRunSet.has(r)).slice(0, recentSlots);
-    const keepSet = /* @__PURE__ */ new Set([...topRuns, ...recentNonTop]);
+    const endlessRuns = history.filter((r) => r.mode !== "expedition");
+    const expeditionRuns = history.filter((r) => r.mode === "expedition");
+    const topEndless = [...endlessRuns].sort((a, b) => b.score - a.score).slice(0, TOP_RUNS_KEPT);
+    const topExpedition = [...expeditionRuns].sort((a, b) => {
+      var _a, _b;
+      return ((_a = a.time) != null ? _a : Infinity) - ((_b = b.time) != null ? _b : Infinity);
+    }).slice(0, TOP_RUNS_KEPT);
+    const topSet = /* @__PURE__ */ new Set([...topEndless, ...topExpedition]);
+    const recentSlots = Math.max(0, MAX_RUN_HISTORY - topSet.size);
+    const recentNonTop = history.filter((r) => !topSet.has(r)).slice(0, recentSlots);
+    const keepSet = /* @__PURE__ */ new Set([...topSet, ...recentNonTop]);
     return history.filter((r) => keepSet.has(r));
   }
   function recordRun() {
+    const elapsedSec = Math.floor((performance.now() - G.startTime) / 1e3);
+    G.frozenElapsed = elapsedSec;
     const isNewHigh = G.score > G.highScore;
     G.highScore = Math.max(G.highScore, G.score);
     G.runHistory.unshift({
@@ -1315,6 +1659,8 @@ canvas {
       wave: G.wave,
       level: G.player.level,
       weapon: G.weapon,
+      mode: G.mode,
+      time: elapsedSec,
       date: Date.now()
     });
     G.runHistory = pruneRunHistory(G.runHistory);
@@ -1323,6 +1669,7 @@ canvas {
   function resetGameState() {
     G.player = makePlayer();
     G.startTime = performance.now();
+    G.frozenElapsed = 0;
     G.score = 0;
     G.wave = 0;
     G.waveTimer = 0;
@@ -1336,6 +1683,7 @@ canvas {
     G.particles = [];
     G.allies = [];
     G.abilityPulses = [];
+    G.chargeTrail = [];
     G.lightningArcs = [];
     G.orbitals = [];
     G.orbitAngle = 0;
@@ -2264,6 +2612,33 @@ canvas {
     const draw = CREATURE_DRAWERS[e.species] || drawWalrus;
     draw(e.x, e.y, e.r, e.color, faceAngle, flash);
   }
+  function drawSpecimenThumb(canvasEl, draw) {
+    const prevCtx = ctx2;
+    const tctx = canvasEl.getContext("2d");
+    const w = canvasEl.width, h = canvasEl.height;
+    try {
+      ctx2 = tctx;
+      tctx.clearRect(0, 0, w, h);
+      tctx.fillStyle = "#16222c";
+      tctx.beginPath();
+      tctx.arc(w / 2, h / 2, Math.min(w, h) / 2 - 2, 0, Math.PI * 2);
+      tctx.fill();
+      draw(w / 2, h / 2);
+    } finally {
+      ctx2 = prevCtx;
+    }
+  }
+  function drawEnemyIcon(canvasEl, species, color, r) {
+    drawSpecimenThumb(canvasEl, (cx, cy) => {
+      const draw = CREATURE_DRAWERS[species] || drawWalrus;
+      draw(cx, cy, r, color, 0, false);
+    });
+  }
+  function drawPenguinIcon(canvasEl, colors, accentStyle, r = PLAYER_R) {
+    drawSpecimenThumb(canvasEl, (cx, cy) => {
+      drawPenguin(cx, cy, r, colors, 0, false, 0, accentStyle);
+    });
+  }
   function drawHarpoonProjectile(p) {
     const angle = Math.atan2(p.vy, p.vx);
     const len = p.r * 4.2;
@@ -2691,6 +3066,20 @@ canvas {
       ctx2.stroke();
       ctx2.globalAlpha = 1;
     }
+    for (const t of G.chargeTrail) {
+      const age = t.age / t.maxAge;
+      const rad = 8 * (1 - age * 0.5);
+      ctx2.globalAlpha = (1 - age) * 0.6;
+      ctx2.beginPath();
+      ctx2.arc(t.x, t.y, rad, 0, Math.PI * 2);
+      ctx2.fillStyle = "rgba(255,255,255,0.6)";
+      ctx2.fill();
+      ctx2.beginPath();
+      ctx2.arc(t.x, t.y, rad * 0.5, 0, Math.PI * 2);
+      ctx2.fillStyle = "#4a4a4a";
+      ctx2.fill();
+      ctx2.globalAlpha = 1;
+    }
     for (const arc of G.lightningArcs) {
       const alpha = 1 - arc.age / arc.maxAge;
       const jag = buildJaggedPath(arc.points);
@@ -2807,13 +3196,11 @@ canvas {
       ctx2.fillText("LV " + player.level, W / 2, H - 50);
       let leftY = 24;
       const lineHeight = 16;
-      const elapsed = Math.floor((performance.now() - G.startTime) / 1e3);
-      const mins = Math.floor(elapsed / 60).toString().padStart(2, "0");
-      const secs = (elapsed % 60).toString().padStart(2, "0");
+      const elapsed = G.state === "playing" ? Math.floor((performance.now() - G.startTime) / 1e3) : G.frozenElapsed;
       ctx2.fillStyle = "#aaa";
       ctx2.font = "14px Courier New";
       ctx2.textAlign = "left";
-      ctx2.fillText("Time: " + mins + ":" + secs, 16, leftY);
+      ctx2.fillText("Time: " + formatTime(elapsed), 16, leftY);
       leftY += lineHeight;
       ctx2.fillStyle = "#aaa";
       ctx2.font = "14px Courier New";
@@ -2833,13 +3220,13 @@ canvas {
       }
       let puY = leftY + 8;
       for (const ap of G.activePowerups) {
-        const secs2 = Math.ceil(ap.remaining);
+        const secs = Math.ceil(ap.remaining);
         const label = getPowerupLabel(ap.type);
         const color = getPowerupColor(ap.type);
         ctx2.fillStyle = color;
         ctx2.font = "12px Courier New";
         ctx2.textAlign = "left";
-        ctx2.fillText(label + " (" + secs2 + "s)", 16, puY);
+        ctx2.fillText(label + " (" + secs + "s)", 16, puY);
         puY += lineHeight;
       }
     }
@@ -2877,7 +3264,7 @@ canvas {
     return RARITY_TABLE[0];
   }
   function applicableDefs() {
-    return UPGRADE_DEFS.filter((d) => d.weapons === "all" || d.weapons.includes(G.weapon));
+    return UPGRADE_DEFS.filter((d) => (d.weapons === "all" || d.weapons.includes(G.weapon)) && (!d.species || d.species.includes(G.penguinType)) && !(d.isMaxed && d.isMaxed(G.player)));
   }
   function pickDefs(n) {
     const pool = applicableDefs();
@@ -2913,12 +3300,13 @@ canvas {
     });
   }
   function showUpgradeScreen() {
+    const upgrades = getUpgradeChoices();
+    if (upgrades.length === 0) return;
     G.state = "upgrading";
     const panel = document.getElementById("upgrade-panel");
     panel.style.display = "block";
     const choices = document.getElementById("upgrade-choices");
     choices.innerHTML = "";
-    const upgrades = getUpgradeChoices();
     const buttons = [];
     let cleanupNav = () => {
     };
@@ -2995,11 +3383,12 @@ canvas {
   }
   function summonAlly(player) {
     const angle = Math.random() * Math.PI * 2;
+    const hp = ALLY_HP * (player.allyPowerMult || 1);
     G.allies.push({
       x: player.x + Math.cos(angle) * 30,
       y: player.y + Math.sin(angle) * 30,
-      hp: ALLY_HP,
-      maxHp: ALLY_HP,
+      hp,
+      maxHp: hp,
       facing: 0,
       attackCooldown: 0,
       hitCooldown: 0
@@ -3007,29 +3396,34 @@ canvas {
     spawnParticles(player.x, player.y, "#f0c020", 10, 2.5);
   }
   function triggerEmperor(player) {
-    if (G.allies.length >= ALLY_MAX_COUNT) return false;
-    const count = Math.min(EMPEROR_SUMMON_COUNT, ALLY_MAX_COUNT - G.allies.length);
+    const bonus = player.allyMaxCountBonus || 0;
+    const maxCount = ALLY_MAX_COUNT + bonus;
+    if (G.allies.length >= maxCount) return false;
+    const count = Math.min(EMPEROR_SUMMON_COUNT + bonus, maxCount - G.allies.length);
     for (let i = 0; i < count; i++) summonAlly(player);
     return true;
   }
-  function triggerChinstrap(player) {
-    player.x += Math.cos(player.facing) * CHINSTRAP_CHARGE_DIST;
-    player.y += Math.sin(player.facing) * CHINSTRAP_CHARGE_DIST;
-    player.x = clamp(player.x, PLAYER_R, WORLD_W - PLAYER_R);
-    player.y = clamp(player.y, PLAYER_R, WORLD_H - PLAYER_R);
-    resolveObstacleCollision(player, PLAYER_R);
-    player.x = clamp(player.x, PLAYER_R, WORLD_W - PLAYER_R);
-    player.y = clamp(player.y, PLAYER_R, WORLD_H - PLAYER_R);
+  function resolveChargeLanding(player) {
     for (let i = G.enemies.length - 1; i >= 0; i--) {
       const e = G.enemies[i];
       if (dist(e, player) < CHINSTRAP_CHARGE_RADIUS + e.r) {
-        e.hp -= CHINSTRAP_CHARGE_DMG;
+        e.hp -= CHINSTRAP_CHARGE_DMG * (player.chinstrapDmgMult || 1);
         e.flashTimer = 5;
         if (e.hp <= 0) killEnemy(e, i);
       }
     }
-    player.invincible = Math.max(player.invincible, CHINSTRAP_CHARGE_INVINCIBLE);
     G.abilityPulses.push({ x: player.x, y: player.y, age: 0, maxAge: 450 });
+  }
+  function triggerChinstrap(player) {
+    const fromX = player.x, fromY = player.y;
+    let toX = clamp(player.x + Math.cos(player.facing) * CHINSTRAP_CHARGE_DIST, PLAYER_R, WORLD_W - PLAYER_R);
+    let toY = clamp(player.y + Math.sin(player.facing) * CHINSTRAP_CHARGE_DIST, PLAYER_R, WORLD_H - PLAYER_R);
+    const probe = { x: toX, y: toY };
+    resolveObstacleCollision(probe, PLAYER_R);
+    toX = clamp(probe.x, PLAYER_R, WORLD_W - PLAYER_R);
+    toY = clamp(probe.y, PLAYER_R, WORLD_H - PLAYER_R);
+    player.chargeState = { fromX, fromY, toX, toY, elapsed: 0, duration: CHINSTRAP_CHARGE_DURATION };
+    player.invincible = Math.max(player.invincible, CHINSTRAP_CHARGE_INVINCIBLE);
     return true;
   }
   function triggerSpeciesAbility() {
@@ -3041,7 +3435,22 @@ canvas {
     if (species.key === "emperor") fired = triggerEmperor(player);
     else if (species.key === "chinstrap") fired = triggerChinstrap(player);
     if (fired) {
-      player.abilityCooldown = species.key === "emperor" ? EMPEROR_ABILITY_COOLDOWN : CHINSTRAP_ABILITY_COOLDOWN;
+      player.abilityCooldown = species.key === "emperor" ? EMPEROR_ABILITY_COOLDOWN : CHINSTRAP_ABILITY_COOLDOWN * (player.chinstrapCooldownMult || 1);
+    }
+  }
+  function updateChinstrapCharge(dt) {
+    const player = G.player;
+    const cs = player.chargeState;
+    if (!cs) return;
+    cs.elapsed += dt;
+    const t = Math.min(1, cs.elapsed / cs.duration);
+    const eased = 1 - Math.pow(1 - t, 2);
+    player.x = cs.fromX + (cs.toX - cs.fromX) * eased;
+    player.y = cs.fromY + (cs.toY - cs.fromY) * eased;
+    G.chargeTrail.push({ x: player.x, y: player.y, age: 0, maxAge: 220 });
+    if (t >= 1) {
+      resolveChargeLanding(player);
+      player.chargeState = null;
     }
   }
   function updateAllies(dt) {
@@ -3066,7 +3475,7 @@ canvas {
           a.y += Math.sin(angle) * ALLY_SPEED * dt * 60;
         } else {
           if (a.attackCooldown <= 0) {
-            nearest.hp -= ALLY_DMG;
+            nearest.hp -= ALLY_DMG * (G.player.allyPowerMult || 1);
             nearest.flashTimer = 5;
             a.attackCooldown = ALLY_ATTACK_INTERVAL;
             if (nearest.hp <= 0) {
@@ -3089,6 +3498,11 @@ canvas {
       const p = G.abilityPulses[i];
       p.age += dt * 1e3;
       if (p.age > p.maxAge) G.abilityPulses.splice(i, 1);
+    }
+    for (let i = G.chargeTrail.length - 1; i >= 0; i--) {
+      const t = G.chargeTrail[i];
+      t.age += dt * 1e3;
+      if (t.age > t.maxAge) G.chargeTrail.splice(i, 1);
     }
   }
 
@@ -3319,6 +3733,20 @@ canvas {
     const btn = document.getElementById("history-close-btn");
     if (btn) btn.onclick = handler;
   }
+  function showCompendiumPanel() {
+    document.getElementById("compendium-panel").style.display = "block";
+  }
+  function hideCompendiumPanel() {
+    document.getElementById("compendium-panel").style.display = "none";
+  }
+  function onCompendiumOpen(handler) {
+    const btn = document.getElementById("compendium-button");
+    if (btn) btn.onclick = handler;
+  }
+  function onCompendiumClose(handler) {
+    const btn = document.getElementById("compendium-close-btn");
+    if (btn) btn.onclick = handler;
+  }
 
   // js/penguinSelect.js
   function selectOrUnlockPenguin(p) {
@@ -3339,6 +3767,7 @@ canvas {
     syncAbilityButton();
   }
   function renderPenguinChoices() {
+    document.getElementById("penguin-xp-display").textContent = G.xpBank;
     const container = document.getElementById("penguin-choices");
     container.innerHTML = "";
     const buttons = [];
@@ -3496,8 +3925,9 @@ canvas {
     const row = document.createElement("div");
     row.className = "history-row" + (run.score > 0 && run.score === G.highScore ? " is-best" : "");
     const weaponName = WEAPON_TYPES[run.weapon] && WEAPON_TYPES[run.weapon].name || run.weapon;
+    const timePart = run.time != null ? " \xB7 " + formatTime(run.time) : "";
     const info = document.createElement("div");
-    info.innerHTML = '<div class="history-score">' + run.score + ' pts</div><div class="history-meta">Wave ' + run.wave + " \xB7 Lv " + run.level + " \xB7 " + weaponName + "</div>";
+    info.innerHTML = '<div class="history-score">' + run.score + ' pts</div><div class="history-meta">Wave ' + run.wave + " \xB7 Lv " + run.level + " \xB7 " + weaponName + timePart + "</div>";
     const date = document.createElement("div");
     date.className = "history-meta";
     date.textContent = formatDate(run.date);
@@ -3521,11 +3951,23 @@ canvas {
       list.appendChild(empty);
       return;
     }
-    const topRuns = [...G.runHistory].sort((a, b) => b.score - a.score).slice(0, 5);
-    const topSet = new Set(topRuns);
+    const endlessRuns = G.runHistory.filter((r) => r.mode !== "expedition");
+    const expeditionRuns = G.runHistory.filter((r) => r.mode === "expedition");
+    const topEndless = [...endlessRuns].sort((a, b) => b.score - a.score).slice(0, 5);
+    const topExpedition = [...expeditionRuns].sort((a, b) => {
+      var _a, _b;
+      return ((_a = a.time) != null ? _a : Infinity) - ((_b = b.time) != null ? _b : Infinity);
+    }).slice(0, 5);
+    const topSet = /* @__PURE__ */ new Set([...topEndless, ...topExpedition]);
     const rest = G.runHistory.filter((r) => !topSet.has(r));
-    list.appendChild(sectionHeader("\u{1F3C6} Top Scores"));
-    topRuns.forEach((run) => list.appendChild(makeRow(run)));
+    if (topEndless.length) {
+      list.appendChild(sectionHeader("\u{1F3C6} Top Endless (by Score)"));
+      topEndless.forEach((run) => list.appendChild(makeRow(run)));
+    }
+    if (topExpedition.length) {
+      list.appendChild(sectionHeader("\u{1F3C6} Top Expedition (by Time)"));
+      topExpedition.forEach((run) => list.appendChild(makeRow(run)));
+    }
     if (rest.length) {
       list.appendChild(sectionHeader("\u{1F552} Recent"));
       rest.forEach((run) => list.appendChild(makeRow(run)));
@@ -3537,6 +3979,221 @@ canvas {
       showHistoryPanel();
     });
     onHistoryClose(hideHistoryPanel);
+  }
+
+  // js/compendium.js
+  function makeCard(bodyHtml, canvas2) {
+    const card = document.createElement("div");
+    card.className = "compendium-card";
+    if (canvas2) card.appendChild(canvas2);
+    const body = document.createElement("div");
+    body.className = "compendium-card-body";
+    body.innerHTML = bodyHtml;
+    card.appendChild(body);
+    return card;
+  }
+  function makeThumbCanvas() {
+    const canvas2 = document.createElement("canvas");
+    canvas2.width = 64;
+    canvas2.height = 64;
+    return canvas2;
+  }
+  function sectionNote(text) {
+    const p = document.createElement("p");
+    p.className = "compendium-section-note";
+    p.textContent = text;
+    return p;
+  }
+  function renderEnemies(container) {
+    container.appendChild(sectionNote(
+      `Mini-bosses: starting wave ${MINIBOSS_MIN_WAVE} (then every ${MINIBOSS_INTERVAL} waves), one regular enemy spawns oversized and empowered (${MINIBOSS_HP_BOOST}x HP, ${MINIBOSS_R_MULT}x size, ${MINIBOSS_DMG_MULT}x damage) rather than being a distinct species.`
+    ));
+    const grid = document.createElement("div");
+    grid.className = "compendium-grid";
+    Object.values(ENEMY_TYPES).forEach((e) => {
+      const canvas2 = makeThumbCanvas();
+      const tags = `<span class="compendium-card-tag">${e.tier}</span>` + (e.ranged ? '<span class="compendium-card-tag">ranged</span>' : "");
+      const card = makeCard(
+        `<div class="compendium-card-name">${e.icon} ${e.name}</div><div>${tags}</div><div class="compendium-card-stats">HP ${Math.round(e.hp)} \xB7 Speed ${e.speed.toFixed(2)} \xB7 Dmg ${e.dmg} \xB7 Score ${e.score}</div><div class="compendium-card-desc">${e.desc}</div>`,
+        canvas2
+      );
+      grid.appendChild(card);
+      drawEnemyIcon(canvas2, e.species, e.color, e.r);
+    });
+    container.appendChild(grid);
+  }
+  function renderWeapons(container) {
+    const grid = document.createElement("div");
+    grid.className = "compendium-grid";
+    Object.values(WEAPON_TYPES).forEach((w) => {
+      const stats = Object.entries(w.baseStats).map(([k, v]) => `${k} ${v}`).join(" \xB7 ");
+      grid.appendChild(makeCard(
+        `<div class="compendium-card-name">${w.name}</div><div class="compendium-card-stats">${stats}</div><div class="compendium-card-desc">${w.desc}</div>`
+      ));
+    });
+    container.appendChild(grid);
+  }
+  function describePowerWeapon(def) {
+    const dmgPct = Math.round((def.dmgMult - 1) * 100);
+    switch (def.fireMode) {
+      case "radial":
+        return `Fires in a ring like Snowball Barrage, but +${dmgPct}% damage at a fixed ${def.fireRate}ms fire rate.`;
+      case "aoe":
+        return `A periodic damaging pulse like Frost Nova \u2014 +${dmgPct}% damage, fixed ${def.radius}px radius, every ${def.fireRate}ms.`;
+      case "chain":
+        return `A lightning bolt leaps between up to ${def.chainCount} enemies within ${def.chainRange}px, +${dmgPct}% damage, every ${def.fireRate}ms.`;
+      case "orbit":
+        return `${def.orbitCount} icicles orbit the player at ${def.orbitRadius}px, dealing +${dmgPct}% damage on contact.`;
+      default:
+        return "";
+    }
+  }
+  function renderPowerWeapons(container) {
+    container.appendChild(sectionNote(
+      `Rare drop \u2014 once wave ${SPECIAL_POWERUP_MIN_WAVE}+ or level ${SPECIAL_POWERUP_MIN_LEVEL}+, roughly ${Math.round(SPECIAL_POWERUP_CHANCE * 100)}% of powerup pickups are a power weapon instead. It replaces your equipped weapon for 8 seconds, then reverts.`
+    ));
+    const grid = document.createElement("div");
+    grid.className = "compendium-grid";
+    Object.values(POWER_WEAPON_DEFS).forEach((def) => {
+      grid.appendChild(makeCard(
+        `<div class="compendium-card-name">${def.label}</div><div class="compendium-card-desc">${describePowerWeapon(def)}</div>`
+      ));
+    });
+    container.appendChild(grid);
+  }
+  function capitalize(s) {
+    return s.charAt(0).toUpperCase() + s.slice(1);
+  }
+  function weaponScopeLabel(weapons) {
+    return weapons === "all" ? "All Weapons" : weapons.map(capitalize).join(", ");
+  }
+  var UPGRADE_CAP_NOTES = {
+    dmg: "Caps at +80 total damage.",
+    fireRate: "Caps at an 8ms fire interval.",
+    speed: "Caps at 4x base movement speed.",
+    hp: "Caps at 500 max HP.",
+    regen: "Caps at 8 HP/sec regeneration.",
+    gemPickup: `Caps at ${GEM_PICKUP_MAX}px pickup radius.`,
+    projCount: "Caps at 16 snowballs.",
+    projSpeed: "Caps at +30% cumulative snowball speed.",
+    pierce: "Caps at 8 pierce count.",
+    harpoonSpeed: "Caps at +30% cumulative harpoon speed.",
+    novaRadius: "Caps at 168px radius \u2014 100% larger than Frost Nova's 84px base.",
+    novaFreq: "Caps at a 300ms fire interval.",
+    allyPower: "Caps at +200% cumulative ally health/damage.",
+    allyCount: "Caps at +3 max/summoned allies.",
+    chargeDamage: "Caps at +200% cumulative charge damage.",
+    chargeCooldown: "Caps at a 40% cooldown floor (60% max reduction)."
+  };
+  function speciesScopeLabel(species) {
+    return species.map(capitalize).join(", ") + "-only";
+  }
+  function renderUpgrades(container) {
+    container.appendChild(sectionNote("Offered on level-up, in Common/Rare/Epic tiers. Once a stat hits its cap, it stops being offered."));
+    const grid = document.createElement("div");
+    grid.className = "compendium-grid";
+    UPGRADE_DEFS.forEach((def) => {
+      const scopeTags = def.species ? `<span class="compendium-card-tag">${speciesScopeLabel(def.species)}</span>` : `<span class="compendium-card-tag">${weaponScopeLabel(def.weapons)}</span>`;
+      grid.appendChild(makeCard(
+        `<div class="compendium-card-name">${def.icon} ${def.name}</div><div>${scopeTags}</div><div class="compendium-card-desc">Best roll: ${def.desc(def.mags.epic)}</div><div class="compendium-card-desc">${UPGRADE_CAP_NOTES[def.key] || ""}</div>`
+      ));
+    });
+    container.appendChild(grid);
+  }
+  function renderPermanentUpgrades(container) {
+    container.appendChild(sectionNote("Bought with banked XP between runs \u2014 persists forever, applied to every future run."));
+    const grid = document.createElement("div");
+    grid.className = "compendium-grid";
+    PERMANENT_UPGRADES.forEach((u) => {
+      grid.appendChild(makeCard(
+        `<div class="compendium-card-name">${u.label}</div><div class="compendium-card-stats">Max level ${u.maxLevel} \xB7 starts at ${u.cost(0)} XP</div><div class="compendium-card-desc">At max level: ${u.desc(u.maxLevel)}</div>`
+      ));
+    });
+    container.appendChild(grid);
+  }
+  function renderPenguins(container) {
+    const grid = document.createElement("div");
+    grid.className = "compendium-grid";
+    PENGUIN_TYPES.forEach((p) => {
+      const canvas2 = makeThumbCanvas();
+      const unlocked = G.penguinUnlocks[p.key];
+      const lockTag = unlocked ? '<span class="compendium-card-tag">Unlocked</span>' : `<span class="compendium-card-tag">Locked \u2014 ${p.cost} XP</span>`;
+      const abilityTag = `<span class="compendium-card-tag">${p.triggerable ? "Active" : "Passive"}</span>`;
+      grid.appendChild(makeCard(
+        `<div class="compendium-card-name">${p.name}</div><div>${lockTag}${abilityTag}</div><div class="compendium-card-desc">${p.desc}</div><div class="compendium-card-desc">${p.ability}</div>`,
+        canvas2
+      ));
+      drawPenguinIcon(canvas2, p.colors, p.accentStyle);
+    });
+    container.appendChild(grid);
+  }
+  var POWERUP_BASE_KEYS = ["dmg", "hp", "proj", "pierce", "radius"];
+  var WEAPON_SPECIFIC_POWERUP_KEYS = /* @__PURE__ */ new Set(["proj", "pierce", "radius"]);
+  function renderPowerups(container) {
+    container.appendChild(sectionNote(
+      "The Projectiles/Pierce/Radius slot only ever drops the one matching your currently-equipped weapon. See Power Weapons above for the 4 rare override drops."
+    ));
+    const grid = document.createElement("div");
+    grid.className = "compendium-grid";
+    POWERUP_BASE_KEYS.forEach((key) => {
+      const def = POWERUP_DEFS[key];
+      const behavior = def.instant ? "Applied instantly." : "Temporary buff for the rest of the run.";
+      const scopeNote = WEAPON_SPECIFIC_POWERUP_KEYS.has(key) ? " Weapon-specific." : "";
+      grid.appendChild(makeCard(
+        `<div class="compendium-card-name">${def.label}</div><div class="compendium-card-desc">${behavior}${scopeNote}</div>`
+      ));
+    });
+    container.appendChild(grid);
+  }
+  function renderSettings(container) {
+    const grid = document.createElement("div");
+    grid.className = "compendium-grid";
+    const entries = [
+      { icon: "\u{1F3AF}", name: "Auto-Avoid / Dodge", desc: "Passively nudges your penguin away from the nearest enemy within 150px so you're less likely to get boxed in. Persisted between sessions." },
+      { icon: "\u{1F50A}", name: "Mute", desc: "Toggles all sound effects and music on (\u{1F50A}) or off (\u{1F507}). Persisted between sessions." }
+    ];
+    entries.forEach((s) => {
+      grid.appendChild(makeCard(
+        `<div class="compendium-card-name">${s.icon} ${s.name}</div><div class="compendium-card-desc">${s.desc}</div>`
+      ));
+    });
+    container.appendChild(grid);
+  }
+  var SECTIONS = [
+    { id: "enemies", title: "\u{1F9CA} Enemies", render: renderEnemies },
+    { id: "weapons", title: "\u{1F427} Weapons", render: renderWeapons },
+    { id: "power-weapons", title: "\u26A1 Power Weapons", render: renderPowerWeapons },
+    { id: "upgrades", title: "\u2B50 In-Run Upgrades", render: renderUpgrades },
+    { id: "permanent-upgrades", title: "\u{1F3EA} Permanent Upgrades", render: renderPermanentUpgrades },
+    { id: "penguins", title: "\u{1F427} Penguins & Abilities", render: renderPenguins },
+    { id: "powerups", title: "\u{1F48E} Powerups", render: renderPowerups },
+    { id: "settings", title: "\u2699\uFE0F Settings", render: renderSettings }
+  ];
+  function renderCompendium() {
+    const nav = document.getElementById("compendium-nav");
+    const list = document.getElementById("compendium-list");
+    nav.innerHTML = "";
+    list.innerHTML = "";
+    SECTIONS.forEach((section) => {
+      const sectionEl = document.createElement("div");
+      sectionEl.className = "compendium-section";
+      const heading = document.createElement("h3");
+      heading.textContent = section.title;
+      sectionEl.appendChild(heading);
+      section.render(sectionEl);
+      list.appendChild(sectionEl);
+      const navBtn = document.createElement("button");
+      navBtn.textContent = section.title;
+      navBtn.onclick = () => sectionEl.scrollIntoView({ block: "start", behavior: "smooth" });
+      nav.appendChild(navBtn);
+    });
+  }
+  function initCompendium() {
+    onCompendiumOpen(() => {
+      renderCompendium();
+      showCompendiumPanel();
+    });
+    onCompendiumClose(hideCompendiumPanel);
   }
 
   // js/player.js
@@ -4456,6 +5113,7 @@ canvas {
     updateEnemies(dt);
     updateEnemyProjectiles(dt);
     updateAllies(dt);
+    updateChinstrapCharge(dt);
     updateOrbitals(dt);
     updateAbilityButtonUI();
     updateGems(dt);
@@ -4501,6 +5159,7 @@ canvas {
   initShop();
   initHistory();
   initPenguinSelect();
+  initCompendium();
   initMuteButton();
   initAutoAvoidButton();
   initAbilityButton();
