@@ -1641,7 +1641,7 @@ canvas {
     const topEndless = [...endlessRuns].sort((a, b) => b.score - a.score).slice(0, TOP_RUNS_KEPT);
     const topExpedition = [...expeditionRuns].sort((a, b) => {
       var _a, _b;
-      return ((_a = a.time) != null ? _a : Infinity) - ((_b = b.time) != null ? _b : Infinity);
+      return b.score - a.score || ((_a = a.time) != null ? _a : Infinity) - ((_b = b.time) != null ? _b : Infinity);
     }).slice(0, TOP_RUNS_KEPT);
     const topSet = /* @__PURE__ */ new Set([...topEndless, ...topExpedition]);
     const recentSlots = Math.max(0, MAX_RUN_HISTORY - topSet.size);
@@ -3956,7 +3956,7 @@ canvas {
     const topEndless = [...endlessRuns].sort((a, b) => b.score - a.score).slice(0, 5);
     const topExpedition = [...expeditionRuns].sort((a, b) => {
       var _a, _b;
-      return ((_a = a.time) != null ? _a : Infinity) - ((_b = b.time) != null ? _b : Infinity);
+      return b.score - a.score || ((_a = a.time) != null ? _a : Infinity) - ((_b = b.time) != null ? _b : Infinity);
     }).slice(0, 5);
     const topSet = /* @__PURE__ */ new Set([...topEndless, ...topExpedition]);
     const rest = G.runHistory.filter((r) => !topSet.has(r));
@@ -3965,7 +3965,7 @@ canvas {
       topEndless.forEach((run) => list.appendChild(makeRow(run)));
     }
     if (topExpedition.length) {
-      list.appendChild(sectionHeader("\u{1F3C6} Top Expedition (by Time)"));
+      list.appendChild(sectionHeader("\u{1F3C6} Top Expedition (by Score, then Time)"));
       topExpedition.forEach((run) => list.appendChild(makeRow(run)));
     }
     if (rest.length) {
