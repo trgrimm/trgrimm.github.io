@@ -1607,6 +1607,14 @@ canvas {
     bossPhase: false,
     bossReinforceTimer: 0,
     // counts up while bossPhase is active; periodic reinforcement waves reset it
+    // True while the current map's `startRoom` is sealed (a map opts in via
+    // `fixedLayout.lockStartRoomUntilWave`, e.g. the facility's Containment
+    // cell) — only ever set in Expedition mode, by expedition.js's
+    // startLevel()/updateExpedition(). Read by terrain.js's collision helpers
+    // (a `wall` obstacle tagged `isDoor:true` is only solid while this is
+    // true) and by enemies.js's spawnEnemy() (confines spawns to `startRoom`
+    // while true).
+    startRoomLocked: false,
     highScore: 0,
     // best score ever, saved to localStorage
     runHistory: [],
@@ -1837,6 +1845,7 @@ canvas {
     G.wavesThisLevel = 0;
     G.bossPhase = false;
     G.bossReinforceTimer = 0;
+    G.startRoomLocked = false;
     G.state = "playing";
     G.lastTime = performance.now();
   }
@@ -2038,6 +2047,12 @@ canvas {
   function isRectObstacle(ob) {
     return RECT_OBSTACLE_TYPES.has(ob.type);
   }
+  function isStructuralWall(ob) {
+    return ob.type === "wall";
+  }
+  function isDoorOpen(ob) {
+    return ob.isDoor && !G.startRoomLocked;
+  }
   function closestPointOnRect(px, py, ob) {
     const hw = ob.w / 2, hh = ob.h / 2;
     const cx = Math.max(ob.x - hw, Math.min(px, ob.x + hw));
@@ -2047,6 +2062,7 @@ canvas {
   }
   function circleHitsObstacle(x, y, radius) {
     return G.obstacles.some((ob) => {
+      if (isDoorOpen(ob)) return false;
       if (isRectObstacle(ob)) {
         const { cx, cy } = closestPointOnRect(x, y, ob);
         return Math.hypot(x - cx, y - cy) < radius;
@@ -2058,6 +2074,7 @@ canvas {
     let px = x, py = y;
     for (let pass = 0; pass < 3; pass++) {
       for (const ob of G.obstacles) {
+        if (isDoorOpen(ob)) continue;
         if (isRectObstacle(ob)) {
           const hw = ob.w / 2, hh = ob.h / 2;
           const { cx, cy, inside } = closestPointOnRect(px, py, ob);
@@ -2100,7 +2117,7 @@ canvas {
   function pushOutOfRectObstacles(x, y, radius) {
     let px = x, py = y;
     for (const ob of G.obstacles) {
-      if (!isRectObstacle(ob)) continue;
+      if (!isRectObstacle(ob) || isDoorOpen(ob)) continue;
       const hw = ob.w / 2, hh = ob.h / 2;
       if (Math.abs(px - ob.x) > hw + radius || Math.abs(py - ob.y) > hh + radius) continue;
       const { cx, cy, inside } = closestPointOnRect(px, py, ob);
@@ -2128,6 +2145,54 @@ canvas {
     const { x, y } = pushOutOfRectObstacles(entity.x, entity.y, radius);
     entity.x = x;
     entity.y = y;
+  }
+  function pushOutOfWalls(x, y, radius) {
+    let px = x, py = y;
+    for (const ob of G.obstacles) {
+      if (!isStructuralWall(ob) || isDoorOpen(ob)) continue;
+      const hw = ob.w / 2, hh = ob.h / 2;
+      if (Math.abs(px - ob.x) > hw + radius || Math.abs(py - ob.y) > hh + radius) continue;
+      const { cx, cy, inside } = closestPointOnRect(px, py, ob);
+      if (inside) {
+        const distLeft = px - (ob.x - hw), distRight = ob.x + hw - px;
+        const distTop = py - (ob.y - hh), distBottom = ob.y + hh - py;
+        const minDist = Math.min(distLeft, distRight, distTop, distBottom);
+        if (minDist === distLeft) px = ob.x - hw - radius;
+        else if (minDist === distRight) px = ob.x + hw + radius;
+        else if (minDist === distTop) py = ob.y - hh - radius;
+        else py = ob.y + hh + radius;
+      } else {
+        const dx = px - cx, dy = py - cy;
+        const d = Math.hypot(dx, dy) || 1e-3;
+        if (d < radius) {
+          const push = radius - d;
+          px += dx / d * push;
+          py += dy / d * push;
+        }
+      }
+    }
+    return { x: px, y: py };
+  }
+  function resolveRockhopperCollision(entity, radius) {
+    const { x, y } = pushOutOfWalls(entity.x, entity.y, radius);
+    entity.x = x;
+    entity.y = y;
+  }
+  var LOS_SAMPLE_STEP = 20;
+  function hasLineOfSight(ax, ay, bx, by) {
+    const dist2 = Math.hypot(bx - ax, by - ay);
+    const steps = Math.max(1, Math.ceil(dist2 / LOS_SAMPLE_STEP));
+    for (const ob of G.obstacles) {
+      if (!isStructuralWall(ob) || isDoorOpen(ob)) continue;
+      const hw = ob.w / 2, hh = ob.h / 2;
+      for (let i = 0; i <= steps; i++) {
+        const t = i / steps;
+        const sx = ax + (bx - ax) * t;
+        const sy = ay + (by - ay) * t;
+        if (sx > ob.x - hw && sx < ob.x + hw && sy > ob.y - hh && sy < ob.y + hh) return false;
+      }
+    }
+    return true;
   }
 
   // js/powerups.js
@@ -2322,7 +2387,7 @@ canvas {
     {
       id: "facility",
       name: "\u{1F9EA} Research Facility",
-      description: "Escape the lab: holding cell, wards, and net-wielding researchers.",
+      description: "Break out of containment and escape the lab, ward by ward.",
       palette: {
         bgTop: "#c9d3d6",
         bgBottom: "#8a9aa0",
@@ -2339,116 +2404,176 @@ canvas {
       terrain: { obstacleCount: 12, obstacleMinR: 32, obstacleMaxR: 58, waterCount: 1, waterMinR: 160, waterMaxR: 260, blobPoints: 9, blobIrregularity: 0.7 },
       // unused while fixedLayout is set below — kept as a fallback reference
       // A hand-authored, deterministic building instead of random generation
-      // (see terrain.js's computeTerrain()) — a multi-room facility centered on
-      // the player's spawn (world-center, 1440/1080): a Holding cell (start),
-      // a Lab to the north, a Storage room to the south, an east Corridor into
-      // a Medical bay, each with doorway gaps + an exterior exit so the player
-      // can escape and enemies funnel through the openings. `floors` are opaque
-      // interior tile regions (render only); `decorations` are flat non-colliding
-      // props; `obstacles` are the solid walls (24px thick, axis-aligned rects)
-      // and collidable furniture (bed/bench/crate/pod) + circular rubble.
+      // (see terrain.js's computeTerrain()) — a larger 6-room facility centered
+      // on the player's spawn (world-center, 1440/1080): a sealed Containment
+      // cell (start) opening north through a single lockable Door into the Lab,
+      // which branches west to Storage (→ south to the Security Office) and
+      // east through a Corridor into the Medical bay — each of those has its
+      // own exterior exit into the open compound. `floors` are opaque interior
+      // tile regions (render only); `decorations` are flat non-colliding props;
+      // `obstacles` are the solid walls (24px thick, axis-aligned rects), the
+      // one lockable Door (a `wall` obstacle tagged `isDoor: true` — solid only
+      // while `G.startRoomLocked`, see terrain.js/expedition.js), collidable
+      // furniture (bed/bench/crate/pod), and circular rubble. `startRoom` is
+      // the Containment cell's interior bounds (enemies.js confines wave-1
+      // spawns to it while locked); `waypoints`/`waypointEdges` are a small
+      // hand-authored room-to-doorway graph enemies path through once a
+      // straight line to the player is blocked by a wall (see enemies.js).
       fixedLayout: {
         floors: [
-          { x: 1400, y: 1080, w: 440, h: 380, fill: "#b9c2c4" },
-          // holding cell (start)
-          { x: 1400, y: 740, w: 440, h: 300, fill: "#c3ccce" },
-          // lab (north)
-          { x: 1400, y: 1420, w: 440, h: 300, fill: "#b4bcbe" },
-          // storage (south)
-          { x: 1805, y: 1080, w: 370, h: 140, fill: "#aeb7ba" },
-          // corridor (east)
-          { x: 2180, y: 1080, w: 380, h: 360, fill: "#c6ccc8" }
-          // medical bay (far east)
+          { x: 1400, y: 1080, w: 640, h: 500, fill: "#b9c2c4" },
+          // containment (start, sealed until wave 1 clears)
+          { x: 1400, y: 600, w: 640, h: 460, fill: "#c3ccce" },
+          // lab (north of containment)
+          { x: 890, y: 600, w: 380, h: 460, fill: "#b4bcbe" },
+          // storage (west of lab)
+          { x: 850, y: 1060, w: 460, h: 460, fill: "#aab2b6" },
+          // security office (south of storage) — the new large room
+          { x: 1930, y: 600, w: 420, h: 180, fill: "#aeb7ba" },
+          // corridor (east of lab)
+          { x: 2370, y: 600, w: 460, h: 440, fill: "#c6ccc8" }
+          // medical bay (east of corridor)
+        ],
+        startRoom: { x: 1400, y: 1080, w: 560, h: 420 },
+        lockStartRoomUntilWave: 1,
+        waypoints: [
+          { id: "containment", x: 1400, y: 1080 },
+          { id: "doorCL", x: 1400, y: 830 },
+          // containment <-> lab (the lockable door)
+          { id: "lab", x: 1400, y: 600 },
+          { id: "doorLS", x: 1080, y: 600 },
+          // lab <-> storage
+          { id: "storage", x: 890, y: 600 },
+          { id: "doorSS", x: 890, y: 830 },
+          // storage <-> security office
+          { id: "security", x: 850, y: 1060 },
+          { id: "doorLC", x: 1720, y: 600 },
+          // lab <-> corridor
+          { id: "corridor", x: 1930, y: 600 },
+          { id: "doorCM", x: 2140, y: 600 },
+          // corridor <-> medical bay
+          { id: "medical", x: 2370, y: 600 }
+        ],
+        waypointEdges: [
+          ["containment", "doorCL"],
+          ["doorCL", "lab"],
+          ["lab", "doorLS"],
+          ["doorLS", "storage"],
+          ["storage", "doorSS"],
+          ["doorSS", "security"],
+          ["lab", "doorLC"],
+          ["doorLC", "corridor"],
+          ["corridor", "doorCM"],
+          ["doorCM", "medical"]
         ],
         obstacles: [
-          // --- Holding cell (start room, contains spawn) ---
-          { type: "wall", x: 1255, y: 890, w: 150, h: 24 },
-          { type: "wall", x: 1545, y: 890, w: 150, h: 24 },
-          // north (door to lab)
-          { type: "wall", x: 1255, y: 1270, w: 150, h: 24 },
-          { type: "wall", x: 1545, y: 1270, w: 150, h: 24 },
-          // south (door to storage)
-          { type: "wall", x: 1180, y: 1080, w: 24, h: 380 },
+          // --- Containment (start, sealed room) ---
+          { type: "wall", x: 1080, y: 1080, w: 24, h: 500 },
           // west (solid)
-          { type: "wall", x: 1620, y: 950, w: 24, h: 120 },
-          { type: "wall", x: 1620, y: 1210, w: 24, h: 120 },
-          // east (door to corridor)
-          { type: "pod", x: 1260, y: 985, w: 70, h: 110 },
-          // the penguin's own broken containment pods
-          { type: "pod", x: 1260, y: 1175, w: 70, h: 110 },
-          // --- Lab (north) ---
-          { type: "wall", x: 1255, y: 590, w: 150, h: 24 },
-          { type: "wall", x: 1545, y: 590, w: 150, h: 24 },
-          // north (exterior exit)
-          { type: "wall", x: 1180, y: 740, w: 24, h: 300 },
-          // west
-          { type: "wall", x: 1620, y: 740, w: 24, h: 300 },
-          // east
-          { type: "bench", x: 1290, y: 660, w: 120, h: 44 },
-          { type: "bench", x: 1510, y: 660, w: 120, h: 44 },
-          { type: "bench", x: 1290, y: 800, w: 110, h: 40 },
-          { type: "bench", x: 1510, y: 800, w: 110, h: 40 },
-          // --- Storage (south) ---
-          { type: "wall", x: 1255, y: 1570, w: 150, h: 24 },
-          { type: "wall", x: 1545, y: 1570, w: 150, h: 24 },
-          // south (exterior exit)
-          { type: "wall", x: 1180, y: 1420, w: 24, h: 300 },
-          // west
-          { type: "wall", x: 1620, y: 1420, w: 24, h: 300 },
-          // east
-          { type: "crate", x: 1280, y: 1370, w: 58, h: 58 },
-          { type: "crate", x: 1300, y: 1440, w: 58, h: 58 },
-          { type: "crate", x: 1530, y: 1500, w: 68, h: 48 },
-          { type: "rubble", x: 1520, y: 1380, r: 38 },
-          // --- Corridor (east spine) ---
-          { type: "wall", x: 1805, y: 1010, w: 370, h: 24 },
-          // north
-          { type: "wall", x: 1805, y: 1150, w: 370, h: 24 },
-          // south
-          // --- Medical bay (far east) ---
-          { type: "wall", x: 1990, y: 955, w: 24, h: 110 },
-          { type: "wall", x: 1990, y: 1205, w: 24, h: 110 },
-          // west (door from corridor)
-          { type: "wall", x: 2180, y: 900, w: 380, h: 24 },
-          // north (solid)
-          { type: "wall", x: 2180, y: 1260, w: 380, h: 24 },
+          { type: "wall", x: 1720, y: 1080, w: 24, h: 500 },
+          // east (solid)
+          { type: "wall", x: 1400, y: 1330, w: 640, h: 24 },
           // south (solid)
-          { type: "wall", x: 2370, y: 955, w: 24, h: 110 },
-          { type: "wall", x: 2370, y: 1205, w: 24, h: 110 },
+          { type: "pod", x: 1160, y: 950, w: 80, h: 130 },
+          // the penguin's own broken containment pods
+          { type: "pod", x: 1160, y: 1210, w: 80, h: 130 },
+          // --- The one door out of Containment (into the Lab) — locked/solid
+          // only while G.startRoomLocked (see terrain.js's isDoorOpen) ---
+          { type: "wall", x: 1205, y: 830, w: 250, h: 24 },
+          { type: "wall", x: 1595, y: 830, w: 250, h: 24 },
+          { type: "wall", x: 1400, y: 830, w: 140, h: 24, isDoor: true },
+          // --- Lab ---
+          { type: "wall", x: 1198, y: 370, w: 235, h: 24 },
+          { type: "wall", x: 1603, y: 370, w: 235, h: 24 },
+          // north (exterior exit)
+          { type: "wall", x: 1080, y: 450, w: 24, h: 160 },
+          { type: "wall", x: 1080, y: 750, w: 24, h: 160 },
+          // west (door to storage)
+          { type: "wall", x: 1720, y: 453, w: 24, h: 165 },
+          { type: "wall", x: 1720, y: 748, w: 24, h: 165 },
+          // east (door to corridor)
+          { type: "bench", x: 1220, y: 480, w: 130, h: 46 },
+          { type: "bench", x: 1580, y: 480, w: 130, h: 46 },
+          { type: "bench", x: 1220, y: 720, w: 120, h: 42 },
+          { type: "bench", x: 1580, y: 720, w: 120, h: 42 },
+          // --- Storage ---
+          { type: "wall", x: 700, y: 600, w: 24, h: 460 },
+          // west (solid)
+          { type: "wall", x: 890, y: 370, w: 380, h: 24 },
+          // north (solid)
+          { type: "wall", x: 763, y: 830, w: 125, h: 24 },
+          { type: "wall", x: 1018, y: 830, w: 125, h: 24 },
+          // south (door to security office)
+          { type: "crate", x: 800, y: 470, w: 62, h: 62 },
+          { type: "crate", x: 820, y: 560, w: 62, h: 62 },
+          { type: "crate", x: 970, y: 700, w: 70, h: 50 },
+          { type: "rubble", x: 950, y: 480, r: 40 },
+          // --- Security Office (NEW large room) ---
+          { type: "wall", x: 620, y: 1060, w: 24, h: 460 },
+          // west (solid)
+          { type: "wall", x: 695, y: 1290, w: 150, h: 24 },
+          { type: "wall", x: 1005, y: 1290, w: 150, h: 24 },
+          // south (exterior exit)
+          { type: "bench", x: 720, y: 960, w: 130, h: 44 },
+          { type: "bench", x: 980, y: 960, w: 130, h: 44 },
+          // desk/monitor stations
+          { type: "crate", x: 720, y: 1180, w: 60, h: 60 },
+          { type: "crate", x: 980, y: 1180, w: 56, h: 56 },
+          // --- Corridor ---
+          { type: "wall", x: 1930, y: 510, w: 420, h: 24 },
+          // north (solid)
+          { type: "wall", x: 1930, y: 690, w: 420, h: 24 },
+          // south (solid)
+          { type: "wall", x: 2140, y: 525, w: 24, h: 30 },
+          { type: "wall", x: 2140, y: 675, w: 24, h: 30 },
+          // east (door to medical bay)
+          // --- Medical bay ---
+          { type: "wall", x: 2370, y: 380, w: 460, h: 24 },
+          // north (solid)
+          { type: "wall", x: 2370, y: 820, w: 460, h: 24 },
+          // south (solid)
+          { type: "wall", x: 2600, y: 453, w: 24, h: 145 },
+          { type: "wall", x: 2600, y: 748, w: 24, h: 145 },
           // east (exterior exit)
-          { type: "bed", x: 2090, y: 1e3, w: 64, h: 140 },
-          { type: "bed", x: 2270, y: 1e3, w: 64, h: 140 },
+          { type: "bed", x: 2260, y: 520, w: 64, h: 140 },
+          { type: "bed", x: 2480, y: 520, w: 64, h: 140 },
           // cots
-          { type: "bench", x: 2180, y: 1200, w: 130, h: 44 },
+          { type: "bench", x: 2370, y: 750, w: 130, h: 44 },
           // monitor station
-          // --- Open compound (outside, east) ---
-          { type: "crate", x: 2560, y: 920, w: 60, h: 60 },
-          { type: "rubble", x: 2700, y: 1650, r: 44 },
-          { type: "rubble", x: 1400, y: 1720, r: 40 }
-          // cover just outside the south exit
+          // --- Open compound (outside the building) ---
+          { type: "crate", x: 1400, y: 280, w: 60, h: 60 },
+          // cover just outside the lab's north exit
+          { type: "rubble", x: 850, y: 1420, r: 42 },
+          // cover just outside the security office's south exit
+          { type: "rubble", x: 2740, y: 950, r: 44 }
         ],
         decorations: [
           // Lab
-          { type: "note", x: 1400, y: 665 },
-          { type: "note", x: 1500, y: 730 },
-          { type: "stain", x: 1360, y: 760, r: 34, color: "rgba(90, 170, 150, 0.25)" },
-          // Holding cell
-          { type: "stripe", x: 1540, y: 1080, w: 110, h: 22 },
-          // hazard band at the east exit
-          { type: "note", x: 1330, y: 1200 },
+          { type: "note", x: 1400, y: 445 },
+          { type: "note", x: 1500, y: 700 },
+          { type: "stain", x: 1360, y: 610, r: 34, color: "rgba(90, 170, 150, 0.25)" },
+          // Containment
+          { type: "stripe", x: 1400, y: 900, w: 130, h: 22 },
+          // hazard band just inside the (sealed) door
+          { type: "note", x: 1250, y: 1080 },
           // Storage
-          { type: "stain", x: 1400, y: 1520, r: 30, color: "rgba(70, 150, 140, 0.22)" },
-          { type: "note", x: 1500, y: 1330 },
+          { type: "stain", x: 890, y: 650, r: 28, color: "rgba(70, 150, 140, 0.22)" },
+          { type: "note", x: 1e3, y: 470 },
+          // Security office
+          { type: "note", x: 850, y: 900 },
+          // patrol log
+          { type: "stripe", x: 850, y: 1220, w: 140, h: 20 },
+          // hazard band at the south exit
           // Medical bay
-          { type: "note", x: 2180, y: 960 },
-          { type: "note", x: 2180, y: 1120 },
-          { type: "stain", x: 2245, y: 1185, r: 24, color: "rgba(150, 45, 45, 0.22)" }
+          { type: "note", x: 2260, y: 460 },
+          { type: "note", x: 2480, y: 460 },
+          { type: "stain", x: 2400, y: 700, r: 24, color: "rgba(150, 45, 45, 0.22)" }
           // dried blood
         ],
-        // A leaked coolant/chemical pool in the open compound south-east of the
+        // A leaked coolant/chemical pool in the open compound east of the
         // building — hand-authored (not rolled), lightly irregular edge.
         waterZones: [
-          { x: 2650, y: 1500, r: 155, radii: [140, 150, 145, 155, 150, 140, 148, 152, 145] }
+          { x: 2740, y: 800, r: 130, radii: [118, 128, 122, 130, 126, 118, 124, 128, 122] }
         ]
       },
       roster: ["basic", "zombie", "fast", "bat", "demon", "researcher", "guard"],
@@ -2598,7 +2723,7 @@ canvas {
     }
     const RECT_TYPES = { wall: 1, crate: 1, pod: 1, bed: 1, bench: 1 };
     for (const ob of obstacles) {
-      pctx.fillStyle = ob.color || (ob.type === "wall" ? "#cfd6da" : pal.obstacleFill);
+      pctx.fillStyle = ob.color || (ob.isDoor ? "#8a6a2a" : ob.type === "wall" ? "#cfd6da" : pal.obstacleFill);
       if (RECT_TYPES[ob.type]) {
         pctx.fillRect(ob.x - ob.w / 2, ob.y - ob.h / 2, ob.w, ob.h);
       } else {
@@ -3279,6 +3404,54 @@ canvas {
     ctx2.lineWidth = 1.5;
     ctx2.strokeRect(left, top, ob.w, ob.h);
   }
+  function drawDoor(ob) {
+    const hw = ob.w / 2, hh = ob.h / 2;
+    const left = ob.x - hw, top = ob.y - hh;
+    const locked = G.startRoomLocked;
+    if (!locked) {
+      const jamb = Math.min(10, hw * 0.3);
+      ctx2.fillStyle = "#8a8f96";
+      if (ob.w >= ob.h) {
+        ctx2.fillRect(left, top, jamb, ob.h);
+        ctx2.fillRect(left + ob.w - jamb, top, jamb, ob.h);
+      } else {
+        ctx2.fillRect(left, top, ob.w, jamb);
+        ctx2.fillRect(left, top + ob.h - jamb, ob.w, jamb);
+      }
+      return;
+    }
+    ctx2.fillStyle = "rgba(0,0,0,0.25)";
+    ctx2.fillRect(left + 4, top + 5, ob.w, ob.h);
+    ctx2.fillStyle = "#8a6a2a";
+    ctx2.fillRect(left, top, ob.w, ob.h);
+    ctx2.save();
+    ctx2.beginPath();
+    ctx2.rect(left, top, ob.w, ob.h);
+    ctx2.clip();
+    ctx2.fillStyle = "rgba(230, 180, 30, 0.5)";
+    const stripeW = 14;
+    const span = ob.w >= ob.h ? ob.w : ob.h;
+    for (let i = -hh - hw; i < span; i += stripeW * 2) {
+      ctx2.beginPath();
+      ctx2.moveTo(left + i, top);
+      ctx2.lineTo(left + i + stripeW, top);
+      ctx2.lineTo(left + i + stripeW + ob.h, top + ob.h);
+      ctx2.lineTo(left + i + ob.h, top + ob.h);
+      ctx2.closePath();
+      ctx2.fill();
+    }
+    ctx2.restore();
+    ctx2.strokeStyle = darken("#8a6a2a", 0.4);
+    ctx2.lineWidth = 1.5;
+    ctx2.strokeRect(left, top, ob.w, ob.h);
+    ctx2.beginPath();
+    ctx2.arc(ob.x, ob.y, Math.min(6, Math.min(hw, hh) * 0.5), 0, Math.PI * 2);
+    ctx2.fillStyle = "#ff3b3b";
+    ctx2.fill();
+    ctx2.strokeStyle = "rgba(0,0,0,0.4)";
+    ctx2.lineWidth = 1;
+    ctx2.stroke();
+  }
   function drawBed(ob) {
     const hw = ob.w / 2, hh = ob.h / 2;
     const left = ob.x - hw, top = ob.y - hh;
@@ -3331,6 +3504,10 @@ canvas {
     ctx2.fillRect(monX + 2, monY + 2, monW - 4, monH - 4);
   }
   function drawObstacle(ob) {
+    if (ob.isDoor) {
+      drawDoor(ob);
+      return;
+    }
     switch (ob.type) {
       case "wall":
         drawWall(ob);
@@ -4970,8 +5147,8 @@ canvas {
       }
       const swimMult = G.penguinType === "gentoo" ? GENTOO_SWIM_MULT : WATER_SPEED_MULT;
       const speedMult = wasInWater ? swimMult : 1;
-      player.x += dx * player.speed * speedMult;
-      player.y += dy * player.speed * speedMult;
+      player.x += dx * player.speed * speedMult * G.dt * 60;
+      player.y += dy * player.speed * speedMult * G.dt * 60;
       player.x = clamp2(player.x, PLAYER_R, WORLD_W - PLAYER_R);
       player.y = clamp2(player.y, PLAYER_R, WORLD_H - PLAYER_R);
       if (G.autoAvoid) {
@@ -4994,7 +5171,7 @@ canvas {
       }
     }
     if (G.penguinType === "rockhopper") {
-      resolveWallCollision(player, PLAYER_R);
+      resolveRockhopperCollision(player, PLAYER_R);
     } else {
       resolveObstacleCollision(player, PLAYER_R);
     }
@@ -5303,21 +5480,28 @@ canvas {
     const t = ENEMY_TYPES[type];
     const rMult = opts.rMult || 1;
     const margin = t.r * rMult + 10;
-    const { camX, camY } = getCameraOffset(G.player);
     let x, y;
-    const side = Math.floor(Math.random() * 4);
-    if (side === 0) {
-      x = camX + Math.random() * W;
-      y = camY - margin;
-    } else if (side === 1) {
-      x = camX + W + margin;
-      y = camY + Math.random() * H;
-    } else if (side === 2) {
-      x = camX + Math.random() * W;
-      y = camY + H + margin;
+    const startRoom = G.currentMap && G.currentMap.fixedLayout && G.currentMap.fixedLayout.startRoom;
+    if (G.startRoomLocked && startRoom) {
+      const inset = t.r * rMult + 14;
+      x = startRoom.x - startRoom.w / 2 + inset + Math.random() * Math.max(1, startRoom.w - inset * 2);
+      y = startRoom.y - startRoom.h / 2 + inset + Math.random() * Math.max(1, startRoom.h - inset * 2);
     } else {
-      x = camX - margin;
-      y = camY + Math.random() * H;
+      const { camX, camY } = getCameraOffset(G.player);
+      const side = Math.floor(Math.random() * 4);
+      if (side === 0) {
+        x = camX + Math.random() * W;
+        y = camY - margin;
+      } else if (side === 1) {
+        x = camX + W + margin;
+        y = camY + Math.random() * H;
+      } else if (side === 2) {
+        x = camX + Math.random() * W;
+        y = camY + H + margin;
+      } else {
+        x = camX - margin;
+        y = camY + Math.random() * H;
+      }
     }
     ({ x, y } = pushOutOfRectObstacles(x, y, t.r * rMult));
     const waveScale = getWaveScaleMult();
@@ -5344,8 +5528,82 @@ canvas {
       shotCooldown: t.ranged ? Math.random() * ENEMY_RANGED_FIRE_RATE : 0,
       // Facility Researcher only: its ranged shot is a restraint net (stun),
       // not a damaging bolt — see the ranged-fire branch in updateEnemies().
-      net: t.net || false
+      net: t.net || false,
+      // Waypoint pathfinding (only ever used on a map with fixedLayout.waypoints,
+      // e.g. the facility — see updateEnemies()). `path` is a list of remaining
+      // waypoint {x,y} stops; staggered repathTimer avoids every enemy
+      // recomputing line-of-sight on the same frame.
+      path: null,
+      repathTimer: Math.random() * 0.4
     });
+  }
+  var REPATH_INTERVAL = 0.5;
+  var cachedGraphFor = null;
+  var cachedAdjacency = null;
+  function getWaypointAdjacency(fixedLayout) {
+    if (cachedGraphFor === fixedLayout) return cachedAdjacency;
+    const adj = /* @__PURE__ */ new Map();
+    for (const wp of fixedLayout.waypoints) adj.set(wp.id, []);
+    for (const [a, b] of fixedLayout.waypointEdges) {
+      adj.get(a).push(b);
+      adj.get(b).push(a);
+    }
+    cachedGraphFor = fixedLayout;
+    cachedAdjacency = adj;
+    return adj;
+  }
+  function nearestWaypoint(waypoints, x, y) {
+    let best = null, bestDist = Infinity;
+    for (const wp of waypoints) {
+      const d = Math.hypot(wp.x - x, wp.y - y);
+      if (d < bestDist) {
+        bestDist = d;
+        best = wp;
+      }
+    }
+    return best;
+  }
+  function findWaypointPath(fixedLayout, fromId, toId) {
+    if (fromId === toId) return [];
+    const adj = getWaypointAdjacency(fixedLayout);
+    const cameFrom = /* @__PURE__ */ new Map();
+    const visited = /* @__PURE__ */ new Set([fromId]);
+    const queue = [fromId];
+    while (queue.length) {
+      const cur = queue.shift();
+      if (cur === toId) break;
+      for (const next of adj.get(cur) || []) {
+        if (!visited.has(next)) {
+          visited.add(next);
+          cameFrom.set(next, cur);
+          queue.push(next);
+        }
+      }
+    }
+    if (!visited.has(toId)) return [];
+    const idPath = [];
+    for (let cur = toId; cur !== fromId; cur = cameFrom.get(cur)) idPath.unshift(cur);
+    const byId = new Map(fixedLayout.waypoints.map((wp) => [wp.id, wp]));
+    return idPath.map((id) => byId.get(id));
+  }
+  function getPathingTarget(e, player, fixedLayout, dt) {
+    e.repathTimer -= dt;
+    if (e.repathTimer <= 0) {
+      e.repathTimer = REPATH_INTERVAL;
+      if (hasLineOfSight(e.x, e.y, player.x, player.y)) {
+        e.path = null;
+      } else {
+        const fromWp = nearestWaypoint(fixedLayout.waypoints, e.x, e.y);
+        const toWp = nearestWaypoint(fixedLayout.waypoints, player.x, player.y);
+        e.path = findWaypointPath(fixedLayout, fromWp.id, toWp.id);
+      }
+    }
+    if (e.path && e.path.length) {
+      const next = e.path[0];
+      if (Math.hypot(next.x - e.x, next.y - e.y) < 30) e.path.shift();
+      if (e.path.length) return e.path[0];
+    }
+    return player;
   }
   var DEFAULT_ROSTER = ["basic", "fast", "tank", "zombie", "bat", "demon"];
   function unlockWave(k) {
@@ -5504,9 +5762,12 @@ canvas {
   }
   function updateEnemies(dt) {
     const player = G.player;
+    const fixedLayout = G.currentMap && G.currentMap.fixedLayout;
+    const hasWaypoints = !!(fixedLayout && fixedLayout.waypoints && fixedLayout.waypoints.length);
     for (let i = G.enemies.length - 1; i >= 0; i--) {
       const e = G.enemies[i];
-      const angle = Math.atan2(player.y - e.y, player.x - e.x);
+      const target = hasWaypoints ? getPathingTarget(e, player, fixedLayout, dt) : player;
+      const angle = Math.atan2(target.y - e.y, target.x - e.x);
       e.x += Math.cos(angle) * e.speed * dt * 60;
       e.y += Math.sin(angle) * e.speed * dt * 60;
       resolveWallCollision(e, e.r);
@@ -5597,6 +5858,7 @@ canvas {
   function startLevel(i) {
     G.levelIndex = i;
     G.currentMap = G.expeditionMaps[i];
+    G.startRoomLocked = !!(G.currentMap.fixedLayout && G.currentMap.fixedLayout.lockStartRoomUntilWave);
     G.enemies = [];
     G.projectiles = [];
     G.enemyProjectiles = [];
@@ -5639,6 +5901,10 @@ canvas {
     }
     G.waveTimer += dt * 1e3;
     if (G.pendingSpawns.length === 0 && G.enemies.length === 0 && G.waveTimer > G.waveDelay) {
+      const lockUntil = G.currentMap.fixedLayout && G.currentMap.fixedLayout.lockStartRoomUntilWave;
+      if (G.startRoomLocked && lockUntil && G.wavesThisLevel <= lockUntil) {
+        G.startRoomLocked = false;
+      }
       if (G.wavesThisLevel < G.wavesPerLevel) {
         startWave();
         G.wavesThisLevel++;
