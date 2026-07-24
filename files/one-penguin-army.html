@@ -5609,11 +5609,14 @@ canvas {
   var cachedAdjacency = null;
   function getWaypointAdjacency(fixedLayout) {
     if (cachedGraphFor === fixedLayout) return cachedAdjacency;
+    const byId = new Map(fixedLayout.waypoints.map((wp) => [wp.id, wp]));
     const adj = /* @__PURE__ */ new Map();
     for (const wp of fixedLayout.waypoints) adj.set(wp.id, []);
     for (const [a, b] of fixedLayout.waypointEdges) {
-      adj.get(a).push(b);
-      adj.get(b).push(a);
+      const wa = byId.get(a), wb = byId.get(b);
+      const d = Math.hypot(wa.x - wb.x, wa.y - wb.y);
+      adj.get(a).push({ id: b, dist: d });
+      adj.get(b).push({ id: a, dist: d });
     }
     cachedGraphFor = fixedLayout;
     cachedAdjacency = adj;
@@ -5636,23 +5639,32 @@ canvas {
     return best || fallback;
   }
   function findWaypointPath(fixedLayout, fromId, toId) {
+    var _a;
     if (fromId === toId) return [];
     const adj = getWaypointAdjacency(fixedLayout);
+    const dist2 = /* @__PURE__ */ new Map([[fromId, 0]]);
     const cameFrom = /* @__PURE__ */ new Map();
-    const visited = /* @__PURE__ */ new Set([fromId]);
-    const queue = [fromId];
-    while (queue.length) {
-      const cur = queue.shift();
-      if (cur === toId) break;
-      for (const next of adj.get(cur) || []) {
-        if (!visited.has(next)) {
-          visited.add(next);
-          cameFrom.set(next, cur);
-          queue.push(next);
+    const visited = /* @__PURE__ */ new Set();
+    for (; ; ) {
+      let cur = null, curDist = Infinity;
+      for (const [id, d] of dist2) {
+        if (!visited.has(id) && d < curDist) {
+          curDist = d;
+          cur = id;
+        }
+      }
+      if (cur === null || cur === toId) break;
+      visited.add(cur);
+      for (const edge of adj.get(cur) || []) {
+        if (visited.has(edge.id)) continue;
+        const nd = curDist + edge.dist;
+        if (nd < ((_a = dist2.get(edge.id)) != null ? _a : Infinity)) {
+          dist2.set(edge.id, nd);
+          cameFrom.set(edge.id, cur);
         }
       }
     }
-    if (!visited.has(toId)) return [];
+    if (!dist2.has(toId)) return [];
     const idPath = [];
     for (let cur = toId; cur !== fromId; cur = cameFrom.get(cur)) idPath.unshift(cur);
     idPath.unshift(fromId);
