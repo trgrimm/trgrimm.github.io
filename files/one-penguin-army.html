@@ -437,6 +437,8 @@ canvas {
   padding: 32px 48px;
   text-align: center;
   pointer-events: auto;
+  max-height: 90vh;
+  overflow-y: auto;
 }
 #game-over h1 {
   color: #ff3366;
@@ -585,6 +587,48 @@ canvas {
   color: #999;
   font-size: 11px;
 }
+/* Run-end stats breakdown (game-over + expedition-complete) — same dark
+   card / gold-value / grey-label language as .history-row above. */
+.run-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 260px;
+  max-width: 340px;
+  margin: 0 auto 20px;
+}
+.run-stats-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: rgba(30, 30, 50, 0.6);
+  border: 1px solid #444;
+  border-radius: 6px;
+  padding: 6px 12px;
+  text-align: left;
+}
+.run-stats-row-sub {
+  margin-left: 16px;
+  padding: 4px 12px;
+  background: rgba(30, 30, 50, 0.35);
+  border-style: dashed;
+}
+.run-stats-label {
+  color: #999;
+  font-size: 12px;
+}
+.run-stats-row-sub .run-stats-label {
+  font-size: 11px;
+}
+.run-stats-value {
+  color: #ffdd00;
+  font-weight: bold;
+  font-size: 14px;
+}
+.run-stats-row-sub .run-stats-value {
+  font-size: 12px;
+}
 .controls-grid {
   display: flex;
   flex-direction: column;
@@ -705,6 +749,7 @@ canvas {
   <h1>🏆 EXPEDITION COMPLETE</h1>
   <p id="expedition-newhigh" style="display:none; color:#ffdd00; font-weight:bold; margin-bottom:8px; text-shadow:0 0 10px #ffdd00;">🎉 NEW HIGH SCORE! 🎉</p>
   <p id="expedition-final-score">Final Score: 0</p>
+  <div id="expedition-stats" class="run-stats"></div>
   <button id="expedition-again-button" class="menu-btn">PLAY AGAIN</button>
   <button id="expedition-menu-button" class="menu-btn menu-btn-secondary">🏠 RETURN TO MENU</button>
 </div>
@@ -725,6 +770,7 @@ canvas {
   <h1>💀 GAME OVER</h1>
   <p id="new-highscore-banner" style="display:none; color:#ffdd00; font-weight:bold; margin-bottom:8px; text-shadow:0 0 10px #ffdd00;">🎉 NEW HIGH SCORE! 🎉</p>
   <p id="final-score">Score: 0</p>
+  <div id="game-over-stats" class="run-stats"></div>
   <button id="restart-button" class="menu-btn">PLAY AGAIN</button>
   <button id="menu-button-gameover" class="menu-btn menu-btn-secondary">🏠 RETURN TO MENU</button>
   <button id="shop-button-gameover" class="menu-btn menu-btn-secondary">🏪 SHOP</button>
@@ -782,7 +828,7 @@ canvas {
   var MINIBOSS_R_MULT = 1.7;
   var MINIBOSS_DMG_MULT = 1.6;
   var PLAYER_R = 14;
-  var BASE_SPEED = 2.25 * 1.3;
+  var BASE_SPEED = 2.25 * 1.3 * 1.1;
   var BASE_FIRE_RATE = 600;
   var BASE_PROJECTILE_SPEED = 8;
   var BASE_MAX_HP = 75;
@@ -799,7 +845,7 @@ canvas {
   var ENEMY_TYPES = {
     basic: {
       hp: 25 * (2 / 3),
-      speed: 1.2,
+      speed: 1.2 * 1.1,
       r: 14,
       dmg: 7,
       color: "#c2a878",
@@ -812,7 +858,7 @@ canvas {
     },
     fast: {
       hp: 15 * (2 / 3),
-      speed: 2.8,
+      speed: 2.8 * 1.1,
       r: 10,
       dmg: 9,
       color: "#7089a0",
@@ -825,7 +871,7 @@ canvas {
     },
     tank: {
       hp: 80 * (2 / 3),
-      speed: 0.759,
+      speed: 0.759 * 1.1,
       r: 20,
       dmg: 16,
       color: "#e2edf2",
@@ -839,7 +885,7 @@ canvas {
     // +10% on top of the earlier +15%
     zombie: {
       hp: 40 * (2 / 3),
-      speed: 1.1,
+      speed: 1.1 * 1.1,
       r: 16,
       dmg: 13,
       color: "#6b8f5a",
@@ -853,7 +899,7 @@ canvas {
     // +10%, one of the "slow" types
     bat: {
       hp: 20 * (2 / 3),
-      speed: 2.2,
+      speed: 2.2 * 1.1,
       r: 9,
       dmg: 9,
       color: "#f2ecd8",
@@ -866,7 +912,7 @@ canvas {
     },
     demon: {
       hp: 60 * (2 / 3),
-      speed: 1.5,
+      speed: 1.5 * 1.1,
       r: 18,
       dmg: 13,
       color: "#9fa8c9",
@@ -883,7 +929,7 @@ canvas {
     // "tougher variant" at a glance, rather than needing brand-new art.
     leopardseal: {
       hp: 55 * (2 / 3),
-      speed: 1.35,
+      speed: 1.35 * 1.1,
       r: 17,
       dmg: 15,
       color: "#5c5a4a",
@@ -897,7 +943,7 @@ canvas {
     // unlocks wave 4+ — demon's melee counterpart
     brute: {
       hp: 130 * (2 / 3),
-      speed: 0.65,
+      speed: 0.65 * 1.1,
       r: 22,
       dmg: 22,
       color: "#7a2530",
@@ -911,7 +957,7 @@ canvas {
     // unlocks wave 7+
     wraith: {
       hp: 70 * (2 / 3),
-      speed: 1.9,
+      speed: 1.9 * 1.1,
       r: 17,
       dmg: 18,
       color: "#3a1a4a",
@@ -930,7 +976,7 @@ canvas {
     // they never win pickEscortTypes' "strongest" pick over demon on this map.
     researcher: {
       hp: 20,
-      speed: 1.3,
+      speed: 1.3 * 1.1,
       r: 15,
       dmg: 5,
       color: "#e8e4d8",
@@ -945,7 +991,7 @@ canvas {
     },
     guard: {
       hp: 13,
-      speed: 2.4,
+      speed: 2.4 * 1.1,
       r: 15,
       dmg: 12,
       color: "#2e3440",
@@ -1196,7 +1242,7 @@ canvas {
       label: "\u2694\uFE0F Damage",
       maxLevel: 10,
       desc: (level) => `+${level} base damage`,
-      cost: (level) => Math.round(50 * Math.pow(1.65, level)),
+      cost: (level) => Math.round(50 * 1.1 * Math.pow(1.7, level)),
       effect: (player, level) => {
         player.dmg += level;
       }
@@ -1206,7 +1252,7 @@ canvas {
       label: "\u{1F6E1}\uFE0F Max HP",
       maxLevel: 10,
       desc: (level) => `+${level * 10} max HP`,
-      cost: (level) => Math.round(25 * Math.pow(1.5, level)),
+      cost: (level) => Math.round(25 * 1.1 * Math.pow(1.55, level)),
       effect: (player, level) => {
         player.maxHp += level * 10;
       }
@@ -1216,7 +1262,7 @@ canvas {
       label: "\u{1F3C3} Speed",
       maxLevel: 5,
       desc: (level) => `+${level * 5}% movement speed`,
-      cost: (level) => Math.round(30 * Math.pow(1.6, level)),
+      cost: (level) => Math.round(30 * 1.1 * Math.pow(1.65, level)),
       effect: (player, level) => {
         player.speed *= 1 + 0.05 * level;
       }
@@ -1226,7 +1272,7 @@ canvas {
       label: "\u{1F3AF} Weapon Power",
       maxLevel: 4,
       desc: (level) => `+${level} snowball${level > 1 ? "s" : ""} (Harpoon: +${level} pierce, Nova: +${level * 8} radius)`,
-      cost: (level) => Math.round(55 * Math.pow(1.7, level)),
+      cost: (level) => Math.round(55 * 1.1 * Math.pow(1.75, level)),
       effect: (player, level, weapon) => {
         if (weapon === "harpoon") player.pierceCount += level;
         else if (weapon === "nova") player.novaRadius += level * 8;
@@ -1238,7 +1284,7 @@ canvas {
       label: "\u26A1 Fire Rate",
       maxLevel: 8,
       desc: (level) => `${level * 4}% faster starting fire rate`,
-      cost: (level) => Math.round(30 * Math.pow(1.55, level)),
+      cost: (level) => Math.round(30 * 1.1 * Math.pow(1.6, level)),
       effect: (player, level) => {
         player.fireRate *= Math.pow(0.96, level);
       }
@@ -1248,7 +1294,7 @@ canvas {
       label: "\u{1F48E} Gem Pickup",
       maxLevel: 5,
       desc: (level) => `+${level * 10} gem pickup radius`,
-      cost: (level) => Math.round(40 * Math.pow(1.7, level)),
+      cost: (level) => Math.round(40 * 1.1 * Math.pow(1.75, level)),
       effect: (player, level) => {
         player.gemPickupRadius = Math.min(GEM_PICKUP_MAX, player.gemPickupRadius + level * 10);
       }
@@ -1266,7 +1312,7 @@ canvas {
   }
   var ALLY_MAX_COUNT = 3;
   var ALLY_HP = 30;
-  var ALLY_SPEED = 1.8;
+  var ALLY_SPEED = 1.8 * 1.1;
   var ALLY_R = 9;
   var ALLY_DMG = 6;
   var ALLY_ATTACK_INTERVAL = 600;
@@ -1442,8 +1488,8 @@ canvas {
       // icicles in the ring
       orbitRadius: 74,
       // px from the player
-      orbitSpeed: 3.2,
-      // radians/sec
+      orbitSpeed: 3.2 * 1.25,
+      // radians/sec (+25%)
       orbitHitR: 12,
       // collision radius of each icicle
       hitInterval: 300
@@ -1494,7 +1540,8 @@ canvas {
       desc: "Small and spry, with spiky yellow head feathers.",
       ability: "Sure-Footed (passive): hops right over obstacles other penguins get pushed off of.",
       triggerable: false,
-      cost: 150,
+      cost: 165,
+      // +10%
       colors: { body: "#161616", belly: "#f2f0e8", beak: "#e8722a", flipper: "#0a0a0a", accent: "#ffdd33" },
       accentStyle: "crest"
     },
@@ -1504,7 +1551,8 @@ canvas {
       desc: "Recognizable by the white stripe swept across its head.",
       ability: "Aquatic Grace (passive): swims dramatically faster than other species.",
       triggerable: false,
-      cost: 200,
+      cost: 220,
+      // +10%
       colors: { body: "#111111", belly: "#f4f6f0", beak: "#ff6a3d", flipper: "#0d0d0d", accent: "#ffffff" },
       accentStyle: "stripe"
     },
@@ -1515,7 +1563,8 @@ canvas {
       ability: "Fearless Charge (active \u2014 button/E): dash forward, damaging enemies near the landing point and briefly becoming invincible.",
       triggerable: true,
       icon: "\u{1F4A8}",
-      cost: 275,
+      cost: 303,
+      // +10%
       colors: { body: "#141414", belly: "#f7f7f2", beak: "#4a4a4a", flipper: "#0a0a0a", accent: "#000000" },
       accentStyle: "chinStrap"
     },
@@ -1526,7 +1575,8 @@ canvas {
       ability: "Command (active \u2014 button/E): summon 2 ally penguins to fight by your side (up to 3 at once).",
       triggerable: true,
       icon: "\u{1F4E3}",
-      cost: 400,
+      cost: 440,
+      // +10%
       colors: { body: "#1a1a1a", belly: "#f5f5f0", beak: "#e8a23a", flipper: "#0d0d0d", accent: "#f0c020" },
       accentStyle: "earPatch"
     }
@@ -1574,6 +1624,8 @@ canvas {
     // Permanent currency (saved to localStorage)
     xpEarnedThisGame: 0,
     // XP earned during current game
+    runStats: defaultRunStats(),
+    // per-run damage/heal/kill totals, shown on the run-end summary (see recordDamageDealt() etc. below)
     permanentUpgrades: defaultPermanentUpgrades(),
     // levels bought in the shop
     permanentUpgradesEnabled: defaultPermanentUpgradesEnabled(),
@@ -1685,6 +1737,22 @@ canvas {
     }
     player.hp = player.maxHp;
     return player;
+  }
+  function defaultRunStats() {
+    return { damageByWeapon: {}, damageTaken: 0, healed: 0, kills: 0, xpGained: 0 };
+  }
+  function recordDamageDealt(source, amount) {
+    const s = G.runStats.damageByWeapon;
+    s[source] = (s[source] || 0) + amount;
+  }
+  function recordDamageTaken(amount) {
+    G.runStats.damageTaken += amount;
+  }
+  function recordHealing(amount) {
+    if (amount > 0) G.runStats.healed += amount;
+  }
+  function recordKill() {
+    G.runStats.kills++;
   }
   function defaultPenguinUnlocks() {
     const obj = {};
@@ -1838,6 +1906,7 @@ canvas {
     G.orbitAngle = 0;
     G.powerupTimer = 0;
     G.xpEarnedThisGame = 0;
+    G.runStats = defaultRunStats();
     G.pendingSpawns = [];
     G.waveSpawnTimer = 0;
     G.screenShake = { x: 0, y: 0, intensity: 0 };
@@ -2340,7 +2409,9 @@ canvas {
         if (def.isWeaponOverride) {
           G.activePowerups = G.activePowerups.filter((ap) => !POWERUP_DEFS[ap.type].isWeaponOverride);
         }
+        const hpBefore = player.hp;
         def.apply(player);
+        recordHealing(player.hp - hpBefore);
         if (!def.instant) {
           const duration = (_a = def.duration) != null ? _a : 10;
           G.activePowerups.push({ type: pu.type, duration, remaining: duration });
@@ -4238,7 +4309,9 @@ canvas {
       btn.innerHTML = '<span class="rarity-tag" style="color:' + u.rarity.color + '">' + u.rarity.label + '</span><span class="label">' + u.label + '</span><span class="desc">' + u.desc + "</span>";
       btn.onclick = () => {
         cleanupNav();
+        const hpBefore = G.player.hp;
         u.def.apply(G.player, u.mag);
+        recordHealing(G.player.hp - hpBefore);
         panel.style.display = "none";
         G.state = "playing";
         spawnParticles(G.player.x, G.player.y, u.rarity.color, 20, 4);
@@ -4295,6 +4368,7 @@ canvas {
   }
   function killEnemy(e, index) {
     G.score += e.score;
+    recordKill();
     spawnFloatingText(e.x, e.y, "+" + e.score, "#ffaa00");
     spawnParticles(e.x, e.y, e.color, 12, 3);
     G.screenShake.intensity = Math.min(G.screenShake.intensity + 3, 8);
@@ -4329,7 +4403,9 @@ canvas {
     for (let i = G.enemies.length - 1; i >= 0; i--) {
       const e = G.enemies[i];
       if (dist(e, player) < CHINSTRAP_CHARGE_RADIUS + e.r) {
-        e.hp -= CHINSTRAP_CHARGE_DMG * (player.chinstrapDmgMult || 1);
+        const dmg = CHINSTRAP_CHARGE_DMG * (player.chinstrapDmgMult || 1);
+        e.hp -= dmg;
+        recordDamageDealt("chinstrapCharge", dmg);
         e.flashTimer = 5;
         if (e.hp <= 0) killEnemy(e, i);
       }
@@ -4397,7 +4473,9 @@ canvas {
           a.y += Math.sin(angle) * ALLY_SPEED * dt * 60;
         } else {
           if (a.attackCooldown <= 0) {
-            nearest.hp -= ALLY_DMG * (G.player.allyPowerMult || 1);
+            const dmg = ALLY_DMG * (G.player.allyPowerMult || 1);
+            nearest.hp -= dmg;
+            recordDamageDealt("allies", dmg);
             nearest.flashTimer = 5;
             a.attackCooldown = ALLY_ATTACK_INTERVAL;
             if (nearest.hp <= 0) {
@@ -4524,6 +4602,36 @@ canvas {
   }
 
   // js/ui.js
+  var ABILITY_DAMAGE_LABELS = {
+    allies: "\u{1F427} Ally Penguins",
+    chinstrapCharge: "\u{1F4A5} Fearless Charge"
+  };
+  function damageSourceLabel(key) {
+    if (WEAPON_TYPES[key]) return WEAPON_TYPES[key].name;
+    if (POWER_WEAPON_DEFS[key]) return POWER_WEAPON_DEFS[key].label;
+    return ABILITY_DAMAGE_LABELS[key] || key;
+  }
+  function runStatRow(label, value, isSub) {
+    return '<div class="run-stats-row' + (isSub ? " run-stats-row-sub" : "") + '"><span class="run-stats-label">' + label + '</span><span class="run-stats-value">' + value + "</span></div>";
+  }
+  function renderRunStats(containerId) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    const stats = G.runStats;
+    const rows = [];
+    const totalDamage = Object.values(stats.damageByWeapon).reduce((a, b) => a + b, 0);
+    if (totalDamage > 0) {
+      rows.push(runStatRow("\u2694\uFE0F Total Damage Dealt", Math.round(totalDamage).toLocaleString()));
+      for (const [source, amount] of Object.entries(stats.damageByWeapon)) {
+        if (amount > 0) rows.push(runStatRow(damageSourceLabel(source), Math.round(amount).toLocaleString(), true));
+      }
+    }
+    if (stats.damageTaken > 0) rows.push(runStatRow("\u{1F494} Damage Taken", Math.round(stats.damageTaken).toLocaleString()));
+    if (stats.healed > 0) rows.push(runStatRow("\u2764\uFE0F Health Healed", Math.round(stats.healed).toLocaleString()));
+    if (stats.xpGained > 0) rows.push(runStatRow("\u2728 XP Gained", Math.round(stats.xpGained).toLocaleString()));
+    if (stats.kills > 0) rows.push(runStatRow("\u{1F480} Enemies Defeated", stats.kills.toLocaleString()));
+    container.innerHTML = rows.join("");
+  }
   function hideOverlay() {
     document.getElementById("overlay").classList.remove("active");
   }
@@ -4542,6 +4650,7 @@ canvas {
   function showGameOverScreen(score, wave, isNewHigh) {
     document.getElementById("final-score").textContent = "Score: " + score + " | Wave: " + wave;
     document.getElementById("new-highscore-banner").style.display = isNewHigh ? "block" : "none";
+    renderRunStats("game-over-stats");
     showGameOverPanel();
   }
   function showPausePanel() {
@@ -5259,7 +5368,9 @@ canvas {
     const swimRate = 4;
     player.swimT = player.inWater ? Math.min(1, player.swimT + swimRate * G.dt) : Math.max(0, player.swimT - swimRate * G.dt);
     if (player.regen > 0) {
+      const before = player.hp;
       player.hp = Math.min(player.maxHp, player.hp + player.regen * G.dt);
+      recordHealing(player.hp - before);
     }
   }
 
@@ -5299,7 +5410,8 @@ canvas {
         dmg: player.dmg,
         r: 4,
         color,
-        shape: "snowball"
+        shape: "snowball",
+        source: "barrage"
       });
     }
   }
@@ -5327,7 +5439,8 @@ canvas {
       shape: "harpoon",
       pierce: true,
       pierceLeft: player.pierceCount,
-      hitSet: /* @__PURE__ */ new Set()
+      hitSet: /* @__PURE__ */ new Set(),
+      source: "harpoon"
     });
   }
   function fireNova(player) {
@@ -5344,7 +5457,8 @@ canvas {
       life,
       maxLife: life,
       maxRadius: player.novaRadius,
-      hitSet: /* @__PURE__ */ new Set()
+      hitSet: /* @__PURE__ */ new Set(),
+      source: "nova"
     });
   }
   function fireFlamingSnowballs(player, powerDef) {
@@ -5362,7 +5476,8 @@ canvas {
         dmg,
         r: 5,
         color: powerDef.color,
-        shape: "flame"
+        shape: "flame",
+        source: "flamingSnowballs"
       });
     }
   }
@@ -5381,7 +5496,8 @@ canvas {
       life,
       maxLife: life,
       maxRadius: powerDef.radius,
-      hitSet: /* @__PURE__ */ new Set()
+      hitSet: /* @__PURE__ */ new Set(),
+      source: "ringOfFire"
     });
   }
   function fireChainLightning(player, powerDef) {
@@ -5401,7 +5517,7 @@ canvas {
       points.push({ x: current.x, y: current.y });
       hit.add(current);
       spawnParticles(current.x, current.y, powerDef.color, 6, 3);
-      damageEnemy(current, dmg, powerDef.color);
+      damageEnemy(current, dmg, powerDef.color, "thundersquall");
       const from = current;
       let next = null, nBest = powerDef.chainRange;
       for (const e of G.enemies) {
@@ -5416,13 +5532,15 @@ canvas {
     }
     G.lightningArcs.push({ points, color: powerDef.color, age: 0, maxAge: 140 });
   }
-  function damageEnemy(e, dmg, color) {
+  function damageEnemy(e, dmg, color, source) {
     e.hp -= dmg;
+    recordDamageDealt(source, dmg);
     e.flashTimer = 5;
     if (e.hp <= 0) {
       const idx = G.enemies.indexOf(e);
       if (idx === -1) return;
       G.score += e.score;
+      recordKill();
       spawnFloatingText(e.x, e.y, "+" + e.score, "#ffaa00");
       spawnParticles(e.x, e.y, e.color, 12, 3);
       G.screenShake.intensity = Math.min(G.screenShake.intensity + 3, 8);
@@ -5458,7 +5576,7 @@ canvas {
         if (dist(o, e) < e.r + def.orbitHitR) {
           e.orbitHitCd = def.hitInterval;
           spawnParticles(e.x, e.y, def.color, 3, 2);
-          damageEnemy(e, dmg, def.color);
+          damageEnemy(e, dmg, def.color, "glacialOrbit");
           break;
         }
       }
@@ -5500,11 +5618,13 @@ canvas {
         if (dist(p, e) < e.r + p.r) {
           if (p.hitSet && p.hitSet.has(e)) continue;
           e.hp -= p.dmg;
+          recordDamageDealt(p.source, p.dmg);
           e.flashTimer = 5;
           if (p.hitSet) p.hitSet.add(e);
           spawnParticles(e.x, e.y, p.color, 4, 2);
           if (e.hp <= 0) {
             G.score += e.score;
+            recordKill();
             spawnFloatingText(e.x, e.y, "+" + e.score, "#ffaa00");
             spawnParticles(e.x, e.y, e.color, 12, 3);
             G.screenShake.intensity = Math.min(G.screenShake.intensity + 3, 8);
@@ -5831,12 +5951,12 @@ canvas {
     const intro = G.mode === "expedition" && G.currentMap && G.currentMap.introWaves && G.currentMap.introWaves[G.wavesThisLevel];
     const entries = intro ? buildIntroWaveEntries(intro) : getWaveEnemies().map((type) => ({ type, hpBoost: 1 }));
     if (!intro) entries.push(...getEliteInjection(G.currentMap));
-    const groupSize = Math.min(8, 3 + Math.floor(G.wave / 3));
+    const groupSize = Math.min(5, 3 + Math.floor(G.wave / 6));
     let delay = 0;
     G.pendingSpawns = [];
     for (let i = 0; i < entries.length; i++) {
       G.pendingSpawns.push({ type: entries[i].type, hpBoost: entries[i].hpBoost, at: delay / 1e3 });
-      if ((i + 1) % groupSize === 0) delay += 350 + Math.random() * 200;
+      if ((i + 1) % groupSize === 0) delay += 400 + Math.random() * 250 + Math.min(500, G.wave * 20);
     }
     const burstEnd = delay;
     if (G.mode !== "expedition" && shouldSpawnMiniBoss()) {
@@ -5904,6 +6024,7 @@ canvas {
       if (dist(e, player) < e.r + PLAYER_R) {
         if (player.invincible <= 0) {
           player.hp -= e.dmg;
+          recordDamageTaken(e.dmg);
           player.invincible = 1;
           player.flashTimer = 10;
           G.screenShake.intensity = Math.min(G.screenShake.intensity + 5, 12);
@@ -5937,7 +6058,10 @@ canvas {
       }
       if (dist(p, player) < p.r + PLAYER_R) {
         if (player.invincible <= 0) {
-          if (p.dmg) player.hp -= p.dmg;
+          if (p.dmg) {
+            player.hp -= p.dmg;
+            recordDamageTaken(p.dmg);
+          }
           if (p.stun) player.immobilizedTimer = Math.max(player.immobilizedTimer, p.stun);
           player.invincible = 1;
           player.flashTimer = 10;
@@ -6054,7 +6178,9 @@ canvas {
       btn.innerHTML = '<span class="label">' + b.label + '</span><span class="desc">' + b.desc + "</span>";
       btn.onclick = () => {
         cleanupNav();
+        const hpBefore = G.player.hp;
         b.apply(G.player);
+        recordHealing(G.player.hp - hpBefore);
         panel.style.display = "none";
         playLevelUp();
         spawnParticles(G.player.x, G.player.y, "#7dffea", 20, 4);
@@ -6078,9 +6204,10 @@ canvas {
     const panel = document.getElementById("expedition-complete");
     if (panel) {
       const scoreEl = document.getElementById("expedition-final-score");
-      if (scoreEl) scoreEl.textContent = "Final Score: " + G.score;
+      if (scoreEl) scoreEl.textContent = "Final Score: " + G.score + " | Wave: " + G.wave;
       const highEl = document.getElementById("expedition-newhigh");
       if (highEl) highEl.style.display = isNewHigh ? "block" : "none";
+      renderRunStats("expedition-stats");
       panel.style.display = "block";
     }
   }
@@ -6209,6 +6336,7 @@ canvas {
     startWave();
   }
   function endRun() {
+    G.runStats.xpGained = G.xpEarnedThisGame;
     G.xpBank += G.xpEarnedThisGame;
     G.xpEarnedThisGame = 0;
     const isNewHigh = recordRun();
