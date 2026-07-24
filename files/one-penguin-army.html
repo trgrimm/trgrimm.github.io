@@ -2452,21 +2452,44 @@ canvas {
           { id: "corridor", x: 1930, y: 600 },
           { id: "doorCM", x: 2140, y: 600 },
           // corridor <-> medical bay
-          { id: "medical", x: 2370, y: 600 },
-          // Exterior anchor points, one per exterior exit — WITHOUT these, an
-          // enemy spawned out in the open compound has no graph node it can
-          // actually walk straight to (every other node is inside the
-          // building), so it picked whichever interior node was numerically
-          // closest even when a wall sat between them and got stuck sliding
-          // along it forever. These sit right in each exterior doorway gap, so
-          // they're always reachable in a straight line from the open ground
-          // outside, then route inward from there like any other doorway.
-          { id: "extLab", x: 1400, y: 370 },
+          // 'medical' sits at y:650, not the room's true y:600 center, purely
+          // so the medical/extMedical walking lane clears the two beds
+          // (y:520, h:140 → bottom edge 590) with room for the biggest
+          // roster enemy's radius (demon, r:18) — a straight walk at y:600
+          // grazed them. Still squarely inside the room and inside the
+          // corridor doorway's gap either way.
+          { id: "medical", x: 2370, y: 650 },
+          // Exterior anchor points, one per exterior exit — pulled a bit
+          // further out (past each doorway's own wall) than a doorway-center
+          // waypoint would need, purely so the straight lines out to the
+          // perimeter ring below don't clip back through the flanking wall
+          // segments on their way. Still directly in line with their doorway
+          // gap, so the anchor-to-interior connection below is unaffected.
+          { id: "extLab", x: 1400, y: 330 },
           // lab's north exterior exit
-          { id: "extMedical", x: 2600, y: 600 },
-          // medical bay's east exterior exit
-          { id: "extSecurity", x: 850, y: 1290 }
-          // security office's south exterior exit
+          { id: "extMedical", x: 2650, y: 650 },
+          // medical bay's east exterior exit (see 'medical' above re: y:650)
+          // extSecurity sits further south (y:1370, not just past its own
+          // wall at y:1290) so its spoke out to ringSE doesn't graze past
+          // Containment's south wall corner on the way — that wall's solid
+          // the whole level (it's the one room with no exterior door at all).
+          { id: "extSecurity", x: 850, y: 1370 },
+          // A perimeter ring well outside the building's full footprint
+          // (x:620-2600, y:370-1330) — without this, only compound positions
+          // roughly in line with one of the three doorways above had any
+          // reachable graph node at all; anywhere else (e.g. due east or south
+          // of the fully-sealed Containment cell, which has no exterior door
+          // of its own) had no visible waypoint, fell back to whichever
+          // interior node was numerically closest regardless of a wall being
+          // in the way, and got stuck sliding along it. Each ring edge and
+          // each ring-to-anchor spoke below is a straight line that stays
+          // entirely outside the building's bounding box, so it's guaranteed
+          // clear — any compound position can reach ITS nearest ring corner
+          // directly, then walk the ring around to the correct doorway.
+          { id: "ringNW", x: 520, y: 270 },
+          { id: "ringNE", x: 2700, y: 270 },
+          { id: "ringSE", x: 2700, y: 1430 },
+          { id: "ringSW", x: 520, y: 1430 }
         ],
         waypointEdges: [
           ["containment", "doorCL"],
@@ -2481,7 +2504,17 @@ canvas {
           ["doorCM", "medical"],
           ["extLab", "lab"],
           ["extMedical", "medical"],
-          ["extSecurity", "security"]
+          ["extSecurity", "security"],
+          ["ringNW", "ringNE"],
+          ["ringNE", "ringSE"],
+          ["ringSE", "ringSW"],
+          ["ringSW", "ringNW"],
+          ["extLab", "ringNW"],
+          ["extLab", "ringNE"],
+          ["extMedical", "ringNE"],
+          ["extMedical", "ringSE"],
+          ["extSecurity", "ringSW"],
+          ["extSecurity", "ringSE"]
         ],
         obstacles: [
           // --- Containment (start, sealed room) ---
@@ -2558,8 +2591,8 @@ canvas {
           { type: "bench", x: 2370, y: 750, w: 130, h: 44 },
           // monitor station
           // --- Open compound (outside the building) ---
-          { type: "crate", x: 1400, y: 280, w: 60, h: 60 },
-          // cover just outside the lab's north exit
+          { type: "crate", x: 1150, y: 200, w: 60, h: 60 },
+          // cover just outside the lab's north exit (kept clear of the extLab/ring pathfinding lane — see enemies.js)
           { type: "rubble", x: 850, y: 1420, r: 42 },
           // cover just outside the security office's south exit
           { type: "rubble", x: 2740, y: 950, r: 44 }
