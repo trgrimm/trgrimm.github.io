@@ -144,7 +144,7 @@ canvas {
 }
 #upgrade-panel, #pause-panel, #weapon-select-panel, #history-panel,
 #mode-select-panel, #map-select-panel, #boon-panel, #expedition-complete, #penguin-panel,
-#compendium-panel, #controls-panel {
+#artifact-panel, #artifact-reveal-panel, #compendium-panel, #controls-panel {
   position: fixed;
   top: 50%; left: 50%;
   transform: translate(-50%, -50%);
@@ -295,7 +295,7 @@ canvas {
    BEFORE #weapon-select-panel in the markup, so without this it would end up
    BEHIND it when opened mid-flow via the "Change Penguin" button. Below
    #shop-panel's z-index:100, above everything else. */
-#penguin-panel {
+#penguin-panel, #artifact-panel {
   z-index: 60;
 }
 
@@ -314,20 +314,20 @@ canvas {
 }
 #upgrade-panel h2, #pause-panel h2, #weapon-select-panel h2, #history-panel h2,
 #mode-select-panel h2, #map-select-panel h2, #boon-panel h2, #expedition-complete h1, #penguin-panel h2,
-#controls-panel h2 {
+#artifact-panel h2, #controls-panel h2 {
   color: #ff3366;
   font-size: 28px;
   margin-bottom: 16px;
   text-shadow: 0 0 10px #ff3366;
 }
-#upgrade-choices, #weapon-choices, #mode-choices, #map-choices, #boon-choices, #penguin-choices {
+#upgrade-choices, #weapon-choices, #mode-choices, #map-choices, #boon-choices, #penguin-choices, #artifact-choices {
   display: flex;
   gap: 16px;
   justify-content: center;
   flex-wrap: wrap;
 }
 #upgrade-choices button, #weapon-choices button,
-#mode-choices button, #map-choices button, #boon-choices button, #penguin-choices button {
+#mode-choices button, #map-choices button, #boon-choices button, #penguin-choices button, #artifact-choices button {
   padding: 14px 20px;
   font-size: 14px;
   font-family: 'Courier New', monospace;
@@ -339,13 +339,13 @@ canvas {
   transition: all 0.15s;
   min-width: 140px;
 }
-#weapon-choices button, #mode-choices button, #map-choices button, #penguin-choices button {
+#weapon-choices button, #mode-choices button, #map-choices button, #penguin-choices button, #artifact-choices button {
   max-width: 220px;
 }
 /* Mouse hover: a lighter cue that the pointer is over this option. */
 #upgrade-choices button:hover, #weapon-choices button:hover,
 #mode-choices button:hover, #map-choices button:hover, #boon-choices button:hover,
-#penguin-choices button:hover {
+#penguin-choices button:hover, #artifact-choices button:hover {
   outline: none;
   border-color: #ff3366;
   background: rgba(50, 20, 40, 0.9);
@@ -366,15 +366,15 @@ canvas {
   transform: translateY(-2px) scale(1.03);
   box-shadow: 0 0 0 2px rgba(255, 221, 0, 0.9), 0 0 18px 4px rgba(255, 221, 0, 0.55);
 }
-/* Gold is reserved for the equipped penguin. Keyboard focus remains visible
-   without making an unselected species look equipped. */
-#penguin-choices button:focus-visible {
+/* Gold is reserved for the equipped penguin/artifact. Keyboard focus remains
+   visible without making an unselected option look equipped. */
+#penguin-choices button:focus-visible, #artifact-choices button:focus-visible {
   outline: 2px solid #ff3366;
   outline-offset: 2px;
 }
 #upgrade-choices button .label, #weapon-choices button .label,
 #mode-choices button .label, #map-choices button .label, #boon-choices button .label,
-#penguin-choices button .label {
+#penguin-choices button .label, #artifact-choices button .label {
   font-weight: bold;
   color: #ff3366;
   display: block;
@@ -382,7 +382,7 @@ canvas {
 }
 #upgrade-choices button .desc, #weapon-choices button .desc,
 #mode-choices button .desc, #map-choices button .desc, #boon-choices button .desc,
-#penguin-choices button .desc {
+#penguin-choices button .desc, #artifact-choices button .desc {
   font-size: 12px;
   color: #999;
 }
@@ -426,6 +426,78 @@ canvas {
   border-color: #555;
   background: rgba(30, 30, 50, 0.9);
   color: #ddd;
+}
+#artifact-choices button.is-selected {
+  border-color: #ffdd00;
+  background: rgba(60, 50, 10, 0.9);
+  box-shadow: 0 0 0 2px rgba(255, 221, 0, 0.9), 0 0 14px 3px rgba(255, 221, 0, 0.45);
+}
+#artifact-choices button.is-selected .label {
+  color: #ffdd00;
+}
+#artifact-choices button.is-locked .label {
+  color: #888;
+}
+#artifact-choices button .desc {
+  display: block;
+  margin-top: 4px;
+}
+#artifact-choices button .cost {
+  display: block;
+  margin-top: 6px;
+  font-size: 12px;
+  font-weight: bold;
+  color: #ffdd00;
+}
+#artifact-choices button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+#artifact-choices button:disabled:hover {
+  transform: none;
+  border-color: #555;
+  background: rgba(30, 30, 50, 0.9);
+  color: #ddd;
+}
+/* Artifact-found reveal popup (on pickup, like the level-up panel but a
+   celebratory gold treatment). */
+#artifact-reveal-panel {
+  border-color: #ffdd00;
+  box-shadow: 0 0 24px 4px rgba(255, 221, 0, 0.35);
+  max-width: 380px;
+}
+#artifact-reveal-panel h2 {
+  color: #ffdd00 !important;
+  text-shadow: 0 0 12px #ffdd00 !important;
+  font-size: 24px !important;
+}
+#artifact-reveal-card {
+  background: rgba(60, 50, 10, 0.55);
+  border: 1px solid rgba(255, 221, 0, 0.7);
+  border-radius: 8px;
+  padding: 16px;
+  margin: 4px auto 18px;
+}
+#artifact-reveal-name {
+  font-size: 22px;
+  font-weight: bold;
+  color: #ffdd00;
+  margin-bottom: 10px;
+}
+#artifact-reveal-desc {
+  font-size: 13px;
+  color: #cfc6a8;
+  font-style: italic;
+  margin-bottom: 8px;
+}
+#artifact-reveal-mechanic {
+  font-size: 14px;
+  color: #fff;
+}
+#artifact-reveal-replace-note {
+  margin-top: 12px;
+  font-size: 12px;
+  color: #ffb84d;
 }
 #game-over {
   position: absolute;
@@ -689,6 +761,7 @@ canvas {
   <button id="shop-button" class="menu-btn menu-btn-secondary">🏪 SHOP</button>
   <button id="history-button" class="menu-btn menu-btn-secondary">📜 HISTORY</button>
   <button id="penguin-button" class="menu-btn menu-btn-secondary">🐧 PENGUIN</button>
+  <button id="artifact-button" class="menu-btn menu-btn-secondary">🏺 ARTIFACT</button>
   <button id="compendium-button" class="menu-btn menu-btn-secondary">📖 JOURNAL</button>
 </div>
 
@@ -697,6 +770,13 @@ canvas {
   <p style="color:#aaa; margin-bottom:16px;">You have <span id="penguin-xp-display" style="color:#ffdd00; font-weight:bold">0</span> XP</p>
   <div id="penguin-choices"></div>
   <button id="penguin-close-btn" class="menu-btn menu-btn-secondary" style="margin-top:16px;">Close</button>
+</div>
+
+<div id="artifact-panel" style="display:none;">
+  <h2>Choose Your Artifact</h2>
+  <p style="color:#aaa; margin-bottom:16px;">Exactly one can be equipped at a time — found via rare in-run pickups, and locked in for the whole run.</p>
+  <div id="artifact-choices"></div>
+  <button id="artifact-close-btn" class="menu-btn menu-btn-secondary" style="margin-top:16px;">Close</button>
 </div>
 
 <div id="history-panel" style="display:none;">
@@ -729,6 +809,7 @@ canvas {
   <h2>Choose Your Weapon</h2>
   <div id="weapon-choices"></div>
   <button id="change-penguin-button" class="menu-btn menu-btn-secondary" style="margin-top:16px;">🐧 Change Penguin</button>
+  <button id="change-artifact-button" class="menu-btn menu-btn-secondary" style="margin-top:8px;">🏺 Change Artifact</button>
   <button id="weapon-back-button" class="menu-btn menu-btn-secondary" style="margin-top:8px;">◀ Back</button>
 </div>
 
@@ -757,6 +838,18 @@ canvas {
 <div id="upgrade-panel" style="display:none;">
   <h2>Level Up! Choose an upgrade:</h2>
   <div id="upgrade-choices"></div>
+</div>
+
+<div id="artifact-reveal-panel" style="display:none;">
+  <h2 id="artifact-reveal-title">✨ Artifact Found! ✨</h2>
+  <div id="artifact-reveal-card">
+    <div id="artifact-reveal-name">Artifact</div>
+    <div id="artifact-reveal-desc"></div>
+    <div id="artifact-reveal-mechanic"></div>
+    <div id="artifact-reveal-replace-note" style="display:none;"></div>
+  </div>
+  <button id="artifact-reveal-equip" class="menu-btn">⚡ Equip Now</button>
+  <button id="artifact-reveal-later" class="menu-btn menu-btn-secondary" style="margin-top:10px;">Not Now</button>
 </div>
 
 <div id="pause-panel" style="display:none;">
@@ -812,6 +905,7 @@ canvas {
   var SPECIAL_POWERUP_MIN_WAVE = 6;
   var SPECIAL_POWERUP_MIN_LEVEL = 5;
   var SPECIAL_POWERUP_CHANCE = 0.1725;
+  var ARTIFACT_DROP_CHANCE = 0.04;
   var PROJECTILE_RANGE = Math.round(W * 2 / 3);
   var ENEMY_FIRE_RANGE = Math.round(W * 0.36);
   var ENEMY_PROJECTILE_RANGE = Math.round(W * 0.45);
@@ -1321,8 +1415,8 @@ canvas {
   var EMPEROR_SUMMON_COUNT = 2;
   var CHINSTRAP_ABILITY_COOLDOWN = 1e4;
   var CHINSTRAP_CHARGE_DIST = 90;
-  var CHINSTRAP_CHARGE_RADIUS = 70;
-  var CHINSTRAP_CHARGE_DMG = 20;
+  var CHINSTRAP_CHARGE_RADIUS = 80;
+  var CHINSTRAP_CHARGE_DMG = 23;
   var CHINSTRAP_CHARGE_INVINCIBLE = 0.4;
   var CHINSTRAP_CHARGE_DURATION = 0.18;
   var GENTOO_SWIM_MULT = 1.55;
@@ -1586,6 +1680,84 @@ canvas {
     return PENGUIN_TYPES.find((p) => p.key === key) || DEFAULT_PENGUIN;
   }
 
+  // js/artifacts.js
+  var ARTIFACT_TYPES = [
+    {
+      key: "iceKnuckles",
+      name: "\u{1F94A} Ice Knuckles",
+      desc: "Brass knuckles, but colder. Enemies that touch you regret it.",
+      mechanic: "Enemies that hit you take 12 damage back.",
+      contactDmg: 12
+    },
+    {
+      key: "emberBrand",
+      name: "\u{1F525} Ember Brand",
+      desc: "A smoldering brand pressed into anything that gets close.",
+      mechanic: "Enemies that hit you burn for 5 damage/sec over 3 seconds.",
+      burnDps: 5,
+      burnDuration: 3
+    },
+    {
+      key: "frostbiteCharm",
+      name: "\u2744\uFE0F Frostbite Charm",
+      desc: "A shard of black ice that never quite stops radiating cold.",
+      mechanic: "25% chance on weapon hit to slow the enemy by 50% for 1.5s.",
+      procChance: 0.25,
+      slowMult: 0.5,
+      slowDuration: 1.5
+    },
+    {
+      key: "staticCoil",
+      name: "\u26A1 Static Coil",
+      desc: "Coiled wire that never quite discharges all its stored crackle.",
+      mechanic: "20% chance on weapon hit to arc 50% of that damage to a nearby enemy.",
+      procChance: 0.2,
+      dmgFraction: 0.5,
+      range: 150
+    },
+    {
+      key: "blubberPlating",
+      name: "\u{1F6E1}\uFE0F Blubber Plating",
+      desc: "A thick, quilted layer of blubber worn like armor.",
+      mechanic: "-20% damage taken from all sources.",
+      reduction: 0.2
+    },
+    {
+      key: "frozenWard",
+      name: "\u{1F4A0} Frozen Ward",
+      desc: "A sliver of enchanted ice that lingers a beat longer than it should.",
+      mechanic: "Post-hit invincibility extended to 1.6s (from 1.0s).",
+      invincibleDuration: 1.6
+    },
+    {
+      key: "crackedIcebergShard",
+      name: "\u{1FA78} Cracked Iceberg Shard",
+      desc: "Jagged and unstable \u2014 powerful to hold, dangerous to keep.",
+      mechanic: "+8 damage, -20 max HP.",
+      dmgBonus: 8,
+      maxHpPenalty: 20
+    },
+    {
+      key: "warHorn",
+      name: "\u{1F4E3} War Horn",
+      desc: "An Emperor's horn \u2014 rally allies to your side, and the longer they hold the line, the harder they hit.",
+      mechanic: "Grants Emperor's summon ability (to any penguin). As Emperor, allies also deal +2%/sec more damage over time, up to +100%.",
+      scalePerSec: 0.02,
+      scaleCap: 1
+    },
+    {
+      key: "stolenRestraintNet",
+      name: "\u{1F945} Stolen Restraint Net",
+      desc: "Turn the facility's own restraints against its staff.",
+      mechanic: "Enemies that hit you are immobilized for 1s. Research Facility only.",
+      stunDuration: 1,
+      mapExclusive: "facility"
+    }
+  ];
+  function getArtifactType(key) {
+    return ARTIFACT_TYPES.find((a) => a.key === key) || null;
+  }
+
   // js/state.js
   var G = {
     state: "menu",
@@ -1642,6 +1814,15 @@ canvas {
     // species choice, persisted across sessions
     penguinUnlocks: defaultPenguinUnlocks(),
     // { [speciesKey]: boolean } — which species have been bought with XP
+    // Permanent artifacts (see js/artifacts.js) — unlocked via a rare in-run
+    // pickup (js/powerups.js's "Artifact Cache"), not bought with XP. Exactly
+    // one may be equipped at a time; `equippedArtifact` is null for "none".
+    // Both persisted across sessions, same pattern as the penguin fields above.
+    equippedArtifact: null,
+    artifactUnlocks: defaultArtifactUnlocks(),
+    // { [artifactKey]: boolean } — which artifacts have been found
+    pendingArtifactReveal: null,
+    // set by the Artifact Cache's apply(), read once by powerups.js for a "Found: X" callout
     // Game mode + active map. `mode` is 'endless' (survive on one chosen map)
     // or 'expedition' (progress through a sequence of maps). `currentMap` is
     // the active map def (null on the menu → render falls back to the default
@@ -1716,8 +1897,8 @@ canvas {
       // key into POWER_WEAPON_DEFS while a rare temporary weapon-override powerup is active
       gemPickupRadius: GEM_PICKUP_BASE,
       // magnet radius: gems within this drift toward the player (see gems.js)
-      abilityCooldown: 0,
-      // ms remaining until the equipped species' active ability (if any) can fire again
+      abilityCooldowns: {},
+      // ms remaining per ability key ('emperor'/'chinstrap') — supports a species ability AND a War-Horn-granted one at once (see abilities.js)
       allyPowerMult: 1,
       // Emperor: multiplies ally HP (at summon) and damage (live) — see abilities.js
       allyMaxCountBonus: 0,
@@ -1734,6 +1915,11 @@ canvas {
       const level = G.permanentUpgrades[upg.key] || 0;
       const enabled = G.permanentUpgradesEnabled[upg.key] !== false;
       if (level > 0 && enabled) upg.effect(player, level, G.weapon);
+    }
+    if (G.equippedArtifact === "crackedIcebergShard") {
+      const a = getArtifactType("crackedIcebergShard");
+      player.dmg += a.dmgBonus;
+      player.maxHp = Math.max(1, player.maxHp - a.maxHpPenalty);
     }
     player.hp = player.maxHp;
     return player;
@@ -1757,6 +1943,11 @@ canvas {
   function defaultPenguinUnlocks() {
     const obj = {};
     for (const p of PENGUIN_TYPES) obj[p.key] = p.cost === 0;
+    return obj;
+  }
+  function defaultArtifactUnlocks() {
+    const obj = {};
+    for (const a of ARTIFACT_TYPES) obj[a.key] = false;
     return obj;
   }
   var MAX_RUN_HISTORY = 15;
@@ -1794,9 +1985,22 @@ canvas {
       }
       const savedAutoAvoid = localStorage.getItem("penguin_autoAvoid");
       if (savedAutoAvoid !== null) G.autoAvoid = savedAutoAvoid === "1";
+      const savedArtifactUnlocks = localStorage.getItem("penguin_artifactUnlocks");
+      if (savedArtifactUnlocks) {
+        const parsed = JSON.parse(savedArtifactUnlocks);
+        for (const key in G.artifactUnlocks) {
+          if (typeof parsed[key] === "boolean") G.artifactUnlocks[key] = parsed[key];
+        }
+      }
+      const savedEquippedArtifact = localStorage.getItem("penguin_equippedArtifact");
+      if (savedEquippedArtifact) G.equippedArtifact = savedEquippedArtifact;
       if (!G.penguinUnlocks[G.penguinType]) {
         G.penguinType = DEFAULT_PENGUIN.key;
         savePenguinType();
+      }
+      if (G.equippedArtifact && !G.artifactUnlocks[G.equippedArtifact]) {
+        G.equippedArtifact = null;
+        saveEquippedArtifact();
       }
     } catch (e) {
     }
@@ -1823,6 +2027,18 @@ canvas {
     } catch (e) {
     }
   }
+  function saveArtifactUnlocks() {
+    try {
+      localStorage.setItem("penguin_artifactUnlocks", JSON.stringify(G.artifactUnlocks));
+    } catch (e) {
+    }
+  }
+  function saveEquippedArtifact() {
+    try {
+      localStorage.setItem("penguin_equippedArtifact", G.equippedArtifact || "");
+    } catch (e) {
+    }
+  }
   function saveAutoAvoidPref() {
     try {
       localStorage.setItem("penguin_autoAvoid", G.autoAvoid ? "1" : "0");
@@ -1840,6 +2056,8 @@ canvas {
       G.penguinType = DEFAULT_PENGUIN.key;
       savePenguinType();
     }
+    G.artifactUnlocks = defaultArtifactUnlocks();
+    G.equippedArtifact = null;
     try {
       localStorage.removeItem("penguin_xpBank");
       localStorage.removeItem("penguin_permanentUpgrades");
@@ -1847,6 +2065,8 @@ canvas {
       localStorage.removeItem("penguin_highScore");
       localStorage.removeItem("penguin_runHistory");
       localStorage.removeItem("penguin_unlocks");
+      localStorage.removeItem("penguin_artifactUnlocks");
+      localStorage.removeItem("penguin_equippedArtifact");
     } catch (e) {
     }
   }
@@ -2139,6 +2359,16 @@ canvas {
       return Math.hypot(x - ob.x, y - ob.y) < ob.r + radius;
     });
   }
+  function circleHitsRectObstacle(x, y, radius) {
+    for (const ob of G.obstacles) {
+      if (!isRectObstacle(ob) || isDoorOpen(ob)) continue;
+      const hw = ob.w / 2, hh = ob.h / 2;
+      if (Math.abs(x - ob.x) > hw + radius || Math.abs(y - ob.y) > hh + radius) continue;
+      const { cx, cy } = closestPointOnRect(x, y, ob);
+      if (Math.hypot(x - cx, y - cy) < radius) return true;
+    }
+    return false;
+  }
   function pushOutOfObstacles(x, y, radius) {
     let px = x, py = y;
     for (let pass = 0; pass < 3; pass++) {
@@ -2264,7 +2494,601 @@ canvas {
     return true;
   }
 
+  // js/upgrades.js
+  function rollRarity() {
+    let r = Math.random();
+    for (const rarity of RARITY_TABLE) {
+      r -= rarity.prob;
+      if (r <= 0) return rarity;
+    }
+    return RARITY_TABLE[0];
+  }
+  function applicableDefs() {
+    const activeKeys = getActiveAbilities().map((a) => a.key);
+    return UPGRADE_DEFS.filter((d) => (d.weapons === "all" || d.weapons.includes(G.weapon)) && (!d.species || d.species.some((s) => activeKeys.includes(s))) && !(d.isMaxed && d.isMaxed(G.player)));
+  }
+  function pickDefs(n) {
+    const pool = applicableDefs();
+    const chosen = [];
+    const remaining = [...pool];
+    while (chosen.length < n && remaining.length > 0) {
+      let total = 0;
+      for (const d of remaining) total += d.weight;
+      let r = Math.random() * total;
+      let idx = 0;
+      for (let i = 0; i < remaining.length; i++) {
+        r -= remaining[i].weight;
+        if (r <= 0) {
+          idx = i;
+          break;
+        }
+      }
+      chosen.push(remaining.splice(idx, 1)[0]);
+    }
+    return chosen;
+  }
+  function getUpgradeChoices() {
+    return pickDefs(3).map((def) => {
+      const rarity = rollRarity();
+      const mag = def.mags[rarity.key];
+      return {
+        def,
+        rarity,
+        mag,
+        label: def.icon + " " + def.name,
+        desc: def.desc(mag)
+      };
+    });
+  }
+  function showUpgradeScreen() {
+    const upgrades = getUpgradeChoices();
+    if (upgrades.length === 0) return;
+    G.state = "upgrading";
+    const panel = document.getElementById("upgrade-panel");
+    panel.style.display = "block";
+    const choices = document.getElementById("upgrade-choices");
+    choices.innerHTML = "";
+    const buttons = [];
+    let cleanupNav = () => {
+    };
+    upgrades.forEach((u) => {
+      const btn = document.createElement("button");
+      btn.style.borderColor = u.rarity.color;
+      btn.innerHTML = '<span class="rarity-tag" style="color:' + u.rarity.color + '">' + u.rarity.label + '</span><span class="label">' + u.label + '</span><span class="desc">' + u.desc + "</span>";
+      btn.onclick = () => {
+        cleanupNav();
+        const hpBefore = G.player.hp;
+        u.def.apply(G.player, u.mag);
+        recordHealing(G.player.hp - hpBefore);
+        panel.style.display = "none";
+        G.state = "playing";
+        spawnParticles(G.player.x, G.player.y, u.rarity.color, 20, 4);
+        spawnFloatingText(G.player.x, G.player.y - 30, u.label, u.rarity.color);
+      };
+      choices.appendChild(btn);
+      buttons.push(btn);
+    });
+    cleanupNav = enableArrowNav(buttons);
+  }
+
+  // js/gems.js
+  function spawnGem(x, y, value) {
+    const pos = pushOutOfObstacles(x, y, 8);
+    G.gems.push({ x: pos.x, y: pos.y, value: value || 1, r: 8, bobOffset: Math.random() * Math.PI * 2 });
+  }
+  function updateGems(dt) {
+    const player = G.player;
+    for (let i = G.gems.length - 1; i >= 0; i--) {
+      const g = G.gems[i];
+      g.bobOffset += dt * 4;
+      const d = dist(g, player);
+      if (d < player.gemPickupRadius) g.attracting = true;
+      if (g.attracting) {
+        const angle = Math.atan2(player.y - g.y, player.x - g.x);
+        const closeness = 1 - Math.min(1, d / player.gemPickupRadius);
+        const speed = 5 + closeness * 9;
+        g.x += Math.cos(angle) * speed * dt * 60;
+        g.y += Math.sin(angle) * speed * dt * 60;
+      }
+      if (d < g.r + PLAYER_R) {
+        G.xpEarnedThisGame += g.value;
+        player.xp += g.value;
+        spawnParticles(g.x, g.y, "#ffdd00", 6, 2);
+        spawnFloatingText(g.x, g.y, "+" + g.value + " XP", "#ffdd00");
+        playGem();
+        G.gems.splice(i, 1);
+        const needed = XP_PER_LEVEL * Math.pow(XP_LEVEL_GROWTH, player.level - 1);
+        if (player.xp >= needed) {
+          player.xp -= needed;
+          player.level++;
+          player.maxHp += 25;
+          player.hp = Math.min(player.hp, player.maxHp);
+          playLevelUp();
+          showUpgradeScreen();
+        }
+      }
+    }
+  }
+
+  // js/abilities.js
+  function clamp(v, min, max) {
+    return Math.max(min, Math.min(max, v));
+  }
+  function killEnemy(e, index) {
+    G.score += e.score;
+    recordKill();
+    spawnFloatingText(e.x, e.y, "+" + e.score, "#ffaa00");
+    spawnParticles(e.x, e.y, e.color, 12, 3);
+    G.screenShake.intensity = Math.min(G.screenShake.intensity + 3, 8);
+    playKill();
+    const gemVal = Math.floor(e.score / 10) + (Math.random() < 0.3 ? 1 : 0);
+    spawnGem(e.x, e.y, gemVal);
+    G.enemies.splice(index, 1);
+  }
+  function summonAlly(player) {
+    const angle = Math.random() * Math.PI * 2;
+    const hp = ALLY_HP * (player.allyPowerMult || 1);
+    G.allies.push({
+      x: player.x + Math.cos(angle) * 30,
+      y: player.y + Math.sin(angle) * 30,
+      hp,
+      maxHp: hp,
+      facing: 0,
+      attackCooldown: 0,
+      hitCooldown: 0,
+      age: 0
+      // seconds since summon — War Horn scales this ally's damage with it
+    });
+    spawnParticles(player.x, player.y, "#f0c020", 10, 2.5);
+  }
+  function triggerEmperor(player) {
+    const bonus = player.allyMaxCountBonus || 0;
+    const maxCount = ALLY_MAX_COUNT + bonus;
+    if (G.allies.length >= maxCount) return false;
+    const count = Math.min(EMPEROR_SUMMON_COUNT + bonus, maxCount - G.allies.length);
+    for (let i = 0; i < count; i++) summonAlly(player);
+    return true;
+  }
+  function resolveChargeLanding(player) {
+    for (let i = G.enemies.length - 1; i >= 0; i--) {
+      const e = G.enemies[i];
+      if (dist(e, player) < CHINSTRAP_CHARGE_RADIUS + e.r) {
+        const dmg = CHINSTRAP_CHARGE_DMG * (player.chinstrapDmgMult || 1);
+        e.hp -= dmg;
+        recordDamageDealt("chinstrapCharge", dmg);
+        e.flashTimer = 5;
+        if (e.hp <= 0) killEnemy(e, i);
+      }
+    }
+    G.abilityPulses.push({ x: player.x, y: player.y, age: 0, maxAge: 450 });
+  }
+  function triggerChinstrap(player) {
+    const fromX = player.x, fromY = player.y;
+    let toX = clamp(player.x + Math.cos(player.facing) * CHINSTRAP_CHARGE_DIST, PLAYER_R, WORLD_W - PLAYER_R);
+    let toY = clamp(player.y + Math.sin(player.facing) * CHINSTRAP_CHARGE_DIST, PLAYER_R, WORLD_H - PLAYER_R);
+    const probe = { x: toX, y: toY };
+    resolveObstacleCollision(probe, PLAYER_R);
+    toX = clamp(probe.x, PLAYER_R, WORLD_W - PLAYER_R);
+    toY = clamp(probe.y, PLAYER_R, WORLD_H - PLAYER_R);
+    player.chargeState = { fromX, fromY, toX, toY, elapsed: 0, duration: CHINSTRAP_CHARGE_DURATION };
+    player.invincible = Math.max(player.invincible, CHINSTRAP_CHARGE_INVINCIBLE);
+    return true;
+  }
+  function getActiveAbilities() {
+    const species = getPenguinType(G.penguinType);
+    const list = [];
+    if (species.triggerable) list.push({ key: species.key, icon: species.icon || "\u2728", title: species.ability });
+    if (G.equippedArtifact === "warHorn" && species.key !== "emperor") {
+      list.push({ key: "emperor", icon: "\u{1F4E3}", title: "Command (granted by War Horn): summon ally penguins to fight beside you." });
+    }
+    return list;
+  }
+  function getActiveAbility() {
+    return getActiveAbilities()[0] || null;
+  }
+  function getAbilityCooldown(key) {
+    const cds = G.player && G.player.abilityCooldowns;
+    return cds && cds[key] || 0;
+  }
+  function triggerAbility(key) {
+    if (G.state !== "playing") return;
+    const player = G.player;
+    if (!getActiveAbilities().some((a) => a.key === key)) return;
+    const cds = player.abilityCooldowns || (player.abilityCooldowns = {});
+    if ((cds[key] || 0) > 0) return;
+    let fired = false;
+    if (key === "emperor") fired = triggerEmperor(player);
+    else if (key === "chinstrap") fired = triggerChinstrap(player);
+    if (fired) {
+      cds[key] = key === "emperor" ? EMPEROR_ABILITY_COOLDOWN : CHINSTRAP_ABILITY_COOLDOWN * (player.chinstrapCooldownMult || 1);
+    }
+  }
+  function triggerSpeciesAbility() {
+    const first = getActiveAbilities()[0];
+    if (first) triggerAbility(first.key);
+  }
+  function updateChinstrapCharge(dt) {
+    const player = G.player;
+    const cs = player.chargeState;
+    if (!cs) return;
+    cs.elapsed += dt;
+    const t = Math.min(1, cs.elapsed / cs.duration);
+    const eased = 1 - Math.pow(1 - t, 2);
+    player.x = cs.fromX + (cs.toX - cs.fromX) * eased;
+    player.y = cs.fromY + (cs.toY - cs.fromY) * eased;
+    G.chargeTrail.push({ x: player.x, y: player.y, age: 0, maxAge: 220 });
+    if (t >= 1) {
+      resolveChargeLanding(player);
+      player.chargeState = null;
+    }
+  }
+  function updateAllies(dt) {
+    for (let i = G.allies.length - 1; i >= 0; i--) {
+      const a = G.allies[i];
+      let nearest = null, nearestDist = Infinity;
+      for (const e of G.enemies) {
+        const d = dist(a, e);
+        if (d < nearestDist) {
+          nearestDist = d;
+          nearest = e;
+        }
+      }
+      if (a.attackCooldown > 0) a.attackCooldown -= dt * 1e3;
+      if (a.hitCooldown > 0) a.hitCooldown -= dt * 1e3;
+      a.age += dt;
+      if (nearest) {
+        const angle = Math.atan2(nearest.y - a.y, nearest.x - a.x);
+        a.facing = angle;
+        const touching = nearestDist < ALLY_R + nearest.r;
+        if (!touching) {
+          a.x += Math.cos(angle) * ALLY_SPEED * dt * 60;
+          a.y += Math.sin(angle) * ALLY_SPEED * dt * 60;
+        } else {
+          if (a.attackCooldown <= 0) {
+            const warHorn = G.equippedArtifact === "warHorn" && G.penguinType === "emperor" && getArtifactType("warHorn");
+            const warHornMult = warHorn ? 1 + Math.min(warHorn.scaleCap, a.age * warHorn.scalePerSec) : 1;
+            const dmg = ALLY_DMG * (G.player.allyPowerMult || 1) * warHornMult;
+            nearest.hp -= dmg;
+            recordDamageDealt("allies", dmg);
+            nearest.flashTimer = 5;
+            a.attackCooldown = ALLY_ATTACK_INTERVAL;
+            if (nearest.hp <= 0) {
+              const idx = G.enemies.indexOf(nearest);
+              if (idx !== -1) killEnemy(nearest, idx);
+            }
+          }
+          if (a.hitCooldown <= 0) {
+            a.hp -= nearest.dmg;
+            a.hitCooldown = ALLY_HIT_COOLDOWN;
+          }
+        }
+      }
+      if (a.hp <= 0) {
+        spawnParticles(a.x, a.y, "#f0c020", 8, 2);
+        G.allies.splice(i, 1);
+      }
+    }
+    for (let i = G.abilityPulses.length - 1; i >= 0; i--) {
+      const p = G.abilityPulses[i];
+      p.age += dt * 1e3;
+      if (p.age > p.maxAge) G.abilityPulses.splice(i, 1);
+    }
+    for (let i = G.chargeTrail.length - 1; i >= 0; i--) {
+      const t = G.chargeTrail[i];
+      t.age += dt * 1e3;
+      if (t.age > t.maxAge) G.chargeTrail.splice(i, 1);
+    }
+  }
+
+  // js/ui.js
+  var ABILITY_DAMAGE_LABELS = {
+    allies: "\u{1F427} Ally Penguins",
+    chinstrapCharge: "\u{1F4A5} Fearless Charge"
+  };
+  function damageSourceLabel(key) {
+    if (WEAPON_TYPES[key]) return WEAPON_TYPES[key].name;
+    if (POWER_WEAPON_DEFS[key]) return POWER_WEAPON_DEFS[key].label;
+    return ABILITY_DAMAGE_LABELS[key] || key;
+  }
+  function runStatRow(label, value, isSub) {
+    return '<div class="run-stats-row' + (isSub ? " run-stats-row-sub" : "") + '"><span class="run-stats-label">' + label + '</span><span class="run-stats-value">' + value + "</span></div>";
+  }
+  function renderRunStats(containerId) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    const stats = G.runStats;
+    const rows = [];
+    const totalDamage = Object.values(stats.damageByWeapon).reduce((a, b) => a + b, 0);
+    if (totalDamage > 0) {
+      rows.push(runStatRow("\u2694\uFE0F Total Damage Dealt", Math.round(totalDamage).toLocaleString()));
+      for (const [source, amount] of Object.entries(stats.damageByWeapon)) {
+        if (amount > 0) rows.push(runStatRow(damageSourceLabel(source), Math.round(amount).toLocaleString(), true));
+      }
+    }
+    if (stats.damageTaken > 0) rows.push(runStatRow("\u{1F494} Damage Taken", Math.round(stats.damageTaken).toLocaleString()));
+    if (stats.healed > 0) rows.push(runStatRow("\u2764\uFE0F Health Healed", Math.round(stats.healed).toLocaleString()));
+    if (stats.xpGained > 0) rows.push(runStatRow("\u2728 XP Gained", Math.round(stats.xpGained).toLocaleString()));
+    if (stats.kills > 0) rows.push(runStatRow("\u{1F480} Enemies Defeated", stats.kills.toLocaleString()));
+    container.innerHTML = rows.join("");
+  }
+  function hideOverlay() {
+    document.getElementById("overlay").classList.remove("active");
+  }
+  function showOverlay() {
+    document.getElementById("overlay").classList.add("active");
+  }
+  function hideUpgradePanel() {
+    document.getElementById("upgrade-panel").style.display = "none";
+  }
+  function hideGameOverPanel() {
+    document.getElementById("game-over").style.display = "none";
+  }
+  function showGameOverPanel() {
+    document.getElementById("game-over").style.display = "block";
+  }
+  function showGameOverScreen(score, wave, isNewHigh) {
+    document.getElementById("final-score").textContent = "Score: " + score + " | Wave: " + wave;
+    document.getElementById("new-highscore-banner").style.display = isNewHigh ? "block" : "none";
+    renderRunStats("game-over-stats");
+    showGameOverPanel();
+  }
+  function showPausePanel() {
+    document.getElementById("pause-panel").style.display = "block";
+  }
+  function hidePausePanel() {
+    document.getElementById("pause-panel").style.display = "none";
+  }
+  function showShopPanel() {
+    document.getElementById("shop-panel").style.display = "block";
+  }
+  function hideShopPanel() {
+    document.getElementById("shop-panel").style.display = "none";
+  }
+  function updateMenuXpDisplay() {
+    const el = document.getElementById("menu-xp-display");
+    if (el) el.textContent = G.xpBank;
+  }
+  function updateMenuHighScoreDisplay() {
+    const el = document.getElementById("menu-highscore-display");
+    if (el) el.textContent = G.highScore;
+  }
+  function initMuteButton() {
+    const btn = document.getElementById("mute-button");
+    if (!btn) return;
+    const sync = () => {
+      btn.textContent = isMuted() ? "\u{1F507}" : "\u{1F50A}";
+    };
+    sync();
+    btn.onclick = () => {
+      toggleMute();
+      sync();
+    };
+  }
+  function initAutoAvoidButton() {
+    const btn = document.getElementById("auto-avoid-button");
+    if (!btn) return;
+    const sync = () => {
+      btn.classList.toggle("is-off", !G.autoAvoid);
+      btn.title = G.autoAvoid ? "Auto-Avoid: ON" : "Auto-Avoid: OFF";
+    };
+    sync();
+    btn.onclick = () => {
+      G.autoAvoid = !G.autoAvoid;
+      saveAutoAvoidPref();
+      sync();
+    };
+  }
+  function syncAbilityButton() {
+    const btn = document.getElementById("ability-button");
+    if (!btn) return;
+    const ability = getActiveAbility();
+    if (ability) {
+      btn.style.display = "";
+      btn.dataset.icon = ability.icon;
+      btn.textContent = ability.icon;
+      btn.title = ability.title;
+    } else {
+      btn.style.display = "none";
+    }
+  }
+  function initAbilityButton() {
+    const btn = document.getElementById("ability-button");
+    if (!btn) return;
+    btn.onclick = () => triggerSpeciesAbility();
+    btn.addEventListener("touchstart", (e) => {
+      e.preventDefault();
+      triggerSpeciesAbility();
+    }, { passive: false });
+    syncAbilityButton();
+  }
+  function updateAbilityButtonUI() {
+    const btn = document.getElementById("ability-button");
+    if (!btn || btn.style.display === "none") return;
+    const ability = getActiveAbility();
+    const cooldown = ability ? getAbilityCooldown(ability.key) : 0;
+    const onCooldown = cooldown > 0;
+    btn.classList.toggle("is-off", onCooldown);
+    btn.textContent = onCooldown ? String(Math.ceil(cooldown / 1e3)) : btn.dataset.icon || "\u2728";
+  }
+  function onStart(handler) {
+    const btn = document.getElementById("start-button");
+    if (btn) btn.onclick = handler;
+  }
+  function onRestart(handler) {
+    const btn = document.getElementById("restart-button");
+    if (btn) btn.onclick = handler;
+  }
+  function onResume(handler) {
+    const btn = document.getElementById("resume-button");
+    if (btn) btn.onclick = handler;
+  }
+  function onPauseRestart(handler) {
+    const btn = document.getElementById("pause-restart-button");
+    if (btn) btn.onclick = handler;
+  }
+  function onQuit(handler) {
+    const btn = document.getElementById("quit-button");
+    if (btn) btn.onclick = handler;
+  }
+  function showHistoryPanel() {
+    document.getElementById("history-panel").style.display = "block";
+  }
+  function hideHistoryPanel() {
+    document.getElementById("history-panel").style.display = "none";
+  }
+  function onHistoryOpen(handler) {
+    const btn = document.getElementById("history-button");
+    if (btn) btn.onclick = handler;
+  }
+  function onHistoryClose(handler) {
+    const btn = document.getElementById("history-close-btn");
+    if (btn) btn.onclick = handler;
+  }
+  function showCompendiumPanel() {
+    document.getElementById("compendium-panel").style.display = "flex";
+  }
+  function hideCompendiumPanel() {
+    document.getElementById("compendium-panel").style.display = "none";
+  }
+  function onCompendiumOpen(handler) {
+    const btn = document.getElementById("compendium-button");
+    if (btn) btn.onclick = handler;
+  }
+  function onCompendiumClose(handler) {
+    const btn = document.getElementById("compendium-close-btn");
+    if (btn) btn.onclick = handler;
+  }
+
+  // js/artifactSelect.js
+  function selectArtifact(key) {
+    if (key === null) {
+      G.equippedArtifact = null;
+    } else {
+      if (!G.artifactUnlocks[key]) return;
+      G.equippedArtifact = G.equippedArtifact === key ? null : key;
+    }
+    saveEquippedArtifact();
+  }
+  function equipArtifactLive(key) {
+    const prev = G.equippedArtifact;
+    if (prev === key) return;
+    const player = G.player;
+    const shard = getArtifactType("crackedIcebergShard");
+    if (player && shard) {
+      if (prev === "crackedIcebergShard") {
+        player.dmg -= shard.dmgBonus;
+        player.maxHp += shard.maxHpPenalty;
+      }
+      if (key === "crackedIcebergShard") {
+        player.dmg += shard.dmgBonus;
+        player.maxHp = Math.max(1, player.maxHp - shard.maxHpPenalty);
+        if (player.hp > player.maxHp) player.hp = player.maxHp;
+      }
+    }
+    G.equippedArtifact = key;
+    saveEquippedArtifact();
+    syncAbilityButton();
+  }
+  function showArtifactReveal(artifact) {
+    const panel = document.getElementById("artifact-reveal-panel");
+    if (!panel) return;
+    G.state = "artifactReveal";
+    playLevelUp();
+    document.getElementById("artifact-reveal-name").textContent = artifact.name;
+    document.getElementById("artifact-reveal-desc").textContent = artifact.desc;
+    document.getElementById("artifact-reveal-mechanic").textContent = artifact.mechanic;
+    const current = G.equippedArtifact ? getArtifactType(G.equippedArtifact) : null;
+    const equipBtn = document.getElementById("artifact-reveal-equip");
+    const laterBtn = document.getElementById("artifact-reveal-later");
+    const note = document.getElementById("artifact-reveal-replace-note");
+    if (current) {
+      note.textContent = "\u26A0\uFE0F Replaces your equipped " + current.name;
+      note.style.display = "block";
+      equipBtn.textContent = "\u26A1 Equip (replace)";
+      laterBtn.textContent = "Keep " + current.name;
+    } else {
+      note.style.display = "none";
+      equipBtn.textContent = "\u26A1 Equip Now";
+      laterBtn.textContent = "Not Now";
+    }
+    let cleanupNav = () => {
+    };
+    const close = () => {
+      cleanupNav();
+      panel.style.display = "none";
+      G.state = "playing";
+      G.lastTime = performance.now();
+    };
+    equipBtn.onclick = () => {
+      equipArtifactLive(artifact.key);
+      close();
+    };
+    laterBtn.onclick = () => {
+      close();
+    };
+    panel.style.display = "block";
+    cleanupNav = enableArrowNav([equipBtn, laterBtn], 0);
+  }
+  function renderArtifactChoices() {
+    const container = document.getElementById("artifact-choices");
+    container.innerHTML = "";
+    const buttons = [];
+    let selectedIndex = 0;
+    let cleanupNav = () => {
+    };
+    const noneSelected = G.equippedArtifact === null;
+    selectedIndex = 0;
+    const noneBtn = document.createElement("button");
+    noneBtn.className = noneSelected ? "is-selected" : "";
+    noneBtn.innerHTML = '<span class="label">\u{1F6AB} None' + (noneSelected ? " \u2014 Selected" : "") + '</span><span class="desc">Go without an artifact equipped.</span>';
+    noneBtn.onclick = () => {
+      selectArtifact(null);
+      cleanupNav();
+      renderArtifactChoices();
+    };
+    container.appendChild(noneBtn);
+    buttons.push(noneBtn);
+    ARTIFACT_TYPES.forEach((a, index) => {
+      const unlocked = G.artifactUnlocks[a.key];
+      const selected = unlocked && G.equippedArtifact === a.key;
+      if (selected) selectedIndex = index + 1;
+      const btn = document.createElement("button");
+      btn.className = selected ? "is-selected" : unlocked ? "" : "is-locked";
+      btn.disabled = !unlocked;
+      let html = '<span class="label">' + a.name + (selected ? " \u2014 Selected" : "") + '</span><span class="desc">' + a.desc + '</span><span class="desc">' + a.mechanic + "</span>";
+      if (!unlocked) {
+        html += '<span class="cost">' + (a.mapExclusive ? "\u{1F512} Found only in the Research Facility" : "\u{1F512} Found via rare pickups") + "</span>";
+      }
+      btn.innerHTML = html;
+      btn.onclick = () => {
+        selectArtifact(a.key);
+        cleanupNav();
+        renderArtifactChoices();
+      };
+      container.appendChild(btn);
+      buttons.push(btn);
+    });
+    cleanupNav = enableArrowNav(buttons, selectedIndex);
+  }
+  function openArtifactPanel() {
+    renderArtifactChoices();
+    document.getElementById("artifact-panel").style.display = "block";
+  }
+  function initArtifactSelect() {
+    const openBtn = document.getElementById("artifact-button");
+    const closeBtn = document.getElementById("artifact-close-btn");
+    const panel = document.getElementById("artifact-panel");
+    if (!panel) return;
+    if (openBtn) openBtn.onclick = openArtifactPanel;
+    if (closeBtn) closeBtn.onclick = () => {
+      panel.style.display = "none";
+    };
+  }
+
   // js/powerups.js
+  function artifactEligible() {
+    return ARTIFACT_TYPES.some((a) => !G.artifactUnlocks[a.key] && (!a.mapExclusive || G.currentMap && G.currentMap.id === a.mapExclusive));
+  }
   var POWERUP_DEFS = {
     dmg: { label: "\u2694\uFE0F +5 DMG", color: "#ff3366", apply: (p) => {
       p.dmg += 5;
@@ -2347,6 +3171,27 @@ canvas {
       revert: (p) => {
         p.powerWeapon = null;
       }
+    },
+    // A permanent unlock, not a run buff — instant like `hp`, but mutates
+    // G.artifactUnlocks instead of the player object. Picks uniformly among
+    // whatever's still unlockable right now; a no-op if somehow nothing is
+    // (spawnPowerup() already checks this before ever rolling the type, so
+    // this is just a defensive backstop, not the primary gate).
+    artifactCache: {
+      // persistent: never expires off the ground (see updatePowerups) — a rare
+      // permanent unlock shouldn't be missable just by not reaching it in time.
+      label: "\u{1F3FA} Artifact Cache",
+      color: "#c9a86a",
+      instant: true,
+      persistent: true,
+      apply: () => {
+        const eligible = ARTIFACT_TYPES.filter((a) => !G.artifactUnlocks[a.key] && (!a.mapExclusive || G.currentMap && G.currentMap.id === a.mapExclusive));
+        if (!eligible.length) return;
+        const picked = eligible[Math.floor(Math.random() * eligible.length)];
+        G.artifactUnlocks[picked.key] = true;
+        saveArtifactUnlocks();
+        G.pendingArtifactReveal = picked;
+      }
     }
   };
   var WEAPON_POWERUP_TYPE = { barrage: "proj", harpoon: "pierce", nova: "radius" };
@@ -2370,7 +3215,9 @@ canvas {
     ({ x, y } = pushOutOfObstacles(x, y, r));
     const specialGated = G.wave >= SPECIAL_POWERUP_MIN_WAVE || player.level >= SPECIAL_POWERUP_MIN_LEVEL;
     let type;
-    if (specialGated && Math.random() < SPECIAL_POWERUP_CHANCE) {
+    if (specialGated && artifactEligible() && Math.random() < ARTIFACT_DROP_CHANCE) {
+      type = "artifactCache";
+    } else if (specialGated && Math.random() < SPECIAL_POWERUP_CHANCE) {
       type = SPECIAL_POWERUP_TYPES[Math.floor(Math.random() * SPECIAL_POWERUP_TYPES.length)];
     } else {
       const weaponType = WEAPON_POWERUP_TYPE[G.weapon] || "proj";
@@ -2385,6 +3232,8 @@ canvas {
       type,
       duration: POWERUP_PICKUP_DURATION,
       remaining: POWERUP_PICKUP_DURATION,
+      persistent: !!def.persistent,
+      // artifact caches never time out
       bobOffset: Math.random() * Math.PI * 2,
       color: def.color,
       label: def.label
@@ -2396,10 +3245,12 @@ canvas {
     for (let i = G.powerups.length - 1; i >= 0; i--) {
       const pu = G.powerups[i];
       pu.bobOffset += dt * 4;
-      pu.remaining -= dt;
-      if (pu.remaining <= 0) {
-        G.powerups.splice(i, 1);
-        continue;
+      if (!pu.persistent) {
+        pu.remaining -= dt;
+        if (pu.remaining <= 0) {
+          G.powerups.splice(i, 1);
+          continue;
+        }
       }
       if (dist(pu, player) < pu.r + PLAYER_R) {
         spawnParticles(pu.x, pu.y, pu.color, 15, 3);
@@ -2412,6 +3263,13 @@ canvas {
         const hpBefore = player.hp;
         def.apply(player);
         recordHealing(player.hp - hpBefore);
+        if (G.pendingArtifactReveal) {
+          const revealed = G.pendingArtifactReveal;
+          G.pendingArtifactReveal = null;
+          G.powerups.splice(i, 1);
+          showArtifactReveal(revealed);
+          break;
+        }
         if (!def.instant) {
           const duration = (_a = def.duration) != null ? _a : 10;
           G.activePowerups.push({ type: pu.type, duration, remaining: duration });
@@ -2790,12 +3648,12 @@ canvas {
     }
   ];
   var BOON_POOL = [
-    { label: "\u2764\uFE0F Blubber", desc: "+30 max HP and heal fully", apply: (p) => {
+    { label: "\u2764\uFE0F Blubber", desc: "+30 max HP and heal 50%", apply: (p) => {
       p.maxHp += 30;
-      p.hp = p.maxHp;
+      p.hp = Math.min(p.maxHp, p.hp + p.maxHp * 0.5);
     } },
-    { label: "\u2694\uFE0F Frostforged", desc: "+8 damage", apply: (p) => {
-      p.dmg += 8;
+    { label: "\u2694\uFE0F Frostforged", desc: "+6 damage", apply: (p) => {
+      p.dmg += 6;
     } },
     { label: "\u26A1 Overclock", desc: "+20% faster attacks", apply: (p) => {
       p.fireRate = Math.max(8, p.fireRate * 0.8);
@@ -3337,17 +4195,18 @@ canvas {
     }
     ctx2.restore();
   }
+  var SNOWBALL_BORDER = "#2fa4ff";
   function drawSnowballProjectile(p) {
     ctx2.beginPath();
     ctx2.arc(p.x, p.y, p.r + 4, 0, Math.PI * 2);
-    ctx2.fillStyle = hexToRgba(p.color, 0.35);
+    ctx2.fillStyle = hexToRgba(SNOWBALL_BORDER, 0.3);
     ctx2.fill();
     ctx2.beginPath();
     ctx2.arc(p.x, p.y, p.r, 0, Math.PI * 2);
     ctx2.fillStyle = "#f4fbff";
     ctx2.fill();
-    ctx2.strokeStyle = "rgba(110, 140, 160, 0.55)";
-    ctx2.lineWidth = 1;
+    ctx2.strokeStyle = hexToRgba(SNOWBALL_BORDER, 0.9);
+    ctx2.lineWidth = 1.5;
     ctx2.stroke();
     ctx2.beginPath();
     ctx2.arc(p.x - p.r * 0.3, p.y + p.r * 0.3, p.r * 0.24, 0, Math.PI * 2);
@@ -3775,11 +4634,81 @@ canvas {
     }
     return out;
   }
-  function getAbilityBadgeRect() {
+  function getAbilityBadgeRect(index = 0) {
     const hpW = 120, hpH = 8;
     const hpX = W / 2 - hpW / 2, hpY = H - 30;
     const xpY = H - 42;
-    return { x: hpX - 24, y: (xpY + hpY + hpH) / 2, r: 15 };
+    const r = 15;
+    const spacing = r * 2 + 6;
+    return { x: hpX - 24 - index * spacing, y: (xpY + hpY + hpH) / 2, r };
+  }
+  function drawBurningFx(e) {
+    const now = performance.now();
+    ctx2.beginPath();
+    ctx2.arc(e.x, e.y, e.r * 1.25, 0, Math.PI * 2);
+    ctx2.fillStyle = "rgba(255, 110, 30, 0.22)";
+    ctx2.fill();
+    for (let k = 0; k < 3; k++) {
+      const seed = e.x * 0.7 + k * 2.1;
+      const baseX = e.x + (k - 1) * e.r * 0.5 + Math.sin(now / (90 + k * 20) + seed) * 3;
+      const baseY = e.y - e.r * 0.4;
+      const h = e.r * (0.9 + 0.4 * (0.5 + 0.5 * Math.sin(now / 70 + seed)));
+      ctx2.beginPath();
+      ctx2.moveTo(baseX - 4, baseY);
+      ctx2.quadraticCurveTo(baseX - 3, baseY - h * 0.5, baseX, baseY - h);
+      ctx2.quadraticCurveTo(baseX + 3, baseY - h * 0.5, baseX + 4, baseY);
+      ctx2.closePath();
+      ctx2.fillStyle = k === 1 ? "rgba(255, 225, 110, 0.85)" : "rgba(255, 130, 40, 0.8)";
+      ctx2.fill();
+    }
+  }
+  function drawFrostedFx(e) {
+    const now = performance.now();
+    ctx2.beginPath();
+    ctx2.arc(e.x, e.y, e.r + 1, 0, Math.PI * 2);
+    ctx2.fillStyle = "rgba(90, 190, 255, 0.45)";
+    ctx2.fill();
+    ctx2.beginPath();
+    ctx2.arc(e.x, e.y, e.r + 2, 0, Math.PI * 2);
+    ctx2.strokeStyle = "rgba(120, 210, 255, 0.95)";
+    ctx2.lineWidth = 2.5;
+    ctx2.stroke();
+    ctx2.strokeStyle = "rgba(235, 250, 255, 0.95)";
+    ctx2.lineWidth = 2;
+    for (let k = 0; k < 8; k++) {
+      const ang = Math.PI * 2 / 8 * k + now / 2600;
+      const r1 = e.r + 2, r2 = e.r + 9;
+      ctx2.beginPath();
+      ctx2.moveTo(e.x + Math.cos(ang) * r1, e.y + Math.sin(ang) * r1);
+      ctx2.lineTo(e.x + Math.cos(ang) * r2, e.y + Math.sin(ang) * r2);
+      ctx2.stroke();
+    }
+  }
+  function drawNettedFx(e) {
+    const r = e.r + 3;
+    ctx2.save();
+    ctx2.beginPath();
+    ctx2.arc(e.x, e.y, r, 0, Math.PI * 2);
+    ctx2.clip();
+    ctx2.strokeStyle = "rgba(235, 243, 248, 0.8)";
+    ctx2.lineWidth = 1.5;
+    const step = 6;
+    for (let o = -r * 2; o <= r * 2; o += step) {
+      ctx2.beginPath();
+      ctx2.moveTo(e.x - r + o, e.y - r);
+      ctx2.lineTo(e.x + r + o, e.y + r);
+      ctx2.stroke();
+      ctx2.beginPath();
+      ctx2.moveTo(e.x - r + o, e.y + r);
+      ctx2.lineTo(e.x + r + o, e.y - r);
+      ctx2.stroke();
+    }
+    ctx2.restore();
+    ctx2.beginPath();
+    ctx2.arc(e.x, e.y, r, 0, Math.PI * 2);
+    ctx2.strokeStyle = "rgba(255, 255, 255, 0.9)";
+    ctx2.lineWidth = 2;
+    ctx2.stroke();
   }
   function render() {
     const player = G.player;
@@ -3870,6 +4799,39 @@ canvas {
     for (const pu of G.powerups) {
       const bobY = Math.sin(pu.bobOffset) * 3;
       const pulse = 1 + Math.sin(performance.now() / 200) * 0.15;
+      if (pu.type === "artifactCache") {
+        const t = performance.now() / 900 % 1;
+        for (let k = 0; k < 2; k++) {
+          const rt = (t + k * 0.5) % 1;
+          ctx2.beginPath();
+          ctx2.arc(pu.x, pu.y + bobY, pu.r + rt * 42, 0, Math.PI * 2);
+          ctx2.strokeStyle = "#ffdd00";
+          ctx2.globalAlpha = 0.5 * (1 - rt);
+          ctx2.lineWidth = 2;
+          ctx2.stroke();
+        }
+        ctx2.globalAlpha = 0.15;
+        ctx2.beginPath();
+        ctx2.arc(pu.x, pu.y + bobY, pu.r * pulse * 2.4, 0, Math.PI * 2);
+        ctx2.fillStyle = "#ffdd00";
+        ctx2.fill();
+        ctx2.globalAlpha = 1;
+        ctx2.beginPath();
+        ctx2.arc(pu.x, pu.y + bobY, pu.r * 1.5 * pulse, 0, Math.PI * 2);
+        ctx2.fillStyle = "#c9a86a";
+        ctx2.fill();
+        ctx2.strokeStyle = "#ffdd00";
+        ctx2.lineWidth = 3;
+        ctx2.stroke();
+        ctx2.font = "bold 18px Courier New";
+        ctx2.textAlign = "center";
+        ctx2.fillStyle = "#fff";
+        ctx2.fillText("\u{1F3FA}", pu.x, pu.y + bobY + 6);
+        ctx2.font = "bold 12px Courier New";
+        ctx2.fillStyle = "#ffdd00";
+        ctx2.fillText("ARTIFACT!", pu.x, pu.y + bobY - pu.r * 1.5 - 12);
+        continue;
+      }
       const alpha = Math.min(1, pu.remaining / 3);
       ctx2.beginPath();
       ctx2.arc(pu.x, pu.y + bobY, pu.r * pulse * 1.8, 0, Math.PI * 2);
@@ -3898,6 +4860,9 @@ canvas {
       ctx2.fill();
       const faceAngle = Math.atan2(player.y - e.y, player.x - e.x);
       drawEnemy(e, faceAngle);
+      if (e.burnTimer > 0) drawBurningFx(e);
+      if (e.slowTimer > 0) drawFrostedFx(e);
+      if (e.immobilizedTimer > 0) drawNettedFx(e);
       if (e.isMiniBoss) {
         const pulse = 1 + Math.sin(performance.now() / 180) * 0.06;
         ctx2.beginPath();
@@ -3918,11 +4883,23 @@ canvas {
       }
     }
     const heroPenguinType = getPenguinType(G.penguinType);
+    const warHornGlow = G.equippedArtifact === "warHorn" && G.penguinType === "emperor";
+    const warHornDef = warHornGlow ? getArtifactType("warHorn") : null;
     for (const a of G.allies) {
       ctx2.beginPath();
       ctx2.ellipse(a.x + 1, a.y + ALLY_R + 1, ALLY_R * 0.8, 3, 0, 0, Math.PI * 2);
       ctx2.fillStyle = "rgba(0,0,0,0.3)";
       ctx2.fill();
+      if (warHornDef) {
+        const boost = Math.min(warHornDef.scaleCap, (a.age || 0) * warHornDef.scalePerSec) / warHornDef.scaleCap;
+        if (boost > 0.02) {
+          ctx2.beginPath();
+          ctx2.arc(a.x, a.y, ALLY_R + 3 + boost * 4, 0, Math.PI * 2);
+          ctx2.strokeStyle = `rgba(255, 210, 60, ${0.2 + boost * 0.55})`;
+          ctx2.lineWidth = 2;
+          ctx2.stroke();
+        }
+      }
       drawPenguin(a.x, a.y, ALLY_R, heroPenguinType.colors, a.facing, false, 0, heroPenguinType.accentStyle);
       if (a.hp < a.maxHp) {
         const bw = ALLY_R * 2;
@@ -4078,6 +5055,20 @@ canvas {
       ctx2.fillStyle = "rgba(0,0,0,0.3)";
       ctx2.fill();
       drawPenguin(player.x, player.y - hopHeight, PLAYER_R, heroPenguinType.colors, player.facing, flash, player.swimT, heroPenguinType.accentStyle);
+      if (invincible && G.equippedArtifact === "frozenWard") {
+        const pulse = 1 + Math.sin(performance.now() / 120) * 0.12;
+        const fr = PLAYER_R * 1.35 * pulse;
+        ctx2.beginPath();
+        ctx2.arc(player.x, player.y, fr, 0, Math.PI * 2);
+        ctx2.strokeStyle = "rgba(220, 245, 255, 0.4)";
+        ctx2.lineWidth = 5;
+        ctx2.stroke();
+        ctx2.beginPath();
+        ctx2.arc(player.x, player.y, fr, 0, Math.PI * 2);
+        ctx2.strokeStyle = "rgba(150, 225, 255, 0.85)";
+        ctx2.lineWidth = 2;
+        ctx2.stroke();
+      }
       if (immobilized) {
         const nr = PLAYER_R * 1.15;
         ctx2.save();
@@ -4159,9 +5150,9 @@ canvas {
       ctx2.strokeStyle = "#fff";
       ctx2.lineWidth = 1;
       ctx2.strokeRect(xpX - 1, xpY - 1, xpW + 2, xpH + 2);
-      if (heroPenguinType.triggerable) {
-        const { x: badgeX, y: badgeY, r: badgeR } = getAbilityBadgeRect();
-        const cooldown = player.abilityCooldown;
+      getActiveAbilities().forEach((ability, idx) => {
+        const { x: badgeX, y: badgeY, r: badgeR } = getAbilityBadgeRect(idx);
+        const cooldown = getAbilityCooldown(ability.key);
         const ready = cooldown <= 0;
         ctx2.beginPath();
         ctx2.arc(badgeX, badgeY, badgeR, 0, Math.PI * 2);
@@ -4174,52 +5165,130 @@ canvas {
         ctx2.textBaseline = "middle";
         if (ready) {
           ctx2.font = "16px Courier New";
-          ctx2.fillText(heroPenguinType.icon || "\u2728", badgeX, badgeY + 1);
+          ctx2.fillText(ability.icon, badgeX, badgeY + 1);
         } else {
           ctx2.font = "bold 12px Courier New";
           ctx2.fillStyle = "#999";
           ctx2.fillText(String(Math.ceil(cooldown / 1e3)), badgeX, badgeY + 1);
         }
         ctx2.textBaseline = "alphabetic";
-      }
+      });
       ctx2.fillStyle = "#fff";
       ctx2.font = "bold 14px Courier New";
       ctx2.textAlign = "center";
       ctx2.fillText("LV " + player.level, W / 2, H - 50);
-      let leftY = 24;
-      const lineHeight = 16;
+      const lineHeight = 17;
+      const speedPct = Math.round((player.speed / BASE_SPEED - 1) * 100);
+      const buildSegs = [
+        { text: "\u2694\uFE0F " + Math.round(player.dmg), color: "#ff8fa3" },
+        { text: "\u26A1 " + (1e3 / player.fireRate).toFixed(1) + "/s", color: "#ffd966" },
+        { text: "\u{1F3C3} " + (speedPct >= 0 ? "+" : "") + speedPct + "%", color: "#7fdcff" },
+        { text: "\u2764\uFE0F " + Math.ceil(player.hp) + "/" + Math.round(player.maxHp), color: "#5fff8f" }
+      ];
+      if (player.regen > 0) buildSegs.push({ text: "\u{1F4A7} +" + player.regen.toFixed(1) + "/s", color: "#9fe8ff" });
       const elapsed = G.state === "playing" ? Math.floor((performance.now() - G.startTime) / 1e3) : G.frozenElapsed;
-      ctx2.fillStyle = "#aaa";
-      ctx2.font = "14px Courier New";
+      const hudLines = [
+        { text: "Time: " + formatTime(elapsed), color: "#e8e8e8", font: "14px Courier New" },
+        { text: "Score: " + G.score, color: "#e8e8e8", font: "14px Courier New" },
+        { segments: buildSegs, font: "12px Courier New" }
+      ];
+      if (G.equippedArtifact) {
+        const art = getArtifactType(G.equippedArtifact);
+        if (art) hudLines.push({ text: art.name, color: "#ffdd00", font: "12px Courier New" });
+      }
+      for (const ap of G.activePowerups) {
+        hudLines.push({
+          text: getPowerupLabel(ap.type) + " (" + Math.ceil(ap.remaining) + "s)",
+          color: getPowerupColor(ap.type),
+          font: "12px Courier New"
+        });
+      }
+      const padX = 10, padTop = 8, padBottom = 10;
+      let maxWidth = 0;
+      for (const line of hudLines) {
+        if (line.segments) {
+          ctx2.font = line.font;
+          let w = -12;
+          for (const seg of line.segments) w += ctx2.measureText(seg.text).width + 12;
+          maxWidth = Math.max(maxWidth, w);
+        } else {
+          ctx2.font = line.font;
+          maxWidth = Math.max(maxWidth, ctx2.measureText(line.text).width);
+        }
+      }
+      const panelX = 6, panelY = 8;
+      const panelW = maxWidth + padX * 2;
+      const panelH = padTop + hudLines.length * lineHeight + padBottom;
+      ctx2.fillStyle = "rgba(10, 14, 22, 0.62)";
+      ctx2.beginPath();
+      ctx2.roundRect(panelX, panelY, panelW, panelH, 8);
+      ctx2.fill();
+      ctx2.strokeStyle = "rgba(255, 255, 255, 0.12)";
+      ctx2.lineWidth = 1;
+      ctx2.stroke();
+      let leftY = panelY + padTop + 12;
+      const textX = panelX + padX;
       ctx2.textAlign = "left";
-      ctx2.fillText("Time: " + formatTime(elapsed), 16, leftY);
-      leftY += lineHeight;
-      ctx2.fillStyle = "#aaa";
-      ctx2.font = "14px Courier New";
-      ctx2.textAlign = "left";
-      ctx2.fillText("Score: " + G.score, 16, leftY);
-      leftY += lineHeight;
+      for (const line of hudLines) {
+        if (line.segments) {
+          let bsx = textX;
+          ctx2.font = line.font;
+          for (const seg of line.segments) {
+            ctx2.fillStyle = seg.color;
+            ctx2.fillText(seg.text, bsx, leftY);
+            bsx += ctx2.measureText(seg.text).width + 12;
+          }
+        } else {
+          ctx2.fillStyle = line.color;
+          ctx2.font = line.font;
+          ctx2.fillText(line.text, textX, leftY);
+        }
+        leftY += lineHeight;
+      }
       ctx2.fillStyle = "#888";
       ctx2.font = "12px Courier New";
       ctx2.textAlign = "right";
       ctx2.fillText("Wave " + G.wave, W - 16, 24);
-      if (player.regen > 0) {
-        ctx2.fillStyle = "#33ff66";
-        ctx2.font = "12px Courier New";
-        ctx2.textAlign = "left";
-        ctx2.fillText("\u2764\uFE0F +" + player.regen.toFixed(1) + "/s", 16, leftY);
-        leftY += lineHeight;
-      }
-      let puY = leftY + 8;
-      for (const ap of G.activePowerups) {
-        const secs = Math.ceil(ap.remaining);
-        const label = getPowerupLabel(ap.type);
-        const color = getPowerupColor(ap.type);
-        ctx2.fillStyle = color;
-        ctx2.font = "12px Courier New";
-        ctx2.textAlign = "left";
-        ctx2.fillText(label + " (" + secs + "s)", 16, puY);
-        puY += lineHeight;
+    }
+    if (G.state === "playing") {
+      const cache = G.powerups.find((pu) => pu.type === "artifactCache");
+      if (cache) {
+        const sx = cache.x - camX, sy = cache.y - camY;
+        if (sx < 0 || sx > W || sy < 0 || sy > H) {
+          const m = 26;
+          const ex = Math.max(m, Math.min(W - m, sx));
+          const ey = Math.max(m, Math.min(H - m, sy));
+          const ang = Math.atan2(sy - H / 2, sx - W / 2);
+          const pulse = 1 + Math.sin(performance.now() / 200) * 0.2;
+          ctx2.save();
+          ctx2.translate(ex, ey);
+          ctx2.beginPath();
+          ctx2.arc(0, 0, 15 * pulse, 0, Math.PI * 2);
+          ctx2.fillStyle = "rgba(255, 221, 0, 0.25)";
+          ctx2.fill();
+          ctx2.beginPath();
+          ctx2.arc(0, 0, 13, 0, Math.PI * 2);
+          ctx2.fillStyle = "#c9a86a";
+          ctx2.fill();
+          ctx2.strokeStyle = "#ffdd00";
+          ctx2.lineWidth = 2;
+          ctx2.stroke();
+          ctx2.font = "13px Courier New";
+          ctx2.textAlign = "center";
+          ctx2.textBaseline = "middle";
+          ctx2.fillStyle = "#fff";
+          ctx2.fillText("\u{1F3FA}", 0, 1);
+          ctx2.textBaseline = "alphabetic";
+          ctx2.rotate(ang);
+          ctx2.beginPath();
+          ctx2.moveTo(24, 0);
+          ctx2.lineTo(15, -7);
+          ctx2.lineTo(15, 7);
+          ctx2.closePath();
+          ctx2.fillStyle = "#ffdd00";
+          ctx2.fill();
+          ctx2.restore();
+        }
       }
     }
     const vig = getPalette().vignette;
@@ -4245,265 +5314,6 @@ canvas {
       ctx2.fill();
     }
     ctx2.restore();
-  }
-
-  // js/upgrades.js
-  function rollRarity() {
-    let r = Math.random();
-    for (const rarity of RARITY_TABLE) {
-      r -= rarity.prob;
-      if (r <= 0) return rarity;
-    }
-    return RARITY_TABLE[0];
-  }
-  function applicableDefs() {
-    return UPGRADE_DEFS.filter((d) => (d.weapons === "all" || d.weapons.includes(G.weapon)) && (!d.species || d.species.includes(G.penguinType)) && !(d.isMaxed && d.isMaxed(G.player)));
-  }
-  function pickDefs(n) {
-    const pool = applicableDefs();
-    const chosen = [];
-    const remaining = [...pool];
-    while (chosen.length < n && remaining.length > 0) {
-      let total = 0;
-      for (const d of remaining) total += d.weight;
-      let r = Math.random() * total;
-      let idx = 0;
-      for (let i = 0; i < remaining.length; i++) {
-        r -= remaining[i].weight;
-        if (r <= 0) {
-          idx = i;
-          break;
-        }
-      }
-      chosen.push(remaining.splice(idx, 1)[0]);
-    }
-    return chosen;
-  }
-  function getUpgradeChoices() {
-    return pickDefs(3).map((def) => {
-      const rarity = rollRarity();
-      const mag = def.mags[rarity.key];
-      return {
-        def,
-        rarity,
-        mag,
-        label: def.icon + " " + def.name,
-        desc: def.desc(mag)
-      };
-    });
-  }
-  function showUpgradeScreen() {
-    const upgrades = getUpgradeChoices();
-    if (upgrades.length === 0) return;
-    G.state = "upgrading";
-    const panel = document.getElementById("upgrade-panel");
-    panel.style.display = "block";
-    const choices = document.getElementById("upgrade-choices");
-    choices.innerHTML = "";
-    const buttons = [];
-    let cleanupNav = () => {
-    };
-    upgrades.forEach((u) => {
-      const btn = document.createElement("button");
-      btn.style.borderColor = u.rarity.color;
-      btn.innerHTML = '<span class="rarity-tag" style="color:' + u.rarity.color + '">' + u.rarity.label + '</span><span class="label">' + u.label + '</span><span class="desc">' + u.desc + "</span>";
-      btn.onclick = () => {
-        cleanupNav();
-        const hpBefore = G.player.hp;
-        u.def.apply(G.player, u.mag);
-        recordHealing(G.player.hp - hpBefore);
-        panel.style.display = "none";
-        G.state = "playing";
-        spawnParticles(G.player.x, G.player.y, u.rarity.color, 20, 4);
-        spawnFloatingText(G.player.x, G.player.y - 30, u.label, u.rarity.color);
-      };
-      choices.appendChild(btn);
-      buttons.push(btn);
-    });
-    cleanupNav = enableArrowNav(buttons);
-  }
-
-  // js/gems.js
-  function spawnGem(x, y, value) {
-    const pos = pushOutOfObstacles(x, y, 8);
-    G.gems.push({ x: pos.x, y: pos.y, value: value || 1, r: 8, bobOffset: Math.random() * Math.PI * 2 });
-  }
-  function updateGems(dt) {
-    const player = G.player;
-    for (let i = G.gems.length - 1; i >= 0; i--) {
-      const g = G.gems[i];
-      g.bobOffset += dt * 4;
-      const d = dist(g, player);
-      if (d < player.gemPickupRadius) g.attracting = true;
-      if (g.attracting) {
-        const angle = Math.atan2(player.y - g.y, player.x - g.x);
-        const closeness = 1 - Math.min(1, d / player.gemPickupRadius);
-        const speed = 5 + closeness * 9;
-        g.x += Math.cos(angle) * speed * dt * 60;
-        g.y += Math.sin(angle) * speed * dt * 60;
-      }
-      if (d < g.r + PLAYER_R) {
-        G.xpEarnedThisGame += g.value;
-        player.xp += g.value;
-        spawnParticles(g.x, g.y, "#ffdd00", 6, 2);
-        spawnFloatingText(g.x, g.y, "+" + g.value + " XP", "#ffdd00");
-        playGem();
-        G.gems.splice(i, 1);
-        const needed = XP_PER_LEVEL * Math.pow(XP_LEVEL_GROWTH, player.level - 1);
-        if (player.xp >= needed) {
-          player.xp -= needed;
-          player.level++;
-          player.maxHp += 25;
-          player.hp = Math.min(player.hp, player.maxHp);
-          playLevelUp();
-          showUpgradeScreen();
-        }
-      }
-    }
-  }
-
-  // js/abilities.js
-  function clamp(v, min, max) {
-    return Math.max(min, Math.min(max, v));
-  }
-  function killEnemy(e, index) {
-    G.score += e.score;
-    recordKill();
-    spawnFloatingText(e.x, e.y, "+" + e.score, "#ffaa00");
-    spawnParticles(e.x, e.y, e.color, 12, 3);
-    G.screenShake.intensity = Math.min(G.screenShake.intensity + 3, 8);
-    playKill();
-    const gemVal = Math.floor(e.score / 10) + (Math.random() < 0.3 ? 1 : 0);
-    spawnGem(e.x, e.y, gemVal);
-    G.enemies.splice(index, 1);
-  }
-  function summonAlly(player) {
-    const angle = Math.random() * Math.PI * 2;
-    const hp = ALLY_HP * (player.allyPowerMult || 1);
-    G.allies.push({
-      x: player.x + Math.cos(angle) * 30,
-      y: player.y + Math.sin(angle) * 30,
-      hp,
-      maxHp: hp,
-      facing: 0,
-      attackCooldown: 0,
-      hitCooldown: 0
-    });
-    spawnParticles(player.x, player.y, "#f0c020", 10, 2.5);
-  }
-  function triggerEmperor(player) {
-    const bonus = player.allyMaxCountBonus || 0;
-    const maxCount = ALLY_MAX_COUNT + bonus;
-    if (G.allies.length >= maxCount) return false;
-    const count = Math.min(EMPEROR_SUMMON_COUNT + bonus, maxCount - G.allies.length);
-    for (let i = 0; i < count; i++) summonAlly(player);
-    return true;
-  }
-  function resolveChargeLanding(player) {
-    for (let i = G.enemies.length - 1; i >= 0; i--) {
-      const e = G.enemies[i];
-      if (dist(e, player) < CHINSTRAP_CHARGE_RADIUS + e.r) {
-        const dmg = CHINSTRAP_CHARGE_DMG * (player.chinstrapDmgMult || 1);
-        e.hp -= dmg;
-        recordDamageDealt("chinstrapCharge", dmg);
-        e.flashTimer = 5;
-        if (e.hp <= 0) killEnemy(e, i);
-      }
-    }
-    G.abilityPulses.push({ x: player.x, y: player.y, age: 0, maxAge: 450 });
-  }
-  function triggerChinstrap(player) {
-    const fromX = player.x, fromY = player.y;
-    let toX = clamp(player.x + Math.cos(player.facing) * CHINSTRAP_CHARGE_DIST, PLAYER_R, WORLD_W - PLAYER_R);
-    let toY = clamp(player.y + Math.sin(player.facing) * CHINSTRAP_CHARGE_DIST, PLAYER_R, WORLD_H - PLAYER_R);
-    const probe = { x: toX, y: toY };
-    resolveObstacleCollision(probe, PLAYER_R);
-    toX = clamp(probe.x, PLAYER_R, WORLD_W - PLAYER_R);
-    toY = clamp(probe.y, PLAYER_R, WORLD_H - PLAYER_R);
-    player.chargeState = { fromX, fromY, toX, toY, elapsed: 0, duration: CHINSTRAP_CHARGE_DURATION };
-    player.invincible = Math.max(player.invincible, CHINSTRAP_CHARGE_INVINCIBLE);
-    return true;
-  }
-  function triggerSpeciesAbility() {
-    if (G.state !== "playing") return;
-    const player = G.player;
-    const species = getPenguinType(G.penguinType);
-    if (!species.triggerable || player.abilityCooldown > 0) return;
-    let fired = false;
-    if (species.key === "emperor") fired = triggerEmperor(player);
-    else if (species.key === "chinstrap") fired = triggerChinstrap(player);
-    if (fired) {
-      player.abilityCooldown = species.key === "emperor" ? EMPEROR_ABILITY_COOLDOWN : CHINSTRAP_ABILITY_COOLDOWN * (player.chinstrapCooldownMult || 1);
-    }
-  }
-  function updateChinstrapCharge(dt) {
-    const player = G.player;
-    const cs = player.chargeState;
-    if (!cs) return;
-    cs.elapsed += dt;
-    const t = Math.min(1, cs.elapsed / cs.duration);
-    const eased = 1 - Math.pow(1 - t, 2);
-    player.x = cs.fromX + (cs.toX - cs.fromX) * eased;
-    player.y = cs.fromY + (cs.toY - cs.fromY) * eased;
-    G.chargeTrail.push({ x: player.x, y: player.y, age: 0, maxAge: 220 });
-    if (t >= 1) {
-      resolveChargeLanding(player);
-      player.chargeState = null;
-    }
-  }
-  function updateAllies(dt) {
-    for (let i = G.allies.length - 1; i >= 0; i--) {
-      const a = G.allies[i];
-      let nearest = null, nearestDist = Infinity;
-      for (const e of G.enemies) {
-        const d = dist(a, e);
-        if (d < nearestDist) {
-          nearestDist = d;
-          nearest = e;
-        }
-      }
-      if (a.attackCooldown > 0) a.attackCooldown -= dt * 1e3;
-      if (a.hitCooldown > 0) a.hitCooldown -= dt * 1e3;
-      if (nearest) {
-        const angle = Math.atan2(nearest.y - a.y, nearest.x - a.x);
-        a.facing = angle;
-        const touching = nearestDist < ALLY_R + nearest.r;
-        if (!touching) {
-          a.x += Math.cos(angle) * ALLY_SPEED * dt * 60;
-          a.y += Math.sin(angle) * ALLY_SPEED * dt * 60;
-        } else {
-          if (a.attackCooldown <= 0) {
-            const dmg = ALLY_DMG * (G.player.allyPowerMult || 1);
-            nearest.hp -= dmg;
-            recordDamageDealt("allies", dmg);
-            nearest.flashTimer = 5;
-            a.attackCooldown = ALLY_ATTACK_INTERVAL;
-            if (nearest.hp <= 0) {
-              const idx = G.enemies.indexOf(nearest);
-              if (idx !== -1) killEnemy(nearest, idx);
-            }
-          }
-          if (a.hitCooldown <= 0) {
-            a.hp -= nearest.dmg;
-            a.hitCooldown = ALLY_HIT_COOLDOWN;
-          }
-        }
-      }
-      if (a.hp <= 0) {
-        spawnParticles(a.x, a.y, "#f0c020", 8, 2);
-        G.allies.splice(i, 1);
-      }
-    }
-    for (let i = G.abilityPulses.length - 1; i >= 0; i--) {
-      const p = G.abilityPulses[i];
-      p.age += dt * 1e3;
-      if (p.age > p.maxAge) G.abilityPulses.splice(i, 1);
-    }
-    for (let i = G.chargeTrail.length - 1; i >= 0; i--) {
-      const t = G.chargeTrail[i];
-      t.age += dt * 1e3;
-      if (t.age > t.maxAge) G.chargeTrail.splice(i, 1);
-    }
   }
 
   // js/input.js
@@ -4532,15 +5342,19 @@ canvas {
     }
     return null;
   }
-  function hitsAbilityBadge(canvas2, clientX, clientY) {
+  function abilityKeyAtPoint(canvas2, clientX, clientY) {
     const rect = canvas2.getBoundingClientRect();
     const scaleX = canvas2.width / rect.width;
     const scaleY = canvas2.height / rect.height;
     const x = (clientX - rect.left) * scaleX;
     const y = (clientY - rect.top) * scaleY;
-    const badge = getAbilityBadgeRect();
     const hitPadding = 8;
-    return Math.hypot(x - badge.x, y - badge.y) <= badge.r + hitPadding;
+    const abilities = getActiveAbilities();
+    for (let i = 0; i < abilities.length; i++) {
+      const badge = getAbilityBadgeRect(i);
+      if (Math.hypot(x - badge.x, y - badge.y) <= badge.r + hitPadding) return abilities[i].key;
+    }
+    return null;
   }
   function attachTouchControls() {
     const canvas2 = document.getElementById("game");
@@ -4548,12 +5362,14 @@ canvas {
     knobEl = document.getElementById("touch-joystick-knob");
     if (!canvas2 || !joystickEl || !knobEl) return;
     canvas2.addEventListener("click", (e) => {
-      if (hitsAbilityBadge(canvas2, e.clientX, e.clientY)) triggerSpeciesAbility();
+      const key = abilityKeyAtPoint(canvas2, e.clientX, e.clientY);
+      if (key) triggerAbility(key);
     });
     canvas2.addEventListener("touchstart", (e) => {
       const t0 = e.changedTouches[0];
-      if (hitsAbilityBadge(canvas2, t0.clientX, t0.clientY)) {
-        triggerSpeciesAbility();
+      const tappedAbility = abilityKeyAtPoint(canvas2, t0.clientX, t0.clientY);
+      if (tappedAbility) {
+        triggerAbility(tappedAbility);
         e.preventDefault();
         return;
       }
@@ -4599,184 +5415,6 @@ canvas {
     }
     canvas2.addEventListener("touchend", endTouch, { passive: false });
     canvas2.addEventListener("touchcancel", endTouch, { passive: false });
-  }
-
-  // js/ui.js
-  var ABILITY_DAMAGE_LABELS = {
-    allies: "\u{1F427} Ally Penguins",
-    chinstrapCharge: "\u{1F4A5} Fearless Charge"
-  };
-  function damageSourceLabel(key) {
-    if (WEAPON_TYPES[key]) return WEAPON_TYPES[key].name;
-    if (POWER_WEAPON_DEFS[key]) return POWER_WEAPON_DEFS[key].label;
-    return ABILITY_DAMAGE_LABELS[key] || key;
-  }
-  function runStatRow(label, value, isSub) {
-    return '<div class="run-stats-row' + (isSub ? " run-stats-row-sub" : "") + '"><span class="run-stats-label">' + label + '</span><span class="run-stats-value">' + value + "</span></div>";
-  }
-  function renderRunStats(containerId) {
-    const container = document.getElementById(containerId);
-    if (!container) return;
-    const stats = G.runStats;
-    const rows = [];
-    const totalDamage = Object.values(stats.damageByWeapon).reduce((a, b) => a + b, 0);
-    if (totalDamage > 0) {
-      rows.push(runStatRow("\u2694\uFE0F Total Damage Dealt", Math.round(totalDamage).toLocaleString()));
-      for (const [source, amount] of Object.entries(stats.damageByWeapon)) {
-        if (amount > 0) rows.push(runStatRow(damageSourceLabel(source), Math.round(amount).toLocaleString(), true));
-      }
-    }
-    if (stats.damageTaken > 0) rows.push(runStatRow("\u{1F494} Damage Taken", Math.round(stats.damageTaken).toLocaleString()));
-    if (stats.healed > 0) rows.push(runStatRow("\u2764\uFE0F Health Healed", Math.round(stats.healed).toLocaleString()));
-    if (stats.xpGained > 0) rows.push(runStatRow("\u2728 XP Gained", Math.round(stats.xpGained).toLocaleString()));
-    if (stats.kills > 0) rows.push(runStatRow("\u{1F480} Enemies Defeated", stats.kills.toLocaleString()));
-    container.innerHTML = rows.join("");
-  }
-  function hideOverlay() {
-    document.getElementById("overlay").classList.remove("active");
-  }
-  function showOverlay() {
-    document.getElementById("overlay").classList.add("active");
-  }
-  function hideUpgradePanel() {
-    document.getElementById("upgrade-panel").style.display = "none";
-  }
-  function hideGameOverPanel() {
-    document.getElementById("game-over").style.display = "none";
-  }
-  function showGameOverPanel() {
-    document.getElementById("game-over").style.display = "block";
-  }
-  function showGameOverScreen(score, wave, isNewHigh) {
-    document.getElementById("final-score").textContent = "Score: " + score + " | Wave: " + wave;
-    document.getElementById("new-highscore-banner").style.display = isNewHigh ? "block" : "none";
-    renderRunStats("game-over-stats");
-    showGameOverPanel();
-  }
-  function showPausePanel() {
-    document.getElementById("pause-panel").style.display = "block";
-  }
-  function hidePausePanel() {
-    document.getElementById("pause-panel").style.display = "none";
-  }
-  function showShopPanel() {
-    document.getElementById("shop-panel").style.display = "block";
-  }
-  function hideShopPanel() {
-    document.getElementById("shop-panel").style.display = "none";
-  }
-  function updateMenuXpDisplay() {
-    const el = document.getElementById("menu-xp-display");
-    if (el) el.textContent = G.xpBank;
-  }
-  function updateMenuHighScoreDisplay() {
-    const el = document.getElementById("menu-highscore-display");
-    if (el) el.textContent = G.highScore;
-  }
-  function initMuteButton() {
-    const btn = document.getElementById("mute-button");
-    if (!btn) return;
-    const sync = () => {
-      btn.textContent = isMuted() ? "\u{1F507}" : "\u{1F50A}";
-    };
-    sync();
-    btn.onclick = () => {
-      toggleMute();
-      sync();
-    };
-  }
-  function initAutoAvoidButton() {
-    const btn = document.getElementById("auto-avoid-button");
-    if (!btn) return;
-    const sync = () => {
-      btn.classList.toggle("is-off", !G.autoAvoid);
-      btn.title = G.autoAvoid ? "Auto-Avoid: ON" : "Auto-Avoid: OFF";
-    };
-    sync();
-    btn.onclick = () => {
-      G.autoAvoid = !G.autoAvoid;
-      saveAutoAvoidPref();
-      sync();
-    };
-  }
-  function syncAbilityButton() {
-    const btn = document.getElementById("ability-button");
-    if (!btn) return;
-    const species = getPenguinType(G.penguinType);
-    if (species.triggerable) {
-      btn.style.display = "";
-      btn.dataset.icon = species.icon || "\u2728";
-      btn.textContent = species.icon || "\u2728";
-      btn.title = species.ability;
-    } else {
-      btn.style.display = "none";
-    }
-  }
-  function initAbilityButton() {
-    const btn = document.getElementById("ability-button");
-    if (!btn) return;
-    btn.onclick = () => triggerSpeciesAbility();
-    btn.addEventListener("touchstart", (e) => {
-      e.preventDefault();
-      triggerSpeciesAbility();
-    }, { passive: false });
-    syncAbilityButton();
-  }
-  function updateAbilityButtonUI() {
-    const btn = document.getElementById("ability-button");
-    if (!btn || btn.style.display === "none") return;
-    const cooldown = G.player.abilityCooldown;
-    const onCooldown = cooldown > 0;
-    btn.classList.toggle("is-off", onCooldown);
-    btn.textContent = onCooldown ? String(Math.ceil(cooldown / 1e3)) : btn.dataset.icon || "\u2728";
-  }
-  function onStart(handler) {
-    const btn = document.getElementById("start-button");
-    if (btn) btn.onclick = handler;
-  }
-  function onRestart(handler) {
-    const btn = document.getElementById("restart-button");
-    if (btn) btn.onclick = handler;
-  }
-  function onResume(handler) {
-    const btn = document.getElementById("resume-button");
-    if (btn) btn.onclick = handler;
-  }
-  function onPauseRestart(handler) {
-    const btn = document.getElementById("pause-restart-button");
-    if (btn) btn.onclick = handler;
-  }
-  function onQuit(handler) {
-    const btn = document.getElementById("quit-button");
-    if (btn) btn.onclick = handler;
-  }
-  function showHistoryPanel() {
-    document.getElementById("history-panel").style.display = "block";
-  }
-  function hideHistoryPanel() {
-    document.getElementById("history-panel").style.display = "none";
-  }
-  function onHistoryOpen(handler) {
-    const btn = document.getElementById("history-button");
-    if (btn) btn.onclick = handler;
-  }
-  function onHistoryClose(handler) {
-    const btn = document.getElementById("history-close-btn");
-    if (btn) btn.onclick = handler;
-  }
-  function showCompendiumPanel() {
-    document.getElementById("compendium-panel").style.display = "flex";
-  }
-  function hideCompendiumPanel() {
-    document.getElementById("compendium-panel").style.display = "none";
-  }
-  function onCompendiumOpen(handler) {
-    const btn = document.getElementById("compendium-button");
-    if (btn) btn.onclick = handler;
-  }
-  function onCompendiumClose(handler) {
-    const btn = document.getElementById("compendium-close-btn");
-    if (btn) btn.onclick = handler;
   }
 
   // js/penguinSelect.js
@@ -5221,6 +5859,22 @@ canvas {
     });
     container.appendChild(grid);
   }
+  function renderArtifacts(container) {
+    container.appendChild(sectionNote(
+      'Permanently unlocked by finding a rare "Artifact Cache" pickup during a run \u2014 never bought with XP. Exactly one can be equipped at a time, and the choice is locked in for the whole run (see the ARTIFACT button on the main menu).'
+    ));
+    const grid = document.createElement("div");
+    grid.className = "compendium-grid";
+    ARTIFACT_TYPES.forEach((a) => {
+      const unlocked = G.artifactUnlocks[a.key];
+      const lockTag = unlocked ? '<span class="compendium-card-tag">Found</span>' : '<span class="compendium-card-tag">Not yet found</span>';
+      const scopeTag = a.mapExclusive ? '<span class="compendium-card-tag">Research Facility only</span>' : "";
+      grid.appendChild(makeCard(
+        `<div class="compendium-card-name">${a.name}</div><div>${lockTag}${scopeTag}</div><div class="compendium-card-desc">${a.desc}</div><div class="compendium-card-desc">${a.mechanic}</div>`
+      ));
+    });
+    container.appendChild(grid);
+  }
   var POWERUP_BASE_KEYS = ["dmg", "hp", "proj", "pierce", "radius"];
   var WEAPON_SPECIFIC_POWERUP_KEYS = /* @__PURE__ */ new Set(["proj", "pierce", "radius"]);
   function renderPowerups(container) {
@@ -5260,6 +5914,7 @@ canvas {
     { id: "upgrades", title: "\u2B50 In-Run Upgrades", render: renderUpgrades },
     { id: "permanent-upgrades", title: "\u{1F3EA} Permanent Upgrades", render: renderPermanentUpgrades },
     { id: "penguins", title: "\u{1F427} Penguins & Abilities", render: renderPenguins },
+    { id: "artifacts", title: "\u{1F3FA} Artifacts", render: renderArtifacts },
     { id: "powerups", title: "\u{1F48E} Powerups", render: renderPowerups },
     { id: "settings", title: "\u2699\uFE0F Settings", render: renderSettings },
     { id: "controls", title: "\u2328\uFE0F Controls", render: renderControlsList }
@@ -5375,6 +6030,49 @@ canvas {
   }
 
   // js/projectiles.js
+  function applyOnHitArtifacts(e, dmg) {
+    if (G.equippedArtifact === "frostbiteCharm") {
+      const a = getArtifactType("frostbiteCharm");
+      if (Math.random() < a.procChance) {
+        e.slowTimer = a.slowDuration;
+        e.slowMult = a.slowMult;
+      }
+    } else if (G.equippedArtifact === "staticCoil") {
+      const a = getArtifactType("staticCoil");
+      if (Math.random() < a.procChance) {
+        let target = null, bestDist = a.range;
+        for (const other of G.enemies) {
+          if (other === e) continue;
+          const d = dist(e, other);
+          if (d < bestDist) {
+            bestDist = d;
+            target = other;
+          }
+        }
+        if (target) {
+          const arcDmg = dmg * a.dmgFraction;
+          target.hp -= arcDmg;
+          recordDamageDealt("staticCoil", arcDmg);
+          spawnParticles(target.x, target.y, "#8fd8ff", 4, 2);
+          G.lightningArcs.push({ points: [{ x: e.x, y: e.y }, { x: target.x, y: target.y }], color: "#8fd8ff", age: 0, maxAge: 130 });
+          if (target.hp <= 0) {
+            const idx = G.enemies.indexOf(target);
+            if (idx !== -1) {
+              G.score += target.score;
+              recordKill();
+              spawnFloatingText(target.x, target.y, "+" + target.score, "#ffaa00");
+              spawnParticles(target.x, target.y, target.color, 12, 3);
+              G.screenShake.intensity = Math.min(G.screenShake.intensity + 3, 8);
+              playKill();
+              const gemVal = Math.floor(target.score / 10) + (Math.random() < 0.3 ? 1 : 0);
+              spawnGem(target.x, target.y, gemVal);
+              G.enemies.splice(idx, 1);
+            }
+          }
+        }
+      }
+    }
+  }
   function shoot() {
     const player = G.player;
     const now = performance.now();
@@ -5536,6 +6234,7 @@ canvas {
     e.hp -= dmg;
     recordDamageDealt(source, dmg);
     e.flashTimer = 5;
+    applyOnHitArtifacts(e, dmg);
     if (e.hp <= 0) {
       const idx = G.enemies.indexOf(e);
       if (idx === -1) return;
@@ -5622,6 +6321,7 @@ canvas {
           e.flashTimer = 5;
           if (p.hitSet) p.hitSet.add(e);
           spawnParticles(e.x, e.y, p.color, 4, 2);
+          applyOnHitArtifacts(e, p.dmg);
           if (e.hp <= 0) {
             G.score += e.score;
             recordKill();
@@ -5721,7 +6421,15 @@ canvas {
       // waypoint {x,y} stops; staggered repathTimer avoids every enemy
       // recomputing line-of-sight on the same frame.
       path: null,
-      repathTimer: Math.random() * 0.4
+      repathTimer: Math.random() * 0.4,
+      // Artifact-inflicted status effects (see updateEnemies()) — initialized
+      // to 0 so a fresh enemy's movement gate (`immobilizedTimer <= 0`) reads
+      // true immediately, rather than comparing against undefined.
+      immobilizedTimer: 0,
+      slowTimer: 0,
+      slowMult: 1,
+      burnTimer: 0,
+      burnDps: 0
     });
   }
   var REPATH_INTERVAL = 0.5;
@@ -5812,6 +6520,17 @@ canvas {
       if (e.path.length) return e.path[0];
     }
     return player;
+  }
+  var STEER_DEFLECTIONS = [0, 0.35, -0.35, 0.7, -0.7, 1.05, -1.05, 1.4, -1.4];
+  function steerAvoiding(e, targetX, targetY, stepLen) {
+    const base = Math.atan2(targetY - e.y, targetX - e.x);
+    for (const off of STEER_DEFLECTIONS) {
+      const a = base + off;
+      const nx = e.x + Math.cos(a) * stepLen;
+      const ny = e.y + Math.sin(a) * stepLen;
+      if (!circleHitsRectObstacle(nx, ny, e.r)) return { x: nx, y: ny };
+    }
+    return { x: e.x + Math.cos(base) * stepLen, y: e.y + Math.sin(base) * stepLen };
   }
   var DEFAULT_ROSTER = ["basic", "fast", "tank", "zombie", "bat", "demon"];
   function unlockWave(k) {
@@ -5911,7 +6630,12 @@ canvas {
       species: t.species,
       score: t.score * 10,
       flashTimer: 0,
-      isBoss: true
+      isBoss: true,
+      immobilizedTimer: 0,
+      slowTimer: 0,
+      slowMult: 1,
+      burnTimer: 0,
+      burnDps: 0
     });
   }
   function pickEscortTypes(mapDef) {
@@ -5994,24 +6718,54 @@ canvas {
     const hasWaypoints = !!(fixedLayout && fixedLayout.waypoints && fixedLayout.waypoints.length);
     for (let i = G.enemies.length - 1; i >= 0; i--) {
       const e = G.enemies[i];
-      const target = hasWaypoints ? getPathingTarget(e, player, fixedLayout, dt) : player;
-      const angle = Math.atan2(target.y - e.y, target.x - e.x);
-      e.x += Math.cos(angle) * e.speed * dt * 60;
-      e.y += Math.sin(angle) * e.speed * dt * 60;
-      resolveWallCollision(e, e.r);
+      if (e.slowTimer > 0) e.slowTimer -= dt;
+      if (e.immobilizedTimer > 0) e.immobilizedTimer -= dt;
+      if (e.burnTimer > 0) {
+        e.burnTimer -= dt;
+        const burnDmg = e.burnDps * dt;
+        e.hp -= burnDmg;
+        recordDamageDealt("emberBrand", burnDmg);
+        if (e.hp <= 0) {
+          G.score += e.score;
+          recordKill();
+          spawnFloatingText(e.x, e.y, "+" + e.score, "#ffaa00");
+          spawnParticles(e.x, e.y, e.color, 12, 3);
+          G.screenShake.intensity = Math.min(G.screenShake.intensity + 3, 8);
+          playKill();
+          const gemVal = Math.floor(e.score / 10) + (Math.random() < 0.3 ? 1 : 0);
+          spawnGem(e.x, e.y, gemVal);
+          G.enemies.splice(i, 1);
+          continue;
+        }
+      }
+      if (e.immobilizedTimer <= 0) {
+        const speedMult = e.slowTimer > 0 ? e.slowMult : 1;
+        const stepLen = e.speed * speedMult * dt * 60;
+        if (hasWaypoints) {
+          const target = getPathingTarget(e, player, fixedLayout, dt);
+          const next = steerAvoiding(e, target.x, target.y, stepLen);
+          e.x = next.x;
+          e.y = next.y;
+        } else {
+          const angle = Math.atan2(player.y - e.y, player.x - e.x);
+          e.x += Math.cos(angle) * stepLen;
+          e.y += Math.sin(angle) * stepLen;
+        }
+        resolveWallCollision(e, e.r);
+      }
       if (e.flashTimer > 0) e.flashTimer -= dt * 60;
       if (e.ranged) {
         e.shotCooldown -= dt * 1e3;
         if (e.shotCooldown <= 0 && dist(e, player) <= ENEMY_FIRE_RANGE) {
           e.shotCooldown = ENEMY_RANGED_FIRE_RATE;
-          const angle2 = Math.atan2(player.y - e.y, player.x - e.x);
+          const angle = Math.atan2(player.y - e.y, player.x - e.x);
           G.enemyProjectiles.push({
             x: e.x,
             y: e.y,
             originX: e.x,
             originY: e.y,
-            vx: Math.cos(angle2) * ENEMY_PROJECTILE_SPEED,
-            vy: Math.sin(angle2) * ENEMY_PROJECTILE_SPEED,
+            vx: Math.cos(angle) * ENEMY_PROJECTILE_SPEED,
+            vy: Math.sin(angle) * ENEMY_PROJECTILE_SPEED,
             dmg: e.net ? 0 : e.dmg,
             stun: e.net ? 1 : 0,
             r: 6,
@@ -6023,16 +6777,44 @@ canvas {
       }
       if (dist(e, player) < e.r + PLAYER_R) {
         if (player.invincible <= 0) {
-          player.hp -= e.dmg;
-          recordDamageTaken(e.dmg);
-          player.invincible = 1;
+          const artifact = G.equippedArtifact && getArtifactType(G.equippedArtifact);
+          const dmgTaken = artifact && artifact.key === "blubberPlating" ? e.dmg * (1 - artifact.reduction) : e.dmg;
+          player.hp -= dmgTaken;
+          recordDamageTaken(dmgTaken);
+          player.invincible = artifact && artifact.key === "frozenWard" ? artifact.invincibleDuration : 1;
           player.flashTimer = 10;
           G.screenShake.intensity = Math.min(G.screenShake.intensity + 5, 12);
           spawnParticles(player.x, player.y, "#ff3366", 8, 2);
+          if (artifact && artifact.key === "blubberPlating") spawnParticles(player.x, player.y, "#ffd9a0", 7, 2);
           playHurt();
           if (player.hp <= 0) {
             player.hp = 0;
             gameOver();
+          }
+          if (artifact && artifact.key === "iceKnuckles") {
+            spawnParticles(e.x, e.y, "#bfefff", 9, 3);
+            e.hp -= artifact.contactDmg;
+            recordDamageDealt("iceKnuckles", artifact.contactDmg);
+            if (e.hp <= 0) {
+              G.score += e.score;
+              recordKill();
+              spawnFloatingText(e.x, e.y, "+" + e.score, "#ffaa00");
+              spawnParticles(e.x, e.y, e.color, 12, 3);
+              G.screenShake.intensity = Math.min(G.screenShake.intensity + 3, 8);
+              playKill();
+              const gemVal = Math.floor(e.score / 10) + (Math.random() < 0.3 ? 1 : 0);
+              spawnGem(e.x, e.y, gemVal);
+              G.enemies.splice(i, 1);
+              continue;
+            }
+          } else if (artifact && artifact.key === "emberBrand") {
+            e.burnTimer = artifact.burnDuration;
+            e.burnDps = artifact.burnDps;
+            spawnParticles(e.x, e.y, "#ff8c3c", 7, 2);
+          } else if (artifact && artifact.key === "stolenRestraintNet" && G.currentMap && G.currentMap.id === artifact.mapExclusive) {
+            e.immobilizedTimer = Math.max(e.immobilizedTimer || 0, artifact.stunDuration);
+            spawnParticles(e.x, e.y, "#eef5f8", 7, 2);
+            playNetted();
           }
         }
       }
@@ -6058,15 +6840,18 @@ canvas {
       }
       if (dist(p, player) < p.r + PLAYER_R) {
         if (player.invincible <= 0) {
+          const artifact = G.equippedArtifact && getArtifactType(G.equippedArtifact);
           if (p.dmg) {
-            player.hp -= p.dmg;
-            recordDamageTaken(p.dmg);
+            const dmgTaken = artifact && artifact.key === "blubberPlating" ? p.dmg * (1 - artifact.reduction) : p.dmg;
+            player.hp -= dmgTaken;
+            recordDamageTaken(dmgTaken);
           }
           if (p.stun) player.immobilizedTimer = Math.max(player.immobilizedTimer, p.stun);
-          player.invincible = 1;
+          player.invincible = artifact && artifact.key === "frozenWard" ? artifact.invincibleDuration : 1;
           player.flashTimer = 10;
           G.screenShake.intensity = Math.min(G.screenShake.intensity + 5, 12);
           spawnParticles(player.x, player.y, p.color, 8, 2);
+          if (p.dmg && artifact && artifact.key === "blubberPlating") spawnParticles(player.x, player.y, "#ffd9a0", 7, 2);
           if (p.stun) playNetted();
           else playHurt();
           if (player.hp <= 0) {
@@ -6151,8 +6936,12 @@ canvas {
     }
   }
   function levelComplete() {
-    G.state = "boon";
     G.screenShake.intensity = Math.min(G.screenShake.intensity + 6, 10);
+    if (G.levelIndex + 1 >= G.expeditionMaps.length) {
+      victory();
+      return;
+    }
+    G.state = "boon";
     showBoonScreen();
   }
   function getBoonChoices() {
@@ -6325,6 +7114,7 @@ canvas {
     hidePanel("map-select-panel");
     hidePanel("boon-panel");
     hidePanel("expedition-complete");
+    hidePanel("artifact-reveal-panel");
   }
   function startRun(mode = "endless", mapDef = null) {
     hideAllRunPanels();
@@ -6425,7 +7215,10 @@ canvas {
     const player = G.player;
     if (player.invincible > 0) player.invincible -= dt;
     if (player.flashTimer > 0) player.flashTimer -= dt * 60;
-    if (player.abilityCooldown > 0) player.abilityCooldown -= dt * 1e3;
+    const cds = player.abilityCooldowns;
+    if (cds) for (const k in cds) {
+      if (cds[k] > 0) cds[k] -= dt * 1e3;
+    }
     if (player.immobilizedTimer > 0) player.immobilizedTimer -= dt;
   }
 
@@ -6436,6 +7229,7 @@ canvas {
   initShop();
   initHistory();
   initPenguinSelect();
+  initArtifactSelect();
   initCompendium();
   initControls();
   initMuteButton();
@@ -6460,6 +7254,8 @@ canvas {
   if (expeditionMenuBtn) expeditionMenuBtn.onclick = backToMenu;
   var changePenguinBtn = document.getElementById("change-penguin-button");
   if (changePenguinBtn) changePenguinBtn.onclick = openPenguinPanel;
+  var changeArtifactBtn = document.getElementById("change-artifact-button");
+  if (changeArtifactBtn) changeArtifactBtn.onclick = openArtifactPanel;
   var pauseBtn = document.getElementById("pause-button");
   if (pauseBtn) pauseBtn.onclick = togglePause;
   function loop() {
