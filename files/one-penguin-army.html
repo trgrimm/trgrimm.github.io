@@ -85,7 +85,11 @@ canvas {
 #overlay h1 {
   font-size: 48px;
   color: #ff3366;
-  text-shadow: 0 0 20px #ff3366, 0 0 40px #aa0044;
+  /* em, not px: the glow blur must shrink WITH the font (see the mobile
+     media query below, where font-size drops to ~7vw) — a fixed px blur
+     stayed desktop-sized on a much smaller mobile title, swallowing the
+     letters in fuzz instead of tracing a crisp glow around them. */
+  text-shadow: 0 0 0.42em #ff3366, 0 0 0.83em #aa0044;
   margin-bottom: 10px;
   text-align: center;
 }
@@ -1351,7 +1355,7 @@ canvas {
       label: "\u2694\uFE0F Damage",
       maxLevel: 10,
       desc: (level) => `+${level} base damage`,
-      cost: (level) => Math.round(50 * 1.1 * Math.pow(1.7, level)),
+      cost: (level) => Math.round(50 * 1.1 * (level > 0 ? 1.2 : 1) * Math.pow(1.7, level)),
       effect: (player, level) => {
         player.dmg += level;
       }
@@ -1361,7 +1365,7 @@ canvas {
       label: "\u{1F6E1}\uFE0F Max HP",
       maxLevel: 10,
       desc: (level) => `+${level * 10} max HP`,
-      cost: (level) => Math.round(25 * 1.1 * Math.pow(1.55, level)),
+      cost: (level) => Math.round(25 * 1.1 * (level > 0 ? 1.2 : 1) * Math.pow(1.55, level)),
       effect: (player, level) => {
         player.maxHp += level * 10;
       }
@@ -1371,7 +1375,7 @@ canvas {
       label: "\u{1F3C3} Speed",
       maxLevel: 5,
       desc: (level) => `+${level * 5}% movement speed`,
-      cost: (level) => Math.round(30 * 1.1 * Math.pow(1.65, level)),
+      cost: (level) => Math.round(30 * 1.1 * (level > 0 ? 1.2 : 1) * Math.pow(1.65, level)),
       effect: (player, level) => {
         player.speed *= 1 + 0.05 * level;
       }
@@ -1381,7 +1385,7 @@ canvas {
       label: "\u{1F3AF} Weapon Power",
       maxLevel: 4,
       desc: (level) => `+${level} snowball${level > 1 ? "s" : ""} (Harpoon: +${level} pierce, Nova: +${level * 8} radius)`,
-      cost: (level) => Math.round(55 * 1.1 * Math.pow(1.75, level)),
+      cost: (level) => Math.round(55 * 1.1 * (level > 0 ? 1.2 : 1) * Math.pow(1.75, level)),
       effect: (player, level, weapon) => {
         if (weapon === "harpoon") player.pierceCount += level;
         else if (weapon === "nova") player.novaRadius += level * 8;
@@ -1393,7 +1397,7 @@ canvas {
       label: "\u26A1 Fire Rate",
       maxLevel: 8,
       desc: (level) => `${level * 4}% faster starting fire rate`,
-      cost: (level) => Math.round(30 * 1.1 * Math.pow(1.6, level)),
+      cost: (level) => Math.round(30 * 1.1 * (level > 0 ? 1.2 : 1) * Math.pow(1.6, level)),
       effect: (player, level) => {
         player.fireRate *= Math.pow(0.96, level);
       }
@@ -1403,7 +1407,7 @@ canvas {
       label: "\u{1F48E} Gem Pickup",
       maxLevel: 5,
       desc: (level) => `+${level * 10} gem pickup radius`,
-      cost: (level) => Math.round(40 * 1.1 * Math.pow(1.75, level)),
+      cost: (level) => Math.round(40 * 1.1 * (level > 0 ? 1.2 : 1) * Math.pow(1.75, level)),
       effect: (player, level) => {
         player.gemPickupRadius = Math.min(GEM_PICKUP_MAX, player.gemPickupRadius + level * 10);
       }
@@ -2641,9 +2645,11 @@ canvas {
   function summonAlly(player) {
     const angle = Math.random() * Math.PI * 2;
     const hp = ALLY_HP * (player.allyPowerMult || 1);
+    const spawn = { x: player.x + Math.cos(angle) * 30, y: player.y + Math.sin(angle) * 30 };
+    resolveObstacleCollision(spawn, ALLY_R);
     G.allies.push({
-      x: player.x + Math.cos(angle) * 30,
-      y: player.y + Math.sin(angle) * 30,
+      x: spawn.x,
+      y: spawn.y,
       hp,
       maxHp: hp,
       facing: 0,
@@ -2756,6 +2762,7 @@ canvas {
         if (!touching) {
           a.x += Math.cos(angle) * ALLY_SPEED * dt * 60;
           a.y += Math.sin(angle) * ALLY_SPEED * dt * 60;
+          resolveObstacleCollision(a, ALLY_R);
         } else {
           if (a.attackCooldown <= 0) {
             const warHorn = G.equippedArtifact === "warHorn" && G.penguinType === "emperor" && getArtifactType("warHorn");
