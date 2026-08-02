@@ -95,11 +95,16 @@ canvas {
 }
 #overlay p {
   font-size: 18px;
-  color: #24333d; /* dark slate — the grey #aaa was hard to read on the bright icy menu backdrop */
+  /* Light text + a dark halo, not a dark slate + light shadow — the menu's
+     backdrop is now the dark night-sky title scene (see renderTitleScreen()
+     in render.js), not the old bright icy one these colors were originally
+     tuned for. Dark-on-dark was blending into the background almost
+     illegibly, which read as "blurry" rather than just low-contrast. */
+  color: #eef4fa;
   margin-bottom: 20px;
   text-align: center;
   padding: 0 12px;
-  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.5);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9), 0 2px 10px rgba(0, 0, 0, 0.6);
 }
 
 /* Narrow (phone-width) viewports: the 48px title is wider than the screen
@@ -114,10 +119,13 @@ canvas {
 }
 #overlay .menu-xp {
   font-size: 14px;
-  color: #9a5b00; /* dark amber — the bright #ffdd00 gold washed out on the light menu backdrop */
+  /* Bright gold + a dark halo — same reasoning as #overlay p above: the dark
+     amber was tuned for the old bright icy backdrop and nearly disappears
+     against the current dark night-sky title scene. */
+  color: #ffdd00;
   font-weight: bold;
   margin-top: -10px;
-  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.5);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9), 0 2px 8px rgba(0, 0, 0, 0.6);
 }
 #overlay button, #game-over button, #pause-panel button, #history-panel button {
   display: block;
@@ -1192,12 +1200,19 @@ canvas {
       },
       isMaxed: (p) => p.dmg >= 80
     },
+    // Excludes nova: Nova has its own dedicated 'novaFreq' upgrade below,
+    // sharing this same p.fireRate field but with a much higher floor (300ms
+    // vs this one's 8ms) appropriate for an AOE pulse instead of a projectile
+    // weapon. Leaving this offered as 'all' let a Nova player pick THIS one
+    // instead and drive fireRate straight through novaFreq's floor down to
+    // 8ms — 37x past Nova's intended cap — since this def's own isMaxed only
+    // ever checks its own (wrong-for-nova) threshold.
     {
       key: "fireRate",
       icon: "\u26A1",
       name: "Fire Rate",
       weight: 1,
-      weapons: "all",
+      weapons: ["barrage", "harpoon"],
       mags: { common: 0.08, rare: 0.15, epic: 0.25 },
       desc: (m) => `+${Math.round(m * 100)}% faster attacks`,
       apply: (p, m) => {
@@ -1241,9 +1256,9 @@ canvas {
       mags: { common: 0.25, rare: 0.5, epic: 1 },
       desc: (m) => `+${m} HP/sec regeneration`,
       apply: (p, m) => {
-        p.regen = (p.regen || 0) + m;
+        p.regen = Math.min(5, (p.regen || 0) + m);
       },
-      isMaxed: (p) => (p.regen || 0) >= 8
+      isMaxed: (p) => (p.regen || 0) >= 5
     },
     {
       key: "gemPickup",
@@ -2569,6 +2584,106 @@ canvas {
     }
     return true;
   }
+  var REPATH_INTERVAL = 0.5;
+  var cachedGraphFor = null;
+  var cachedAdjacency = null;
+  function getWaypointAdjacency(fixedLayout) {
+    if (cachedGraphFor === fixedLayout) return cachedAdjacency;
+    const byId = new Map(fixedLayout.waypoints.map((wp) => [wp.id, wp]));
+    const adj = /* @__PURE__ */ new Map();
+    for (const wp of fixedLayout.waypoints) adj.set(wp.id, []);
+    for (const [a, b] of fixedLayout.waypointEdges) {
+      const wa = byId.get(a), wb = byId.get(b);
+      const d = Math.hypot(wa.x - wb.x, wa.y - wb.y);
+      adj.get(a).push({ id: b, dist: d });
+      adj.get(b).push({ id: a, dist: d });
+    }
+    cachedGraphFor = fixedLayout;
+    cachedAdjacency = adj;
+    return adj;
+  }
+  function nearestWaypoint(waypoints, x, y) {
+    let best = null, bestDist = Infinity;
+    let fallback = null, fallbackDist = Infinity;
+    for (const wp of waypoints) {
+      const d = Math.hypot(wp.x - x, wp.y - y);
+      if (d < fallbackDist) {
+        fallbackDist = d;
+        fallback = wp;
+      }
+      if (d < bestDist && hasLineOfSight(x, y, wp.x, wp.y)) {
+        bestDist = d;
+        best = wp;
+      }
+    }
+    return best || fallback;
+  }
+  function findWaypointPath(fixedLayout, fromId, toId) {
+    var _a;
+    if (fromId === toId) return [];
+    const adj = getWaypointAdjacency(fixedLayout);
+    const dist2 = /* @__PURE__ */ new Map([[fromId, 0]]);
+    const cameFrom = /* @__PURE__ */ new Map();
+    const visited = /* @__PURE__ */ new Set();
+    for (; ; ) {
+      let cur = null, curDist = Infinity;
+      for (const [id, d] of dist2) {
+        if (!visited.has(id) && d < curDist) {
+          curDist = d;
+          cur = id;
+        }
+      }
+      if (cur === null || cur === toId) break;
+      visited.add(cur);
+      for (const edge of adj.get(cur) || []) {
+        if (visited.has(edge.id)) continue;
+        const nd = curDist + edge.dist;
+        if (nd < ((_a = dist2.get(edge.id)) != null ? _a : Infinity)) {
+          dist2.set(edge.id, nd);
+          cameFrom.set(edge.id, cur);
+        }
+      }
+    }
+    if (!dist2.has(toId)) return [];
+    const idPath = [];
+    for (let cur = toId; cur !== fromId; cur = cameFrom.get(cur)) idPath.unshift(cur);
+    idPath.unshift(fromId);
+    const byId = new Map(fixedLayout.waypoints.map((wp) => [wp.id, wp]));
+    return idPath.map((id) => byId.get(id));
+  }
+  function getPathingTarget(e, dest, fixedLayout, dt) {
+    e.repathTimer -= dt;
+    if (e.repathTimer <= 0) {
+      e.repathTimer = REPATH_INTERVAL;
+      if (hasLineOfSight(e.x, e.y, dest.x, dest.y)) {
+        e.path = null;
+      } else {
+        const toWp = nearestWaypoint(fixedLayout.waypoints, dest.x, dest.y);
+        const needsFreshPath = !e.path || e.path.length === 0 || e.path[e.path.length - 1].id !== toWp.id;
+        if (needsFreshPath) {
+          const fromWp = e.path && e.path.length ? e.path[0] : nearestWaypoint(fixedLayout.waypoints, e.x, e.y);
+          e.path = findWaypointPath(fixedLayout, fromWp.id, toWp.id);
+        }
+      }
+    }
+    if (e.path && e.path.length) {
+      const next = e.path[0];
+      if (Math.hypot(next.x - e.x, next.y - e.y) < 30) e.path.shift();
+      if (e.path.length) return e.path[0];
+    }
+    return dest;
+  }
+  var STEER_DEFLECTIONS = [0, 0.35, -0.35, 0.7, -0.7, 1.05, -1.05, 1.4, -1.4];
+  function steerAvoiding(e, targetX, targetY, stepLen, radius) {
+    const base = Math.atan2(targetY - e.y, targetX - e.x);
+    for (const off of STEER_DEFLECTIONS) {
+      const a = base + off;
+      const nx = e.x + Math.cos(a) * stepLen;
+      const ny = e.y + Math.sin(a) * stepLen;
+      if (!circleHitsRectObstacle(nx, ny, radius)) return { x: nx, y: ny };
+    }
+    return { x: e.x + Math.cos(base) * stepLen, y: e.y + Math.sin(base) * stepLen };
+  }
 
   // js/upgrades.js
   function rollRarity() {
@@ -2714,8 +2829,12 @@ canvas {
       facing: 0,
       attackCooldown: 0,
       hitCooldown: 0,
-      age: 0
+      age: 0,
       // seconds since summon — War Horn scales this ally's damage with it
+      // Waypoint pathfinding (facility-style maps only — see updateAllies()),
+      // same fields/mechanism enemies.js's spawnEnemy() seeds for enemies.
+      path: null,
+      repathTimer: Math.random() * 0.4
     });
     spawnParticles(player.x, player.y, "#f0c020", 10, 2.5);
   }
@@ -2801,6 +2920,8 @@ canvas {
     }
   }
   function updateAllies(dt) {
+    const fixedLayout = G.currentMap && G.currentMap.fixedLayout;
+    const hasWaypoints = !!(fixedLayout && fixedLayout.waypoints && fixedLayout.waypoints.length);
     for (let i = G.allies.length - 1; i >= 0; i--) {
       const a = G.allies[i];
       let nearest = null, nearestDist = Infinity;
@@ -2815,12 +2936,19 @@ canvas {
       if (a.hitCooldown > 0) a.hitCooldown -= dt * 1e3;
       a.age += dt;
       if (nearest) {
-        const angle = Math.atan2(nearest.y - a.y, nearest.x - a.x);
-        a.facing = angle;
+        a.facing = Math.atan2(nearest.y - a.y, nearest.x - a.x);
         const touching = nearestDist < ALLY_R + nearest.r;
         if (!touching) {
-          a.x += Math.cos(angle) * ALLY_SPEED * dt * 60;
-          a.y += Math.sin(angle) * ALLY_SPEED * dt * 60;
+          const stepLen = ALLY_SPEED * dt * 60;
+          if (hasWaypoints) {
+            const target = getPathingTarget(a, nearest, fixedLayout, dt);
+            const next = steerAvoiding(a, target.x, target.y, stepLen, ALLY_R);
+            a.x = next.x;
+            a.y = next.y;
+          } else {
+            a.x += Math.cos(a.facing) * stepLen;
+            a.y += Math.sin(a.facing) * stepLen;
+          }
           resolveObstacleCollision(a, ALLY_R);
         } else {
           if (a.attackCooldown <= 0) {
@@ -3733,8 +3861,12 @@ canvas {
     { label: "\u{1F3C3} Frostpaws", desc: "+15% movement speed", apply: (p) => {
       p.speed *= 1.15;
     } },
+    // The 5 mirrors config.js's regen upgrade cap (UPGRADE_DEFS' 'regen' entry)
+    // — duplicated as a literal rather than imported since this file is kept
+    // import-free (see the module comment above), but both must stay in sync
+    // so Meltwater can't stack past the same ceiling the level-up upgrade has.
     { label: "\u{1F4A7} Meltwater", desc: "+1.5 HP/sec regeneration", apply: (p) => {
-      p.regen = (p.regen || 0) + 1.5;
+      p.regen = Math.min(5, (p.regen || 0) + 1.5);
     } },
     { label: "\u{1FA78} Frenzy", desc: "+30% damage", apply: (p) => {
       p.dmg *= 1.3;
@@ -4811,6 +4943,99 @@ canvas {
     }
     ctx2.restore();
   }
+  function drawStandingPenguin(x, groundY, scale, colors, accentStyle, speciesKey) {
+    const bodyW = scale * 1.3, bodyH = scale * 2.15;
+    const bodyCenterY = groundY - bodyH * 0.46;
+    const headR = scale * 0.68;
+    const headCenterY = bodyCenterY - bodyH * 0.5 - headR * 0.45;
+    ctx2.fillStyle = colors.beak;
+    for (const side of [-1, 1]) {
+      ctx2.beginPath();
+      ctx2.ellipse(x + side * scale * 0.34, groundY - scale * 0.04, scale * 0.3, scale * 0.13, side * 0.15, 0, Math.PI * 2);
+      ctx2.fill();
+    }
+    for (const side of [-1, 1]) {
+      ctx2.save();
+      ctx2.translate(x + side * bodyW * 0.52, bodyCenterY - bodyH * 0.05);
+      ctx2.rotate(-side * 0.32);
+      ctx2.beginPath();
+      ctx2.ellipse(0, 0, scale * 0.26, bodyH * 0.36, 0, 0, Math.PI * 2);
+      ctx2.fillStyle = colors.flipper;
+      ctx2.fill();
+      ctx2.restore();
+    }
+    ctx2.beginPath();
+    ctx2.ellipse(x, bodyCenterY, bodyW * 0.5, bodyH * 0.5, 0, 0, Math.PI * 2);
+    ctx2.fillStyle = colors.body;
+    ctx2.fill();
+    ctx2.beginPath();
+    ctx2.ellipse(x, bodyCenterY + bodyH * 0.1, bodyW * 0.36, bodyH * 0.38, 0, 0, Math.PI * 2);
+    ctx2.fillStyle = colors.belly;
+    ctx2.fill();
+    ctx2.beginPath();
+    ctx2.arc(x, headCenterY, headR, 0, Math.PI * 2);
+    ctx2.fillStyle = colors.body;
+    ctx2.fill();
+    ctx2.beginPath();
+    ctx2.ellipse(x, headCenterY + headR * 0.12, headR * 0.72, headR * 0.8, 0, 0, Math.PI * 2);
+    ctx2.fillStyle = colors.belly;
+    ctx2.fill();
+    ctx2.fillStyle = colors.accent;
+    if (accentStyle === "crest" && speciesKey === "rockhopper") {
+      ctx2.strokeStyle = colors.accent;
+      ctx2.lineWidth = Math.max(1.5, scale * 0.05);
+      ctx2.lineCap = "round";
+      for (const t of [-0.55, -0.2, 0.15, 0.5]) {
+        const bx = x + headR * t, by = headCenterY - headR * 0.8;
+        ctx2.beginPath();
+        ctx2.moveTo(bx, by);
+        ctx2.lineTo(bx + headR * t * 0.5, by - headR * 0.7);
+        ctx2.stroke();
+      }
+    } else if (accentStyle === "crest") {
+      ctx2.beginPath();
+      ctx2.moveTo(x - headR * 0.3, headCenterY - headR * 0.75);
+      ctx2.lineTo(x, headCenterY - headR * 1.5);
+      ctx2.lineTo(x + headR * 0.3, headCenterY - headR * 0.75);
+      ctx2.closePath();
+      ctx2.fill();
+    } else if (accentStyle === "stripe") {
+      ctx2.beginPath();
+      ctx2.ellipse(x, headCenterY - headR * 0.35, headR * 0.62, headR * 0.22, 0, 0, Math.PI * 2);
+      ctx2.fill();
+    } else if (accentStyle === "chinStrap") {
+      ctx2.strokeStyle = colors.accent;
+      ctx2.lineWidth = Math.max(1.5, scale * 0.06);
+      ctx2.beginPath();
+      ctx2.arc(x, headCenterY + headR * 0.1, headR * 0.78, Math.PI * 0.18, Math.PI * 0.82);
+      ctx2.stroke();
+    } else if (accentStyle === "earPatch") {
+      for (const side of [-1, 1]) {
+        ctx2.beginPath();
+        ctx2.ellipse(x + side * headR * 0.75, headCenterY + headR * 0.35, headR * 0.32, headR * 0.42, side * 0.3, 0, Math.PI * 2);
+        ctx2.fill();
+      }
+    }
+    const beakY = headCenterY + headR * 0.42;
+    ctx2.beginPath();
+    ctx2.moveTo(x - headR * 0.26, beakY);
+    ctx2.lineTo(x + headR * 0.26, beakY);
+    ctx2.lineTo(x, beakY + headR * 0.4);
+    ctx2.closePath();
+    ctx2.fillStyle = colors.beak;
+    ctx2.fill();
+    for (const side of [-1, 1]) {
+      const ex = x + side * headR * 0.32, ey = headCenterY - headR * 0.06;
+      ctx2.beginPath();
+      ctx2.arc(ex, ey, headR * 0.13, 0, Math.PI * 2);
+      ctx2.fillStyle = "#222";
+      ctx2.fill();
+      ctx2.beginPath();
+      ctx2.arc(ex + headR * 0.04, ey - headR * 0.04, headR * 0.045, 0, Math.PI * 2);
+      ctx2.fillStyle = "#fff";
+      ctx2.fill();
+    }
+  }
   function renderTitleScreen() {
     const now = performance.now();
     if (!titleStars) {
@@ -4871,7 +5096,7 @@ canvas {
     ctx2.beginPath();
     ctx2.ellipse(hx, hy + hr * 1.02, hr * 1.55, hr * 0.28, 0, 0, Math.PI * 2);
     ctx2.fill();
-    drawPenguin(hx, hy, hr, hero.colors, -Math.PI / 2, false, 0, hero.accentStyle);
+    drawStandingPenguin(hx, hy + hr * 0.85, hr, hero.colors, hero.accentStyle, hero.key);
     const snowDt = Math.min((now - lastSnowTime) / 1e3, 0.05);
     lastSnowTime = now;
     for (const f of snowflakes) {
@@ -5991,7 +6216,7 @@ canvas {
     fireRate: "Caps at an 8ms fire interval.",
     speed: "Caps at 4x base movement speed.",
     hp: "Caps at 500 max HP.",
-    regen: "Caps at 8 HP/sec regeneration.",
+    regen: "Caps at 5 HP/sec regeneration.",
     gemPickup: `Caps at ${GEM_PICKUP_MAX}px pickup radius.`,
     projCount: "Caps at 16 snowballs.",
     projSpeed: "Caps at +30% cumulative snowball speed.",
@@ -6623,106 +6848,6 @@ canvas {
       burnDps: 0
     });
   }
-  var REPATH_INTERVAL = 0.5;
-  var cachedGraphFor = null;
-  var cachedAdjacency = null;
-  function getWaypointAdjacency(fixedLayout) {
-    if (cachedGraphFor === fixedLayout) return cachedAdjacency;
-    const byId = new Map(fixedLayout.waypoints.map((wp) => [wp.id, wp]));
-    const adj = /* @__PURE__ */ new Map();
-    for (const wp of fixedLayout.waypoints) adj.set(wp.id, []);
-    for (const [a, b] of fixedLayout.waypointEdges) {
-      const wa = byId.get(a), wb = byId.get(b);
-      const d = Math.hypot(wa.x - wb.x, wa.y - wb.y);
-      adj.get(a).push({ id: b, dist: d });
-      adj.get(b).push({ id: a, dist: d });
-    }
-    cachedGraphFor = fixedLayout;
-    cachedAdjacency = adj;
-    return adj;
-  }
-  function nearestWaypoint(waypoints, x, y) {
-    let best = null, bestDist = Infinity;
-    let fallback = null, fallbackDist = Infinity;
-    for (const wp of waypoints) {
-      const d = Math.hypot(wp.x - x, wp.y - y);
-      if (d < fallbackDist) {
-        fallbackDist = d;
-        fallback = wp;
-      }
-      if (d < bestDist && hasLineOfSight(x, y, wp.x, wp.y)) {
-        bestDist = d;
-        best = wp;
-      }
-    }
-    return best || fallback;
-  }
-  function findWaypointPath(fixedLayout, fromId, toId) {
-    var _a;
-    if (fromId === toId) return [];
-    const adj = getWaypointAdjacency(fixedLayout);
-    const dist2 = /* @__PURE__ */ new Map([[fromId, 0]]);
-    const cameFrom = /* @__PURE__ */ new Map();
-    const visited = /* @__PURE__ */ new Set();
-    for (; ; ) {
-      let cur = null, curDist = Infinity;
-      for (const [id, d] of dist2) {
-        if (!visited.has(id) && d < curDist) {
-          curDist = d;
-          cur = id;
-        }
-      }
-      if (cur === null || cur === toId) break;
-      visited.add(cur);
-      for (const edge of adj.get(cur) || []) {
-        if (visited.has(edge.id)) continue;
-        const nd = curDist + edge.dist;
-        if (nd < ((_a = dist2.get(edge.id)) != null ? _a : Infinity)) {
-          dist2.set(edge.id, nd);
-          cameFrom.set(edge.id, cur);
-        }
-      }
-    }
-    if (!dist2.has(toId)) return [];
-    const idPath = [];
-    for (let cur = toId; cur !== fromId; cur = cameFrom.get(cur)) idPath.unshift(cur);
-    idPath.unshift(fromId);
-    const byId = new Map(fixedLayout.waypoints.map((wp) => [wp.id, wp]));
-    return idPath.map((id) => byId.get(id));
-  }
-  function getPathingTarget(e, player, fixedLayout, dt) {
-    e.repathTimer -= dt;
-    if (e.repathTimer <= 0) {
-      e.repathTimer = REPATH_INTERVAL;
-      if (hasLineOfSight(e.x, e.y, player.x, player.y)) {
-        e.path = null;
-      } else {
-        const toWp = nearestWaypoint(fixedLayout.waypoints, player.x, player.y);
-        const needsFreshPath = !e.path || e.path.length === 0 || e.path[e.path.length - 1].id !== toWp.id;
-        if (needsFreshPath) {
-          const fromWp = nearestWaypoint(fixedLayout.waypoints, e.x, e.y);
-          e.path = findWaypointPath(fixedLayout, fromWp.id, toWp.id);
-        }
-      }
-    }
-    if (e.path && e.path.length) {
-      const next = e.path[0];
-      if (Math.hypot(next.x - e.x, next.y - e.y) < 30) e.path.shift();
-      if (e.path.length) return e.path[0];
-    }
-    return player;
-  }
-  var STEER_DEFLECTIONS = [0, 0.35, -0.35, 0.7, -0.7, 1.05, -1.05, 1.4, -1.4];
-  function steerAvoiding(e, targetX, targetY, stepLen) {
-    const base = Math.atan2(targetY - e.y, targetX - e.x);
-    for (const off of STEER_DEFLECTIONS) {
-      const a = base + off;
-      const nx = e.x + Math.cos(a) * stepLen;
-      const ny = e.y + Math.sin(a) * stepLen;
-      if (!circleHitsRectObstacle(nx, ny, e.r)) return { x: nx, y: ny };
-    }
-    return { x: e.x + Math.cos(base) * stepLen, y: e.y + Math.sin(base) * stepLen };
-  }
   var DEFAULT_ROSTER = ["basic", "fast", "tank", "zombie", "bat", "demon"];
   function unlockWave(k) {
     return k === 0 ? 0 : 2 * k - 1;
@@ -6934,7 +7059,7 @@ canvas {
         const stepLen = e.speed * speedMult * dt * 60;
         if (hasWaypoints) {
           const target = getPathingTarget(e, player, fixedLayout, dt);
-          const next = steerAvoiding(e, target.x, target.y, stepLen);
+          const next = steerAvoiding(e, target.x, target.y, stepLen, e.r);
           e.x = next.x;
           e.y = next.y;
         } else {
