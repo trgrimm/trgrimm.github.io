@@ -103,7 +103,11 @@ canvas {
 }
 
 /* Narrow (phone-width) viewports: the 48px title is wider than the screen
-   at its default size, so shrink the heading/body text down to fit. */
+   at its default size, so shrink the heading/body text down to fit. Panel
+   sizing/positioning for mobile lives in a separate, LATER media query at
+   the end of this file — it has to come after every rule it overrides
+   (#compendium-panel's own height, etc.), since a same-specificity rule
+   later in source order always wins regardless of the media condition. */
 @media (max-width: 480px) {
   #overlay h1 { font-size: 7.5vw; }
   #overlay p { font-size: 4vw; }
@@ -753,6 +757,59 @@ canvas {
   image-rendering: pixelated;
 }
 
+/* Mobile panel geometry — deliberately last in the file. Every modal panel
+   (Journal, History, Controls, Upgrade, game-over stats, etc.) shares fixed/
+   centered/max-90vw-by-92vh geometry. On a phone that centers a near-full-
+   height box right under the corner buttons (mute/pause/auto-avoid/...),
+   which sit pinned at the very top of the screen — the panel's top edge
+   lands right where they are, visually colliding, and the panel eats almost
+   the entire screen with barely any margin. Anchor panels below the button
+   row instead of dead-center, cap their height to whatever's left, and trim
+   padding so more space goes to actual content instead of chrome.
+   This has to be positioned AFTER every non-media rule it overrides (e.g.
+   #compendium-panel's own `height`, which is defined much earlier) — with
+   equal ID specificity, later source order wins regardless of the media
+   condition; being merely "inside a @media block" does not out-rank a
+   plain rule that comes after it in the file. */
+@media (max-width: 480px) {
+  #upgrade-panel, #pause-panel, #weapon-select-panel, #history-panel,
+  #mode-select-panel, #map-select-panel, #boon-panel, #expedition-complete, #penguin-panel,
+  #artifact-panel, #artifact-reveal-panel, #compendium-panel, #controls-panel,
+  #game-over {
+    top: 60px;
+    transform: translateX(-50%);
+    width: 94vw;
+    max-width: 94vw;
+    max-height: calc(100vh - 76px);
+    padding: 16px;
+  }
+  #compendium-panel {
+    /* Overrides the desktop rule's fixed `height` (not `max-height`). */
+    top: 60px;
+    height: calc(100vh - 76px);
+    width: 94vw;
+    max-width: 94vw;
+    padding: 16px;
+  }
+  /* Trim the Journal's own header chrome (title/intro/section-nav) so more
+     of the panel's now-tighter height goes to the actual scrollable list —
+     previously the header alone could eat ~45% of the panel before any
+     content was visible. */
+  #compendium-panel h2 { font-size: 20px; margin-bottom: 4px; }
+  #compendium-panel .compendium-intro { font-size: 11px; margin-bottom: 8px; }
+  #compendium-nav { gap: 4px; margin-bottom: 8px; padding-bottom: 8px; }
+  #compendium-nav button { font-size: 10px; padding: 3px 8px; }
+
+  /* These three lists carry a desktop min-width (260-280px) so their rows
+     don't look cramped on a wide panel — but on a narrow phone that min-width
+     can exceed the panel's own (now 94vw) content area and force horizontal
+     overflow. Let them shrink to fit instead. */
+  #history-list, .run-stats, .controls-grid {
+    min-width: 0;
+    width: 100%;
+  }
+}
+
 </style>
 </head>
 <body>
@@ -955,6 +1012,8 @@ canvas {
   var ENEMY_DAMAGE_WAVE_CAP = 50;
   var ENEMY_DAMAGE_WAVE_CAP_EXPEDITION = 20;
   var ENEMY_DAMAGE_WAVE_MAX_MULT = 1.5;
+  var ENEMY_DAMAGE_LATE_WAVE_THRESHOLD = 10;
+  var ENEMY_DAMAGE_LATE_WAVE_BOOST = 1.15;
   var ENEMY_TYPES = {
     basic: {
       hp: 25 * (2 / 3),
@@ -1179,7 +1238,7 @@ canvas {
       name: "Regen",
       weight: 0.9,
       weapons: "all",
-      mags: { common: 0.5, rare: 1, epic: 2 },
+      mags: { common: 0.25, rare: 0.5, epic: 1 },
       desc: (m) => `+${m} HP/sec regeneration`,
       apply: (p, m) => {
         p.regen = (p.regen || 0) + m;
@@ -6491,7 +6550,9 @@ canvas {
   function getWaveDamageMult() {
     const cap = G.mode === "expedition" ? ENEMY_DAMAGE_WAVE_CAP_EXPEDITION : ENEMY_DAMAGE_WAVE_CAP;
     const progress = Math.min(G.wave, cap) / cap;
-    return 1 + progress * (ENEMY_DAMAGE_WAVE_MAX_MULT - 1);
+    let mult = 1 + progress * (ENEMY_DAMAGE_WAVE_MAX_MULT - 1);
+    if (G.wave > ENEMY_DAMAGE_LATE_WAVE_THRESHOLD) mult *= ENEMY_DAMAGE_LATE_WAVE_BOOST;
+    return mult;
   }
   function spawnEnemy(type, hpBoost = 1, opts = {}) {
     const t = ENEMY_TYPES[type];
