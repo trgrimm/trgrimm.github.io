@@ -206,7 +206,7 @@ canvas {
 }
 #upgrade-panel, #pause-panel, #weapon-select-panel, #history-panel,
 #mode-select-panel, #map-select-panel, #boon-panel, #expedition-complete, #penguin-panel,
-#artifact-panel, #artifact-reveal-panel, #compendium-panel, #controls-panel {
+#artifact-panel, #artifact-reveal-panel, #compendium-panel, #controls-panel, #saveslots-panel {
   position: fixed;
   top: 50%; left: 50%;
   transform: translate(-50%, -50%);
@@ -263,7 +263,7 @@ canvas {
    stranded Close/Reset Progress instead (see the #shop-upgrades comment
    below) — so panels not listed here keep the simpler plain scroll. */
 #penguin-close-btn, #artifact-close-btn, #history-close-btn, #controls-close-btn,
-#mode-back-button, .panel-actions {
+#mode-back-button, #saveslots-close-btn, .panel-actions {
   position: sticky;
   bottom: 0;
   margin-top: 16px;
@@ -439,7 +439,7 @@ canvas {
 }
 #upgrade-panel h2, #pause-panel h2, #weapon-select-panel h2, #history-panel h2,
 #mode-select-panel h2, #map-select-panel h2, #boon-panel h2, #expedition-complete h1, #penguin-panel h2,
-#artifact-panel h2, #controls-panel h2 {
+#artifact-panel h2, #controls-panel h2, #saveslots-panel h2 {
   color: #ff3366;
   font-size: 28px;
   margin-bottom: 16px;
@@ -786,6 +786,73 @@ canvas {
   color: #999;
   font-size: 11px;
 }
+/* Save Files list — same dark card layout as .history-row/.shop-row above,
+   but always exactly SAVE_SLOT_COUNT (3) rows, so unlike those two there's
+   no inner scroll cap needed here — the panel's own max-height + sticky
+   Close button are sufficient on their own. */
+.saveslot-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: rgba(30, 30, 50, 0.6);
+  border: 1px solid #444;
+  border-radius: 6px;
+  padding: 10px 14px;
+  margin-bottom: 8px;
+  text-align: left;
+}
+.saveslot-row.is-active {
+  border-color: #ffdd00;
+}
+.saveslot-row-info {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+.saveslot-name {
+  color: #ff3366;
+  font-weight: bold;
+  font-size: 15px;
+}
+.saveslot-badge {
+  color: #ffdd00;
+  font-size: 11px;
+  font-weight: bold;
+}
+.saveslot-meta {
+  color: #999;
+  font-size: 11px;
+}
+.saveslot-row-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.saveslot-btn {
+  flex-shrink: 0;
+  text-align: center;
+  padding: 8px 14px;
+  font-family: 'Courier New', monospace;
+  font-size: 12px;
+  font-weight: bold;
+  background: rgba(30, 30, 50, 0.9);
+  color: #ddd;
+  border: 1px solid #555;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.saveslot-btn:hover {
+  border-color: #ffdd00;
+  color: #fff;
+}
+.saveslot-btn-danger:hover {
+  border-color: #ff3366;
+  color: #ff8fa3;
+}
 /* Run-end stats breakdown (game-over + expedition-complete) — same dark
    card / gold-value / grey-label language as .history-row above. */
 .run-stats {
@@ -888,7 +955,7 @@ canvas {
   #upgrade-panel, #pause-panel, #weapon-select-panel, #history-panel,
   #mode-select-panel, #map-select-panel, #boon-panel, #expedition-complete, #penguin-panel,
   #artifact-panel, #artifact-reveal-panel, #compendium-panel, #controls-panel,
-  #game-over {
+  #saveslots-panel, #game-over {
     top: 60px;
     transform: translateX(-50%);
     width: 94vw;
@@ -957,6 +1024,7 @@ canvas {
   <p class="menu-xp">🏆 Best Score: <span id="menu-highscore-display">0</span></p>
   <button id="start-button" class="menu-btn">START GAME</button>
   <button id="shop-button" class="menu-btn menu-btn-secondary">🏪 SHOP</button>
+  <button id="saveslots-button" class="menu-btn menu-btn-secondary">💾 SAVE FILES</button>
   <button id="history-button" class="menu-btn menu-btn-secondary">📜 HISTORY</button>
   <button id="penguin-button" class="menu-btn menu-btn-secondary">🐧 PENGUIN</button>
   <button id="artifact-button" class="menu-btn menu-btn-secondary">🏺 ARTIFACT</button>
@@ -975,6 +1043,12 @@ canvas {
   <p style="color:#aaa; margin-bottom:16px;">Exactly one can be equipped at a time — found via rare in-run pickups, and locked in for the whole run.</p>
   <div id="artifact-choices"></div>
   <button id="artifact-close-btn" class="menu-btn menu-btn-secondary" style="margin-top:16px;">Close</button>
+</div>
+
+<div id="saveslots-panel" style="display:none;">
+  <h2>💾 Save Files</h2>
+  <div id="saveslots-list"></div>
+  <button id="saveslots-close-btn" class="menu-btn menu-btn-secondary">Close</button>
 </div>
 
 <div id="history-panel" style="display:none;">
@@ -1123,6 +1197,7 @@ canvas {
   var MINIBOSS_HP_BOOST = 4;
   var MINIBOSS_R_MULT = 1.7;
   var MINIBOSS_DMG_MULT = 1.6;
+  var MINIBOSS_SPEED_MULT = 1.2;
   var PLAYER_R = 14;
   var BASE_SPEED = 2.25 * 1.3 * 1.1;
   var BASE_FIRE_RATE = 600;
@@ -1357,13 +1432,13 @@ canvas {
       name: "Max HP",
       weight: 1,
       weapons: "all",
-      mags: { common: 25, rare: 50, epic: 100 },
+      mags: { common: 10, rare: 25, epic: 50 },
       desc: (m) => `+${m} max HP, heal ${m}`,
       apply: (p, m) => {
         p.maxHp += m;
         p.hp = Math.min(p.hp + m, p.maxHp);
       },
-      isMaxed: (p) => p.maxHp >= 500
+      isMaxed: (p) => p.maxHp >= 250
     },
     {
       key: "regen",
@@ -1556,10 +1631,10 @@ canvas {
       key: "maxHp",
       label: "\u{1F6E1}\uFE0F Max HP",
       maxLevel: 10,
-      desc: (level) => `+${level * 10} max HP`,
+      desc: (level) => `+${level * 5} max HP`,
       cost: (level) => Math.round(25 * 1.1 * (level > 0 ? 1.2 : 1) * Math.pow(1.55, level)),
       effect: (player, level) => {
-        player.maxHp += level * 10;
+        player.maxHp += level * 5;
       }
     },
     {
@@ -1616,10 +1691,10 @@ canvas {
     return obj;
   }
   var ALLY_MAX_COUNT = 3;
-  var ALLY_HP = 30;
+  var ALLY_HP = 60;
   var ALLY_SPEED = 1.8 * 1.1;
   var ALLY_R = 9;
-  var ALLY_DMG = 6;
+  var ALLY_DMG = 12;
   var ALLY_ATTACK_INTERVAL = 600;
   var ALLY_HIT_COOLDOWN = 500;
   var EMPEROR_ABILITY_COOLDOWN = 18e3;
@@ -1641,6 +1716,10 @@ canvas {
     const mins = Math.floor(s / 60).toString().padStart(2, "0");
     const secs = (s % 60).toString().padStart(2, "0");
     return mins + ":" + secs;
+  }
+  function formatDate(ts) {
+    const d = new Date(ts);
+    return d.toLocaleDateString(void 0, { month: "short", day: "numeric" }) + " " + d.toLocaleTimeString(void 0, { hour: "numeric", minute: "2-digit" });
   }
   function spawnParticles(x, y, color, count, speed) {
     for (let i = 0; i < count; i++) {
@@ -1759,8 +1838,8 @@ canvas {
       fireRate: 500,
       // pulses much more often than base Nova (1170ms)
       dmgMult: 1.5,
-      radius: 120
-      // fixed — independent of player.novaRadius, which may be unset for non-Nova players
+      radius: 156
+      // fixed — independent of player.novaRadius, which may be unset for non-Nova players (was 120, +30%)
     },
     thundersquall: {
       key: "thundersquall",
@@ -1845,8 +1924,8 @@ canvas {
       desc: "Small and spry, with spiky yellow head feathers.",
       ability: "Sure-Footed (passive): hops right over obstacles other penguins get pushed off of.",
       triggerable: false,
-      cost: 165,
-      // +10%
+      cost: 198,
+      // was 165, +20%
       colors: { body: "#161616", belly: "#f2f0e8", beak: "#e8722a", flipper: "#0a0a0a", accent: "#ffdd33" },
       accentStyle: "crest"
     },
@@ -1856,8 +1935,8 @@ canvas {
       desc: "Recognizable by the white stripe swept across its head.",
       ability: "Aquatic Grace (passive): swims dramatically faster than other species.",
       triggerable: false,
-      cost: 220,
-      // +10%
+      cost: 264,
+      // was 220, +20%
       colors: { body: "#111111", belly: "#f4f6f0", beak: "#ff6a3d", flipper: "#0d0d0d", accent: "#ffffff" },
       accentStyle: "stripe"
     },
@@ -1868,8 +1947,8 @@ canvas {
       ability: "Fearless Charge (active \u2014 button/E): dash forward, damaging enemies near the landing point and briefly becoming invincible.",
       triggerable: true,
       icon: "\u{1F4A8}",
-      cost: 303,
-      // +10%
+      cost: 364,
+      // was 303, +20%
       colors: { body: "#141414", belly: "#f7f7f2", beak: "#4a4a4a", flipper: "#0a0a0a", accent: "#000000" },
       accentStyle: "chinStrap"
     },
@@ -1880,8 +1959,8 @@ canvas {
       ability: "Command (active \u2014 button/E): summon 2 ally penguins to fight by your side (up to 3 at once).",
       triggerable: true,
       icon: "\u{1F4E3}",
-      cost: 440,
-      // +10%
+      cost: 660,
+      // was 440, +50% (Emperor is priced separately from the other species' +20%)
       colors: { body: "#1a1a1a", belly: "#f5f5f0", beak: "#e8a23a", flipper: "#0d0d0d", accent: "#f0c020" },
       accentStyle: "earPatch"
     }
@@ -1954,7 +2033,12 @@ canvas {
       desc: "An Emperor's horn \u2014 rally allies to your side, and the longer they hold the line, the harder they hit.",
       mechanic: "Grants Emperor's summon ability (to any penguin). As Emperor, allies also deal +2%/sec more damage over time, up to +100%.",
       scalePerSec: 0.02,
-      scaleCap: 1
+      scaleCap: 1,
+      // Deliberately rarer than every other artifact (which default to an
+      // implicit weight of 1 — see getArtifactWeight() in powerups.js): it
+      // grants Emperor's summon to ANY species, on top of a scaling damage
+      // buff, making it one of the strongest picks in the pool.
+      weight: 0.5
     },
     {
       key: "stolenRestraintNet",
@@ -2005,6 +2089,8 @@ canvas {
     powerupTimer: 0,
     xpBank: 0,
     // Permanent currency (saved to localStorage)
+    activeSlotIndex: 0,
+    // which of the 3 save slots is currently loaded — see loadProgress()/switchToSlot()
     xpEarnedThisGame: 0,
     // XP earned during current game
     runStats: defaultRunStats(),
@@ -2161,7 +2247,100 @@ canvas {
   }
   var MAX_RUN_HISTORY = 15;
   var TOP_RUNS_KEPT = 5;
-  function loadProgress() {
+  var SAVE_SLOT_COUNT = 3;
+  var SLOT_FIELDS = [
+    "xpBank",
+    "permanentUpgrades",
+    "permanentUpgradesEnabled",
+    "highScore",
+    "runHistory",
+    "penguinType",
+    "penguinUnlocks",
+    "artifactUnlocks",
+    "equippedArtifact"
+  ];
+  function readSlotsArray() {
+    try {
+      const raw = localStorage.getItem("penguin_saveSlots");
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed) && parsed.length === SAVE_SLOT_COUNT) return parsed;
+      }
+    } catch (e) {
+    }
+    return [null, null, null];
+  }
+  function writeSlotsArray(slots) {
+    try {
+      localStorage.setItem("penguin_saveSlots", JSON.stringify(slots));
+    } catch (e) {
+    }
+  }
+  function readActiveSlotIndex() {
+    const idx = parseInt(localStorage.getItem("penguin_activeSlotIndex"), 10);
+    return Number.isInteger(idx) && idx >= 0 && idx < SAVE_SLOT_COUNT ? idx : 0;
+  }
+  function writeActiveSlotIndex(index) {
+    try {
+      localStorage.setItem("penguin_activeSlotIndex", String(index));
+    } catch (e) {
+    }
+  }
+  function defaultSlotName(index) {
+    return "Slot " + (index + 1);
+  }
+  function freshSlotDefaults(index) {
+    return {
+      name: defaultSlotName(index),
+      lastSaved: Date.now(),
+      xpBank: 0,
+      permanentUpgrades: defaultPermanentUpgrades(),
+      permanentUpgradesEnabled: defaultPermanentUpgradesEnabled(),
+      highScore: 0,
+      runHistory: [],
+      penguinType: DEFAULT_PENGUIN.key,
+      penguinUnlocks: defaultPenguinUnlocks(),
+      artifactUnlocks: defaultArtifactUnlocks(),
+      equippedArtifact: null
+    };
+  }
+  function validateEquippedAgainstUnlocks() {
+    if (!G.penguinUnlocks[G.penguinType]) G.penguinType = DEFAULT_PENGUIN.key;
+    if (G.equippedArtifact && !G.artifactUnlocks[G.equippedArtifact]) G.equippedArtifact = null;
+  }
+  function applySlotToG(slot) {
+    for (const key of SLOT_FIELDS) G[key] = slot[key];
+    validateEquippedAgainstUnlocks();
+  }
+  function persistActiveSlot() {
+    const slots = readSlotsArray();
+    const existing = slots[G.activeSlotIndex];
+    const slot = { name: existing && existing.name || defaultSlotName(G.activeSlotIndex), lastSaved: Date.now() };
+    for (const key of SLOT_FIELDS) slot[key] = G[key];
+    slots[G.activeSlotIndex] = slot;
+    writeSlotsArray(slots);
+  }
+  function loadFromSlotsStructure() {
+    const slots = readSlotsArray();
+    let index = readActiveSlotIndex();
+    if (!slots[index]) {
+      const firstReal = slots.findIndex((s) => s);
+      index = firstReal === -1 ? 0 : firstReal;
+      if (firstReal === -1) slots[0] = freshSlotDefaults(0);
+    }
+    G.activeSlotIndex = index;
+    writeActiveSlotIndex(index);
+    writeSlotsArray(slots);
+    applySlotToG(slots[index]);
+  }
+  function migrateGIntoSlot1() {
+    const slot = { name: defaultSlotName(0), lastSaved: Date.now() };
+    for (const key of SLOT_FIELDS) slot[key] = G[key];
+    G.activeSlotIndex = 0;
+    writeSlotsArray([slot, null, null]);
+    writeActiveSlotIndex(0);
+  }
+  function runLegacyFieldMerge() {
     try {
       const savedBank = localStorage.getItem("penguin_xpBank");
       if (savedBank) G.xpBank = parseInt(savedBank, 10);
@@ -2203,50 +2382,32 @@ canvas {
       }
       const savedEquippedArtifact = localStorage.getItem("penguin_equippedArtifact");
       if (savedEquippedArtifact) G.equippedArtifact = savedEquippedArtifact;
-      if (!G.penguinUnlocks[G.penguinType]) {
-        G.penguinType = DEFAULT_PENGUIN.key;
-        savePenguinType();
-      }
-      if (G.equippedArtifact && !G.artifactUnlocks[G.equippedArtifact]) {
-        G.equippedArtifact = null;
-        saveEquippedArtifact();
-      }
     } catch (e) {
+    }
+  }
+  function loadProgress() {
+    if (localStorage.getItem("penguin_saveSlots")) {
+      loadFromSlotsStructure();
+    } else {
+      runLegacyFieldMerge();
+      validateEquippedAgainstUnlocks();
+      migrateGIntoSlot1();
     }
   }
   function saveProgress() {
-    try {
-      localStorage.setItem("penguin_xpBank", String(G.xpBank));
-      localStorage.setItem("penguin_permanentUpgrades", JSON.stringify(G.permanentUpgrades));
-      localStorage.setItem("penguin_permanentUpgradesEnabled", JSON.stringify(G.permanentUpgradesEnabled));
-      localStorage.setItem("penguin_highScore", String(G.highScore));
-      localStorage.setItem("penguin_runHistory", JSON.stringify(G.runHistory));
-    } catch (e) {
-    }
+    persistActiveSlot();
   }
   function savePenguinType() {
-    try {
-      localStorage.setItem("penguin_species", G.penguinType);
-    } catch (e) {
-    }
+    persistActiveSlot();
   }
   function savePenguinUnlocks() {
-    try {
-      localStorage.setItem("penguin_unlocks", JSON.stringify(G.penguinUnlocks));
-    } catch (e) {
-    }
+    persistActiveSlot();
   }
   function saveArtifactUnlocks() {
-    try {
-      localStorage.setItem("penguin_artifactUnlocks", JSON.stringify(G.artifactUnlocks));
-    } catch (e) {
-    }
+    persistActiveSlot();
   }
   function saveEquippedArtifact() {
-    try {
-      localStorage.setItem("penguin_equippedArtifact", G.equippedArtifact || "");
-    } catch (e) {
-    }
+    persistActiveSlot();
   }
   function saveAutoAvoidPref() {
     try {
@@ -2261,23 +2422,50 @@ canvas {
     G.highScore = 0;
     G.runHistory = [];
     G.penguinUnlocks = defaultPenguinUnlocks();
-    if (!G.penguinUnlocks[G.penguinType]) {
-      G.penguinType = DEFAULT_PENGUIN.key;
-      savePenguinType();
-    }
+    if (!G.penguinUnlocks[G.penguinType]) G.penguinType = DEFAULT_PENGUIN.key;
     G.artifactUnlocks = defaultArtifactUnlocks();
     G.equippedArtifact = null;
-    try {
-      localStorage.removeItem("penguin_xpBank");
-      localStorage.removeItem("penguin_permanentUpgrades");
-      localStorage.removeItem("penguin_permanentUpgradesEnabled");
-      localStorage.removeItem("penguin_highScore");
-      localStorage.removeItem("penguin_runHistory");
-      localStorage.removeItem("penguin_unlocks");
-      localStorage.removeItem("penguin_artifactUnlocks");
-      localStorage.removeItem("penguin_equippedArtifact");
-    } catch (e) {
+    persistActiveSlot();
+  }
+  function switchToSlot(index) {
+    if (index === G.activeSlotIndex) return;
+    persistActiveSlot();
+    const slots = readSlotsArray();
+    if (!slots[index]) slots[index] = freshSlotDefaults(index);
+    writeSlotsArray(slots);
+    G.activeSlotIndex = index;
+    writeActiveSlotIndex(index);
+    applySlotToG(slots[index]);
+  }
+  function renameSlot(index, name) {
+    const slots = readSlotsArray();
+    if (!slots[index]) return;
+    slots[index].name = (name || "").trim() || defaultSlotName(index);
+    writeSlotsArray(slots);
+  }
+  function deleteSlot(index) {
+    const slots = readSlotsArray();
+    slots[index] = null;
+    if (index === G.activeSlotIndex) {
+      slots[index] = freshSlotDefaults(index);
+      applySlotToG(slots[index]);
     }
+    writeSlotsArray(slots);
+  }
+  function getSlotSummary(index) {
+    const slot = readSlotsArray()[index];
+    const isActive = index === G.activeSlotIndex;
+    if (!slot) return { index, isActive, empty: true };
+    return {
+      index,
+      isActive,
+      empty: false,
+      name: slot.name,
+      lastSaved: slot.lastSaved,
+      highScore: slot.highScore,
+      xpBank: slot.xpBank,
+      penguinType: slot.penguinType
+    };
   }
   function pruneRunHistory(history) {
     if (history.length <= MAX_RUN_HISTORY) return history;
@@ -2910,7 +3098,7 @@ canvas {
         if (player.xp >= needed) {
           player.xp -= needed;
           player.level++;
-          player.maxHp += 25;
+          player.maxHp += 5;
           player.hp = Math.min(player.hp, player.maxHp);
           playLevelUp();
           showUpgradeScreen();
@@ -3269,6 +3457,20 @@ canvas {
     const btn = document.getElementById("history-close-btn");
     if (btn) btn.onclick = handler;
   }
+  function showSaveSlotsPanel() {
+    document.getElementById("saveslots-panel").style.display = "block";
+  }
+  function hideSaveSlotsPanel() {
+    document.getElementById("saveslots-panel").style.display = "none";
+  }
+  function onSaveSlotsOpen(handler) {
+    const btn = document.getElementById("saveslots-button");
+    if (btn) btn.onclick = handler;
+  }
+  function onSaveSlotsClose(handler) {
+    const btn = document.getElementById("saveslots-close-btn");
+    if (btn) btn.onclick = handler;
+  }
   function showCompendiumPanel() {
     document.getElementById("compendium-panel").style.display = "flex";
   }
@@ -3413,8 +3615,8 @@ canvas {
     }, revert: (p) => {
       p.dmg -= 5;
     } },
-    hp: { label: "\u2764\uFE0F +20 HP", color: "#33ff66", instant: true, apply: (p) => {
-      p.hp = Math.min(p.maxHp, p.hp + 20);
+    hp: { label: "\u2764\uFE0F +10 HP", color: "#33ff66", instant: true, apply: (p) => {
+      p.hp = Math.min(p.maxHp, p.hp + 10);
     } },
     proj: { label: "\u{1F3AF} +6 Proj", color: "#ffaa00", apply: (p) => {
       p.projCount += 6;
@@ -3491,8 +3693,10 @@ canvas {
       }
     },
     // A permanent unlock, not a run buff — instant like `hp`, but mutates
-    // G.artifactUnlocks instead of the player object. Picks uniformly among
-    // whatever's still unlockable right now; a no-op if somehow nothing is
+    // G.artifactUnlocks instead of the player object. Weighted among whatever's
+    // still unlockable right now (an artifact with no explicit `weight` is
+    // implicitly 1 — see War Horn's own reduced weight in artifacts.js for the
+    // one current exception); a no-op if somehow nothing is eligible
     // (spawnPowerup() already checks this before ever rolling the type, so
     // this is just a defensive backstop, not the primary gate).
     artifactCache: {
@@ -3503,9 +3707,22 @@ canvas {
       instant: true,
       persistent: true,
       apply: () => {
+        var _a;
         const eligible = ARTIFACT_TYPES.filter((a) => !G.artifactUnlocks[a.key] && (!a.mapExclusive || G.currentMap && G.currentMap.id === a.mapExclusive));
         if (!eligible.length) return;
-        const picked = eligible[Math.floor(Math.random() * eligible.length)];
+        const totalWeight = eligible.reduce((sum, a) => {
+          var _a2;
+          return sum + ((_a2 = a.weight) != null ? _a2 : 1);
+        }, 0);
+        let r = Math.random() * totalWeight;
+        let picked = eligible[eligible.length - 1];
+        for (const a of eligible) {
+          r -= (_a = a.weight) != null ? _a : 1;
+          if (r <= 0) {
+            picked = a;
+            break;
+          }
+        }
         G.artifactUnlocks[picked.key] = true;
         saveArtifactUnlocks();
         G.pendingArtifactReveal = picked;
@@ -6143,10 +6360,6 @@ canvas {
   }
 
   // js/history.js
-  function formatDate(ts) {
-    const d = new Date(ts);
-    return d.toLocaleDateString(void 0, { month: "short", day: "numeric" }) + " " + d.toLocaleTimeString(void 0, { hour: "numeric", minute: "2-digit" });
-  }
   function makeRow(run) {
     const row = document.createElement("div");
     row.className = "history-row" + (run.score > 0 && run.score === G.highScore ? " is-best" : "");
@@ -6207,6 +6420,82 @@ canvas {
       showHistoryPanel();
     });
     onHistoryClose(hideHistoryPanel);
+  }
+
+  // js/saveSlots.js
+  function afterChange() {
+    updateMenuXpDisplay();
+    updateMenuHighScoreDisplay();
+    renderSlotsList();
+  }
+  function renderSlotsList() {
+    const list = document.getElementById("saveslots-list");
+    list.innerHTML = "";
+    for (let i = 0; i < SAVE_SLOT_COUNT; i++) {
+      const summary = getSlotSummary(i);
+      const row = document.createElement("div");
+      row.className = "saveslot-row" + (summary.isActive ? " is-active" : "");
+      const info = document.createElement("div");
+      info.className = "saveslot-row-info";
+      if (summary.empty) {
+        info.innerHTML = '<span class="saveslot-name">Slot ' + (i + 1) + " \u2014 Empty</span>";
+      } else {
+        info.innerHTML = '<span class="saveslot-name">' + summary.name + (summary.isActive ? ' <span class="saveslot-badge">\u25CF ACTIVE</span>' : "") + '</span><span class="saveslot-meta">\u{1F3C6} ' + summary.highScore + " \xB7 \u{1F3E6} " + summary.xpBank + " XP \xB7 Saved " + formatDate(summary.lastSaved) + "</span>";
+      }
+      row.appendChild(info);
+      const actions = document.createElement("div");
+      actions.className = "saveslot-row-actions";
+      if (summary.empty) {
+        const newBtn = document.createElement("button");
+        newBtn.className = "saveslot-btn";
+        newBtn.textContent = "\u25B6 New Game";
+        newBtn.onclick = () => {
+          switchToSlot(i);
+          afterChange();
+        };
+        actions.appendChild(newBtn);
+      } else {
+        if (!summary.isActive) {
+          const switchBtn = document.createElement("button");
+          switchBtn.className = "saveslot-btn";
+          switchBtn.textContent = "\u25B6 Switch";
+          switchBtn.onclick = () => {
+            switchToSlot(i);
+            afterChange();
+          };
+          actions.appendChild(switchBtn);
+        }
+        const renameBtn = document.createElement("button");
+        renameBtn.className = "saveslot-btn";
+        renameBtn.textContent = "Rename";
+        renameBtn.onclick = () => {
+          const next = window.prompt("Rename this slot:", summary.name);
+          if (next === null) return;
+          renameSlot(i, next);
+          renderSlotsList();
+        };
+        actions.appendChild(renameBtn);
+        const deleteBtn = document.createElement("button");
+        deleteBtn.className = "saveslot-btn saveslot-btn-danger";
+        deleteBtn.textContent = "Delete";
+        deleteBtn.onclick = () => {
+          const confirmed = window.confirm('Delete "' + summary.name + '"? This permanently erases its progress. This cannot be undone.');
+          if (!confirmed) return;
+          deleteSlot(i);
+          afterChange();
+        };
+        actions.appendChild(deleteBtn);
+      }
+      row.appendChild(actions);
+      list.appendChild(row);
+    }
+  }
+  function initSaveSlots() {
+    onSaveSlotsOpen(() => {
+      renderSlotsList();
+      showSaveSlotsPanel();
+    });
+    onSaveSlotsClose(hideSaveSlotsPanel);
   }
 
   // js/controls.js
@@ -6335,7 +6624,7 @@ canvas {
     dmg: "Caps at +80 total damage.",
     fireRate: "Caps at an 8ms fire interval.",
     speed: "Caps at 4x base movement speed.",
-    hp: "Caps at 500 max HP.",
+    hp: "Caps at 250 max HP.",
     regen: "Caps at 5 HP/sec regeneration.",
     gemPickup: `Caps at ${GEM_PICKUP_MAX}px pickup radius.`,
     projCount: "Caps at 16 snowballs.",
@@ -6936,7 +7225,7 @@ canvas {
       y,
       hp: Math.round(t.hp * hpMult),
       maxHp: Math.round(t.hp * hpMult),
-      speed: t.speed * waveScale,
+      speed: t.speed * waveScale * (opts.speedMult || 1),
       r: t.r * rMult,
       dmg: t.dmg * waveDamageMult * (opts.dmgMult || 1),
       color: t.color,
@@ -7124,7 +7413,7 @@ canvas {
       G.pendingSpawns.push({
         type: strongType,
         hpBoost: MINIBOSS_HP_BOOST,
-        opts: { rMult: MINIBOSS_R_MULT, dmgMult: MINIBOSS_DMG_MULT, isMiniBoss: true },
+        opts: { rMult: MINIBOSS_R_MULT, dmgMult: MINIBOSS_DMG_MULT, speedMult: MINIBOSS_SPEED_MULT, isMiniBoss: true },
         at: burstEnd * (0.5 + Math.random() * 0.35) / 1e3
       });
     }
@@ -7673,6 +7962,7 @@ canvas {
   attachInputListeners(togglePause);
   initShop();
   initHistory();
+  initSaveSlots();
   initPenguinSelect();
   initArtifactSelect();
   initCompendium();
