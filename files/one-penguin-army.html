@@ -11,7 +11,18 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
+  /* 100vh on mobile Safari/Chrome is the LARGEST possible viewport, as if
+     the address bar/toolbar were hidden, even while they're actually
+     showing and eating into what's really visible — so 100vh-based sizing
+     throughout this file (canvas, overlay, popup panels) computed against
+     more height than the screen was actually showing, pushing the bottom of
+     every page (including Close/Start buttons) below the real fold. 100dvh
+     tracks the ACTUAL visible viewport instead, dynamically, as the
+     browser's own chrome shows/hides. Declared after the vh version (not
+     replacing it) so a browser that doesn't recognize dvh keeps the vh
+     fallback instead of dropping the declaration entirely. */
   min-height: 100vh;
+  min-height: 100dvh;
   font-family: 'Courier New', monospace;
   overflow: hidden;
 }
@@ -29,7 +40,14 @@ canvas {
      wide screens instead of out in the letterbox bars — while staying anchored
      to the screen top, which keeps them clear of the centered menu on tall
      phones (where the canvas is a short, vertically-centered strip). */
-  --corner-inset: calc((100vw - min(96vw, calc(96vh * 4 / 3))) / 2);
+  /* Custom properties don't get the "declare vh then dvh, unsupported dvh
+     drops the whole declaration" fallback trick used elsewhere in this file
+     — an unrecognized unit inside a custom property's value is still stored
+     as-is (it's only validated where it's actually USED), so a second
+     declaration here wouldn't reliably override the first in every engine.
+     Using dvh directly is fine: every current mobile browser supports it,
+     same as the min()/calc() this already leans on. */
+  --corner-inset: calc((100vw - min(96vw, calc(96dvh * 4 / 3))) / 2);
 }
 #game {
   /* Scale to fill up to 96% of the viewport in whichever dimension is the
@@ -37,7 +55,9 @@ canvas {
      grows on large desktop windows instead of staying pinned at 800x600,
      and still shrinks correctly on small/mobile screens. */
   width: min(96vw, calc(96vh * 4 / 3));
+  width: min(96vw, calc(96dvh * 4 / 3));
   height: min(96vh, calc(96vw * 3 / 4));
+  height: min(96dvh, calc(96vw * 3 / 4));
   touch-action: none; /* the joystick handles drags itself — don't let the browser scroll/zoom/refresh on them */
 }
 .touch-joystick {
@@ -68,7 +88,14 @@ canvas {
 #overlay {
   position: absolute;
   top: 0; left: 0;
-  width: 100%; height: 100%;
+  width: 100%;
+  /* Not height:100% — with no positioned ancestor this resolves against the
+     initial containing block, which (like 100vh) mobile Safari/Chrome size
+     to the LARGEST possible viewport rather than what's actually visible
+     right now, pushing the lower menu buttons (Artifact/Journal) below the
+     real fold. Explicit dvh sizing tracks the actual visible area instead. */
+  height: 100vh;
+  height: 100dvh;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -194,6 +221,12 @@ canvas {
      than the screen itself. Without this, it overflows past both edges with
      no way to scroll to it — e.g. the map-select panel's START button. */
   max-height: 92vh;
+  /* See body's min-height comment above — 92vh is computed against mobile
+     Safari/Chrome's largest-possible viewport, not what's actually on
+     screen with the address bar/toolbar showing, so this cap alone still
+     let a panel's real bottom edge (and Close/Start button) land below the
+     real fold despite technically being "within max-height." */
+  max-height: 92dvh;
   overflow-y: auto;
 }
 
@@ -261,6 +294,7 @@ canvas {
   max-width: 720px;
   width: 92vw;
   height: min(92vh, 760px);
+  height: min(92dvh, 760px);
   box-sizing: border-box;
   background: linear-gradient(135deg, #e8d9b5, #d4c19a);
   border: 3px double #6b4a2a;
@@ -601,6 +635,7 @@ canvas {
   text-align: center;
   pointer-events: auto;
   max-height: 90vh;
+  max-height: 90dvh;
   overflow-y: auto;
 }
 #game-over h1 {
@@ -712,6 +747,7 @@ canvas {
   flex-direction: column;
   gap: 8px;
   max-height: 50vh;
+  max-height: 50dvh;
   overflow-y: auto;
   min-width: 280px;
   margin-bottom: 16px;
@@ -857,13 +893,22 @@ canvas {
     transform: translateX(-50%);
     width: 94vw;
     max-width: 94vw;
+    /* This is the one that actually governs whether Close/Start/Back stay
+       on screen on a real phone. 100vh here is mobile Safari/Chrome's
+       largest-possible viewport (as if the address bar/toolbar were
+       hidden), not what's actually visible right now — so even though this
+       math "fit," the real bottom edge of the panel routinely landed below
+       the real fold, taking the sticky action button(s) with it. 100dvh
+       tracks the actual visible viewport instead. */
     max-height: calc(100vh - 76px);
+    max-height: calc(100dvh - 76px);
     padding: 16px;
   }
   #compendium-panel {
     /* Overrides the desktop rule's fixed `height` (not `max-height`). */
     top: 60px;
     height: calc(100vh - 76px);
+    height: calc(100dvh - 76px);
     width: 94vw;
     max-width: 94vw;
     padding: 16px;
@@ -1026,7 +1071,7 @@ canvas {
   <button id="shop-button-gameover" class="menu-btn menu-btn-secondary">🏪 SHOP</button>
 </div>
 
-<div id="shop-panel" style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:rgba(10,10,20,0.97); border:2px solid #ff3366; border-radius:8px; padding:24px; text-align:center; pointer-events:auto; max-width:520px; width:90%; max-height:92vh; overflow-y:auto; z-index:100;">
+<div id="shop-panel" style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:rgba(10,10,20,0.97); border:2px solid #ff3366; border-radius:8px; padding:24px; text-align:center; pointer-events:auto; max-width:520px; width:90%; max-height:92vh; max-height:92dvh; overflow-y:auto; z-index:100;">
   <h2 style="color:#ff3366; font-size:24px; margin-bottom:8px;">🏪 PERMANENT SHOP</h2>
   <p style="color:#aaa; margin-bottom:16px;">You have <span id="shop-xp-display" style="color:#ffdd00; font-weight:bold">0</span> XP</p>
   <div id="shop-scroll">
