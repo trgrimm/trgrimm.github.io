@@ -127,7 +127,15 @@ canvas {
   margin-top: -10px;
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9), 0 2px 8px rgba(0, 0, 0, 0.6);
 }
-#overlay button, #game-over button, #pause-panel button, #history-panel button {
+/* .menu-btn itself carries no rule of its own below this comment — every
+   button using it (#map-start-btn, #artifact-reveal-equip, etc.) only ever
+   looked styled by accident, when it also happened to sit inside one of the
+   four containers this selector lists. Anywhere else — #map-select-panel,
+   #artifact-reveal-panel, the new .panel-actions wrapper — it rendered as a
+   bare default browser button. Listing the class directly makes it correct
+   regardless of container; .menu-btn-secondary's own !important rules still
+   win for buttons carrying both classes. */
+#overlay button, #game-over button, #pause-panel button, #history-panel button, .menu-btn {
   display: block;
   padding: 12px 32px;
   font-size: 20px;
@@ -187,6 +195,62 @@ canvas {
      no way to scroll to it — e.g. the map-select panel's START button. */
   max-height: 92vh;
   overflow-y: auto;
+}
+
+/* The whole-panel scroll above technically makes a tall panel's trailing
+   Close/Start/Back button(s) reachable, but they scroll away with everything
+   else and there's no visual hint the panel even scrolls — on a phone,
+   several of these panels (Penguin: 5 species; Artifact: 9 items; Map
+   select: a 270px-tall preview canvas plus 5 map cards) are routinely taller
+   than the viewport, so the button ends up well past the fold and reads as
+   missing rather than "scroll for more."
+
+   Pinning them via a flex column (header/footer fixed, only a wrapped middle
+   region scrolling — the way #compendium-panel does it below) would be the
+   cleanest fix, but every one of these panels is shown by JS setting
+   `.style.display = 'block'` directly (renderChoicePanel/openMapSelect in
+   game.js, plus penguinSelect.js/artifactSelect.js/controls.js/ui.js) — an
+   INLINE style, which beats any stylesheet rule's `display` regardless of
+   selector specificity or source order, so a `display:flex` here would
+   simply never apply. Rather than touch every one of those call sites (and
+   stay correct if a future one is added), `position: sticky` sidesteps the
+   fight entirely: it works within whatever `display` the element ends up
+   with, as long as its scrolling ANCESTOR (the panel itself, unchanged
+   overflow-y:auto above) actually scrolls. The trailing button(s) — or, for
+   panels with more than one (#weapon-select-panel, #map-select-panel), a
+   wrapping .panel-actions div around the group so they stick together
+   instead of piling on top of each other — stick to the panel's own bottom
+   edge once scrolled that far, so they're always at most one scroll-swipe
+   away instead of buried past content the user has no reason to think
+   continues. A solid background stops list content scrolling underneath
+   from showing through. Deliberately not applied to every panel —
+   #upgrade-panel/#boon-panel always show exactly 3 choice cards and have no
+   separate close button (picking IS the action), and #shop-panel found that
+   splitting its scroll region a different way (an inner scrolling wrapper)
+   stranded Close/Reset Progress instead (see the #shop-upgrades comment
+   below) — so panels not listed here keep the simpler plain scroll. */
+#penguin-close-btn, #artifact-close-btn, #history-close-btn, #controls-close-btn,
+#mode-back-button, .panel-actions {
+  position: sticky;
+  bottom: 0;
+  margin-top: 16px;
+  /* Fully opaque, not a semi-transparent rgba matching the panel's own
+     background (line ~171) — this paints OVER that already-blended
+     background rather than replacing it, so any alpha here still lets
+     whatever's mid-scroll underneath show/bleed through at the seam.
+     Solid avoids that outright; the panel's own backdrop is dark enough
+     that it reads as the same surface anyway. */
+  background: #0a0a14;
+  padding: 8px 0 0;
+}
+.panel-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: center;
+}
+.panel-actions button {
+  margin-top: 0 !important;
 }
 
 /* The Compendium is deliberately themed as a light parchment field journal,
@@ -763,6 +827,11 @@ canvas {
   border: 2px solid #555;
   background: #0d0d1a;
   image-rendering: pixelated;
+  /* Fixed 360x270 drawing-buffer resolution (kept crisp) but scaled down to
+     fit narrow phones instead of overflowing the panel's width — height:auto
+     preserves the 4:3 ratio as max-width kicks in. */
+  max-width: 100%;
+  height: auto;
 }
 
 /* Mobile panel geometry — deliberately last in the file. Every modal panel
@@ -892,17 +961,21 @@ canvas {
 <div id="weapon-select-panel" style="display:none;">
   <h2>Choose Your Weapon</h2>
   <div id="weapon-choices"></div>
-  <button id="change-penguin-button" class="menu-btn menu-btn-secondary" style="margin-top:16px;">🐧 Change Penguin</button>
-  <button id="change-artifact-button" class="menu-btn menu-btn-secondary" style="margin-top:8px;">🏺 Change Artifact</button>
-  <button id="weapon-back-button" class="menu-btn menu-btn-secondary" style="margin-top:8px;">◀ Back</button>
+  <div class="panel-actions">
+    <button id="change-penguin-button" class="menu-btn menu-btn-secondary">🐧 Change Penguin</button>
+    <button id="change-artifact-button" class="menu-btn menu-btn-secondary">🏺 Change Artifact</button>
+    <button id="weapon-back-button" class="menu-btn menu-btn-secondary">◀ Back</button>
+  </div>
 </div>
 
 <div id="map-select-panel" style="display:none;">
   <h2>Choose a Map</h2>
   <canvas id="map-preview" class="preview-canvas" width="360" height="270"></canvas>
   <div id="map-choices"></div>
-  <button id="map-start-btn" class="menu-btn" style="margin-top:16px;">▶ START</button>
-  <button id="map-back-button" class="menu-btn menu-btn-secondary" style="margin-top:8px;">◀ Back</button>
+  <div class="panel-actions">
+    <button id="map-start-btn" class="menu-btn">▶ START</button>
+    <button id="map-back-button" class="menu-btn menu-btn-secondary">◀ Back</button>
+  </div>
 </div>
 
 <div id="boon-panel" style="display:none;">
