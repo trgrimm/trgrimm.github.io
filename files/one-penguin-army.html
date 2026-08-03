@@ -5719,7 +5719,13 @@ canvas {
       if (player.regen > 0) buildSegs.push({ text: "\u{1F4A7} +" + player.regen.toFixed(1) + "/s", color: "#9fe8ff" });
       const elapsed = G.state === "playing" ? Math.floor((performance.now() - G.startTime) / 1e3) : G.frozenElapsed;
       const hudLines = [
-        { text: "Time: " + formatTime(elapsed), color: "#e8e8e8", font: "14px Courier New" },
+        {
+          segments: [
+            { text: "Time: " + formatTime(elapsed), color: "#e8e8e8" },
+            { text: "Wave " + G.wave, color: "#ffd966" }
+          ],
+          font: "14px Courier New"
+        },
         { text: "Score: " + G.score, color: "#e8e8e8", font: "14px Courier New" },
         { text: "Kills: " + G.runStats.kills, color: "#e8e8e8", font: "14px Courier New" },
         { segments: buildSegs, font: "12px Courier New" }
@@ -5777,10 +5783,6 @@ canvas {
         }
         leftY += lineHeight;
       }
-      ctx2.fillStyle = "#888";
-      ctx2.font = "12px Courier New";
-      ctx2.textAlign = "right";
-      ctx2.fillText("Wave " + G.wave, W - 16, 24);
     }
     if (G.state === "playing") {
       const cache = G.powerups.find((pu) => pu.type === "artifactCache");
