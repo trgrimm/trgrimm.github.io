@@ -1197,7 +1197,7 @@ canvas {
   var MINIBOSS_HP_BOOST = 4;
   var MINIBOSS_R_MULT = 1.7;
   var MINIBOSS_DMG_MULT = 1.6;
-  var MINIBOSS_SPEED_MULT = 1.2;
+  var MINIBOSS_SPEED_MULT = 1.38;
   var PLAYER_R = 14;
   var BASE_SPEED = 2.25 * 1.3 * 1.1;
   var BASE_FIRE_RATE = 600;
@@ -1446,12 +1446,12 @@ canvas {
       name: "Regen",
       weight: 0.9,
       weapons: "all",
-      mags: { common: 0.25, rare: 0.5, epic: 1 },
+      mags: { common: 0.5, rare: 1, epic: 2 },
       desc: (m) => `+${m} HP/sec regeneration`,
       apply: (p, m) => {
-        p.regen = Math.min(5, (p.regen || 0) + m);
+        p.regen = Math.min(8, (p.regen || 0) + m);
       },
-      isMaxed: (p) => (p.regen || 0) >= 5
+      isMaxed: (p) => (p.regen || 0) >= 8
     },
     {
       key: "gemPickup",
@@ -1705,6 +1705,7 @@ canvas {
   var CHINSTRAP_CHARGE_DMG = 23;
   var CHINSTRAP_CHARGE_INVINCIBLE = 0.4;
   var CHINSTRAP_CHARGE_DURATION = 0.18;
+  var FROZEN_WARD_ABILITY_COOLDOWN = 15e3;
   var GENTOO_SWIM_MULT = 1.55;
 
   // js/utils.js
@@ -2015,9 +2016,9 @@ canvas {
     {
       key: "frozenWard",
       name: "\u{1F4A0} Frozen Ward",
-      desc: "A sliver of enchanted ice that lingers a beat longer than it should.",
-      mechanic: "Post-hit invincibility extended to 1.6s (from 1.0s).",
-      invincibleDuration: 1.6
+      desc: "A shard of ice kept close for exactly the moment you need it.",
+      mechanic: "Grants Frozen Ward (button/E): 1.5s of invincibility, on its own cooldown.",
+      invincibleDuration: 1.5
     },
     {
       key: "crackedIcebergShard",
@@ -2176,6 +2177,9 @@ canvas {
       projCount: BASE_PROJ_COUNT,
       projSpeed: BASE_PROJECTILE_SPEED,
       invincible: 0,
+      // TRUE invincibility (currently only Chinstrap's Fearless Charge) — blocks damage from every source. NOT set on ordinary hits anymore; see each enemy's own hitCooldown for that.
+      hitFlashTimer: 0,
+      // cosmetic-only: drives the HP-bar blink and the Frozen Ward ring — set on every hit taken, but never gates damage itself
       flashTimer: 0,
       immobilizedTimer: 0,
       // seconds remaining stuck in a Facility Researcher's net — blocks movement, see player.js's handleInput()
@@ -3177,12 +3181,21 @@ canvas {
     player.invincible = Math.max(player.invincible, CHINSTRAP_CHARGE_INVINCIBLE);
     return true;
   }
+  function triggerFrozenWard(player) {
+    const art = getArtifactType("frozenWard");
+    player.invincible = Math.max(player.invincible, art.invincibleDuration);
+    return true;
+  }
   function getActiveAbilities() {
     const species = getPenguinType(G.penguinType);
     const list = [];
     if (species.triggerable) list.push({ key: species.key, icon: species.icon || "\u2728", title: species.ability });
     if (G.equippedArtifact === "warHorn" && species.key !== "emperor") {
       list.push({ key: "emperor", icon: "\u{1F4E3}", title: "Command (granted by War Horn): summon ally penguins to fight beside you." });
+    }
+    if (G.equippedArtifact === "frozenWard") {
+      const art = getArtifactType("frozenWard");
+      list.push({ key: "frozenWard", icon: "\u{1F4A0}", title: `Frozen Ward: grant yourself ${art.invincibleDuration}s of invincibility.` });
     }
     return list;
   }
@@ -3202,8 +3215,9 @@ canvas {
     let fired = false;
     if (key === "emperor") fired = triggerEmperor(player);
     else if (key === "chinstrap") fired = triggerChinstrap(player);
+    else if (key === "frozenWard") fired = triggerFrozenWard(player);
     if (fired) {
-      cds[key] = key === "emperor" ? EMPEROR_ABILITY_COOLDOWN : CHINSTRAP_ABILITY_COOLDOWN * (player.chinstrapCooldownMult || 1);
+      cds[key] = key === "emperor" ? EMPEROR_ABILITY_COOLDOWN : key === "chinstrap" ? CHINSTRAP_ABILITY_COOLDOWN * (player.chinstrapCooldownMult || 1) : FROZEN_WARD_ABILITY_COOLDOWN;
     }
   }
   function triggerSpeciesAbility() {
@@ -4196,12 +4210,12 @@ canvas {
     { label: "\u{1F3C3} Frostpaws", desc: "+15% movement speed", apply: (p) => {
       p.speed *= 1.15;
     } },
-    // The 5 mirrors config.js's regen upgrade cap (UPGRADE_DEFS' 'regen' entry)
+    // The 8 mirrors config.js's regen upgrade cap (UPGRADE_DEFS' 'regen' entry)
     // — duplicated as a literal rather than imported since this file is kept
     // import-free (see the module comment above), but both must stay in sync
     // so Meltwater can't stack past the same ceiling the level-up upgrade has.
-    { label: "\u{1F4A7} Meltwater", desc: "+1.5 HP/sec regeneration", apply: (p) => {
-      p.regen = Math.min(5, (p.regen || 0) + 1.5);
+    { label: "\u{1F4A7} Meltwater", desc: "+2.5 HP/sec regeneration", apply: (p) => {
+      p.regen = Math.min(8, (p.regen || 0) + 2.5);
     } },
     { label: "\u{1FA78} Frenzy", desc: "+30% damage", apply: (p) => {
       p.dmg *= 1.3;
@@ -5460,7 +5474,7 @@ canvas {
     const player = G.player;
     const { camX, camY } = getCameraOffset(player);
     const flash = player.flashTimer > 0;
-    const invincible = player.invincible > 0;
+    const invincible = player.invincible > 0 || player.hitFlashTimer > 0;
     const blinkOff = invincible && Math.floor(performance.now() / 80) % 2 === 0;
     const immobilized = player.immobilizedTimer > 0;
     ctx2.save();
@@ -5933,7 +5947,7 @@ canvas {
         { text: "\u{1F3C3} " + (speedPct >= 0 ? "+" : "") + speedPct + "%", color: "#7fdcff" },
         { text: "\u2764\uFE0F " + Math.ceil(player.hp) + "/" + Math.round(player.maxHp), color: "#5fff8f" }
       ];
-      if (player.regen > 0) buildSegs.push({ text: "\u{1F4A7} +" + player.regen.toFixed(1) + "/s", color: "#9fe8ff" });
+      if (player.regen > 0) buildSegs.push({ text: "\u{1F4A7} +" + player.regen.toFixed(2) + "/s", color: "#9fe8ff" });
       const elapsed = G.state === "playing" ? Math.floor((performance.now() - G.startTime) / 1e3) : G.frozenElapsed;
       const hudLines = [
         {
@@ -6625,7 +6639,7 @@ canvas {
     fireRate: "Caps at an 8ms fire interval.",
     speed: "Caps at 4x base movement speed.",
     hp: "Caps at 250 max HP.",
-    regen: "Caps at 5 HP/sec regeneration.",
+    regen: "Caps at 8 HP/sec regeneration.",
     gemPickup: `Caps at ${GEM_PICKUP_MAX}px pickup radius.`,
     projCount: "Caps at 16 snowballs.",
     projSpeed: "Caps at +30% cumulative snowball speed.",
@@ -7233,6 +7247,13 @@ canvas {
       species: t.species,
       score,
       flashTimer: 0,
+      // Seconds remaining before THIS enemy can melee-damage the player again
+      // — independent per enemy, so one enemy's recent hit doesn't shield the
+      // player from a different enemy touching them at the same time (see the
+      // collision-with-player block below). Not used for enemy projectiles,
+      // which are one-shot and already rate-limited by the firing enemy's own
+      // shotCooldown.
+      hitCooldown: 0,
       isMiniBoss: opts.isMiniBoss || false,
       // Ranged enemies fire a straight-line shot at the player periodically;
       // staggered start so a pack doesn't all fire in perfect unison.
@@ -7355,6 +7376,8 @@ canvas {
       species: t.species,
       score: t.score * 10,
       flashTimer: 0,
+      hitCooldown: 0,
+      // see spawnEnemy()'s own field for what this gates
       isBoss: true,
       immobilizedTimer: 0,
       slowTimer: 0,
@@ -7445,6 +7468,7 @@ canvas {
       const e = G.enemies[i];
       if (e.slowTimer > 0) e.slowTimer -= dt;
       if (e.immobilizedTimer > 0) e.immobilizedTimer -= dt;
+      if (e.hitCooldown > 0) e.hitCooldown -= dt;
       if (e.burnTimer > 0) {
         e.burnTimer -= dt;
         const burnDmg = e.burnDps * dt;
@@ -7501,12 +7525,13 @@ canvas {
         }
       }
       if (dist(e, player) < e.r + PLAYER_R) {
-        if (player.invincible <= 0) {
+        if (player.invincible <= 0 && e.hitCooldown <= 0) {
           const artifact = G.equippedArtifact && getArtifactType(G.equippedArtifact);
           const dmgTaken = artifact && artifact.key === "blubberPlating" ? e.dmg * (1 - artifact.reduction) : e.dmg;
           player.hp -= dmgTaken;
           recordDamageTaken(dmgTaken);
-          player.invincible = artifact && artifact.key === "frozenWard" ? artifact.invincibleDuration : 1;
+          e.hitCooldown = 1;
+          player.hitFlashTimer = 1;
           player.flashTimer = 10;
           G.screenShake.intensity = Math.min(G.screenShake.intensity + 5, 12);
           spawnParticles(player.x, player.y, "#ff3366", 8, 2);
@@ -7572,7 +7597,7 @@ canvas {
             recordDamageTaken(dmgTaken);
           }
           if (p.stun) player.immobilizedTimer = Math.max(player.immobilizedTimer, p.stun);
-          player.invincible = artifact && artifact.key === "frozenWard" ? artifact.invincibleDuration : 1;
+          player.hitFlashTimer = 1;
           player.flashTimer = 10;
           G.screenShake.intensity = Math.min(G.screenShake.intensity + 5, 12);
           spawnParticles(player.x, player.y, p.color, 8, 2);
@@ -7850,6 +7875,11 @@ canvas {
     syncAbilityButton();
     startWave();
   }
+  function restartRun() {
+    hideAllRunPanels();
+    if (G.mode === "expedition") startExpedition();
+    else startRun("endless", G.currentMap);
+  }
   function endRun() {
     G.runStats.xpGained = G.xpEarnedThisGame;
     G.xpBank += G.xpEarnedThisGame;
@@ -7939,6 +7969,7 @@ canvas {
     }
     const player = G.player;
     if (player.invincible > 0) player.invincible -= dt;
+    if (player.hitFlashTimer > 0) player.hitFlashTimer -= dt;
     if (player.flashTimer > 0) player.flashTimer -= dt * 60;
     const cds = player.abilityCooldowns;
     if (cds) for (const k in cds) {
@@ -7977,12 +8008,12 @@ canvas {
     if (e.code === "KeyE") triggerSpeciesAbility();
   });
   onStart(openModeSelect);
-  onRestart(openModeSelect);
+  onRestart(restartRun);
   onResume(togglePause);
-  onPauseRestart(openModeSelect);
+  onPauseRestart(restartRun);
   onQuit(quitToMenu);
   var expeditionAgainBtn = document.getElementById("expedition-again-button");
-  if (expeditionAgainBtn) expeditionAgainBtn.onclick = openModeSelect;
+  if (expeditionAgainBtn) expeditionAgainBtn.onclick = restartRun;
   var menuButtonGameover = document.getElementById("menu-button-gameover");
   if (menuButtonGameover) menuButtonGameover.onclick = backToMenu;
   var expeditionMenuBtn = document.getElementById("expedition-menu-button");
