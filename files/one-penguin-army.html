@@ -1208,6 +1208,11 @@ canvas {
   var POWERUP_PICKUP_DURATION = 8;
   var XP_PER_LEVEL = 10;
   var XP_LEVEL_GROWTH = 1.1;
+  var XP_LEVEL_GROWTH_CAP_LEVEL = 35;
+  function xpNeededForLevel(level) {
+    const cappedLevel = Math.min(level, XP_LEVEL_GROWTH_CAP_LEVEL);
+    return XP_PER_LEVEL * Math.pow(XP_LEVEL_GROWTH, cappedLevel - 1);
+  }
   var BASE_DMG = 10;
   var BASE_PROJ_COUNT = 8;
   var ENEMY_DAMAGE_WAVE_CAP = 50;
@@ -1707,6 +1712,84 @@ canvas {
   var CHINSTRAP_CHARGE_DURATION = 0.18;
   var FROZEN_WARD_ABILITY_COOLDOWN = 15e3;
   var GENTOO_SWIM_MULT = 1.55;
+  var SHOCKED_DURATION = 3;
+  var BRITTLE_BONUS_MULT = 0.25;
+  var OVERLOAD_RADIUS = 90;
+  var OVERLOAD_DAMAGE = 15;
+  var RING_OF_FIRE_BURN_DPS = 5;
+  var RING_OF_FIRE_BURN_DURATION = 2;
+  var STORM_HARPOON_PIERCE_THRESHOLD = 6;
+  var BLIZZARD_BARRAGE_PROJCOUNT_THRESHOLD = 12;
+  var RETALIATION_NOVA_RADIUS_THRESHOLD = NOVA_BASE_RADIUS * 1.5;
+  var BLAZING_HARPOON_SPEED_THRESHOLD = 22;
+  var SHATTER_BARRAGE_SPEED_THRESHOLD = 20;
+  var GLACIAL_NOVA_FIRERATE_THRESHOLD = 520;
+  var SHATTER_RADIUS = 70;
+  var SHATTER_SPLASH_FRAC = 0.4;
+  var RETALIATION_NOVA_COOLDOWN = 1.5;
+  var EVOLUTION_DEFS = [
+    {
+      key: "stormHarpoon",
+      icon: "\u26A1",
+      name: "Storm Harpoon",
+      color: "#8fd8ff",
+      weapon: "Harpoon",
+      artifact: "Static Coil",
+      trigger: `Pierce \u2265 ${STORM_HARPOON_PIERCE_THRESHOLD} (caps at 8)`,
+      effect: "Every pierced enemy is guaranteed to arc damage to a nearby enemy, instead of Static Coil's usual 20% chance."
+    },
+    {
+      key: "blazingHarpoon",
+      icon: "\u{1F525}",
+      name: "Blazing Harpoon",
+      color: "#ff8c3c",
+      weapon: "Harpoon",
+      artifact: "Ember Brand",
+      trigger: `Harpoon Speed \u2265 ${BLAZING_HARPOON_SPEED_THRESHOLD} (caps at 30)`,
+      effect: "The harpoon itself sets everything it hits on fire \u2014 Ember Brand's burn normally only triggers when an enemy hits you."
+    },
+    {
+      key: "blizzardBarrage",
+      icon: "\u2744\uFE0F",
+      name: "Blizzard Barrage",
+      color: "#bfeaff",
+      weapon: "Snowball Barrage",
+      artifact: "Frostbite Charm",
+      trigger: `Projectiles \u2265 ${BLIZZARD_BARRAGE_PROJCOUNT_THRESHOLD} (caps at 16)`,
+      effect: "Every snowball is guaranteed to slow the enemy it hits, instead of Frostbite Charm's usual 25% chance."
+    },
+    {
+      key: "shatterBarrage",
+      icon: "\u{1FA78}",
+      name: "Shatter Barrage",
+      color: "#bfeaff",
+      weapon: "Snowball Barrage",
+      artifact: "Cracked Iceberg Shard",
+      trigger: `Snowball Speed \u2265 ${SHATTER_BARRAGE_SPEED_THRESHOLD} (caps at 30)`,
+      effect: "Snowballs shatter on impact into an icy splash burst, damaging nearby enemies around each hit."
+    },
+    {
+      key: "retaliationNova",
+      icon: "\u{1F6E1}\uFE0F",
+      name: "Retaliation Nova",
+      color: "#6fb0ff",
+      weapon: "Frost Nova",
+      artifact: "Blubber Plating",
+      trigger: `Nova Radius \u2265 ${Math.round(RETALIATION_NOVA_RADIUS_THRESHOLD)} (caps at ${NOVA_BASE_RADIUS * 2})`,
+      effect: "Taking a hit automatically fires a bonus Nova pulse, on a short internal cooldown."
+    },
+    {
+      key: "glacialNova",
+      icon: "\u{1F4A0}",
+      name: "Glacial Nova",
+      color: "#8fd8ff",
+      weapon: "Frost Nova",
+      artifact: "Frostbite Charm",
+      trigger: `Nova pulses sped up to a \u2264 ${GLACIAL_NOVA_FIRERATE_THRESHOLD}ms interval (floor 300ms)`,
+      effect: "Every pulse slows every enemy it hits."
+    }
+  ];
+  var FLOATING_TEXT_LONG_DECAY = 0.01;
 
   // js/utils.js
   function dist(a, b) {
@@ -1738,14 +1821,14 @@ canvas {
       });
     }
   }
-  function spawnFloatingText(x, y, text, color) {
+  function spawnFloatingText(x, y, text, color, decay = 0.02) {
     G.particles.push({
       x,
       y,
       vy: -1.5,
       vx: 0,
       life: 1,
-      decay: 0.02,
+      decay,
       color,
       size: 0,
       text,
@@ -2064,7 +2147,11 @@ canvas {
     waveDelay: 3e3,
     startTime: 0,
     frozenElapsed: 0,
-    // elapsed seconds captured once by recordRun(); the HUD timer reads this once G.state isn't 'playing' so it stops ticking after the run ends
+    // elapsed seconds captured once by recordRun(); the HUD timer reads this once the run has fully ended (state isn't 'playing' or 'paused')
+    pausedAccum: 0,
+    // total ms spent paused so far this run (completed pause intervals only — see getElapsedSeconds())
+    pauseStartedAt: 0,
+    // performance.now() when the CURRENT pause began, or 0 while not paused
     enemies: [],
     projectiles: [],
     enemyProjectiles: [],
@@ -2208,8 +2295,12 @@ canvas {
       // Chinstrap: multiplies Fearless Charge landing damage
       chinstrapCooldownMult: 1,
       // Chinstrap: multiplies Fearless Charge's ability cooldown (floor 0.4)
-      chargeState: null
+      chargeState: null,
       // non-null while a Fearless Charge dash is animating — see abilities.js's updateChinstrapCharge
+      retaliationNovaCooldown: 0,
+      // Retaliation Nova evolution's own internal cooldown — see projectiles.js
+      evolvedFlags: { stormHarpoon: false, blizzardBarrage: false, retaliationNova: false, blazingHarpoon: false, shatterBarrage: false, glacialNova: false }
+      // edge-detects each weapon evolution's one-time "Evolved!" toast — reset every run, never persisted
     };
     Object.assign(player, defaultWeaponStats(G.weapon));
     for (const upg of PERMANENT_UPGRADES) {
@@ -2486,8 +2577,13 @@ canvas {
     const keepSet = /* @__PURE__ */ new Set([...topSet, ...recentNonTop]);
     return history.filter((r) => keepSet.has(r));
   }
+  function getElapsedSeconds() {
+    const now = performance.now();
+    const ongoingPause = G.state === "paused" ? now - G.pauseStartedAt : 0;
+    return Math.floor((now - G.startTime - G.pausedAccum - ongoingPause) / 1e3);
+  }
   function recordRun() {
-    const elapsedSec = Math.floor((performance.now() - G.startTime) / 1e3);
+    const elapsedSec = getElapsedSeconds();
     G.frozenElapsed = elapsedSec;
     const isNewHigh = G.score > G.highScore;
     G.highScore = Math.max(G.highScore, G.score);
@@ -2508,6 +2604,8 @@ canvas {
     G.player = makePlayer();
     G.startTime = performance.now();
     G.frozenElapsed = 0;
+    G.pausedAccum = 0;
+    G.pauseStartedAt = 0;
     G.score = 0;
     G.wave = 0;
     G.waveTimer = 0;
@@ -3064,7 +3162,7 @@ canvas {
         panel.style.display = "none";
         G.state = "playing";
         spawnParticles(G.player.x, G.player.y, u.rarity.color, 20, 4);
-        spawnFloatingText(G.player.x, G.player.y - 30, u.label, u.rarity.color);
+        spawnFloatingText(G.player.x, G.player.y - 30, u.label, u.rarity.color, FLOATING_TEXT_LONG_DECAY);
       };
       choices.appendChild(btn);
       buttons.push(btn);
@@ -3098,7 +3196,7 @@ canvas {
         spawnFloatingText(g.x, g.y, "+" + g.value + " XP", "#ffdd00");
         playGem();
         G.gems.splice(i, 1);
-        const needed = XP_PER_LEVEL * Math.pow(XP_LEVEL_GROWTH, player.level - 1);
+        const needed = xpNeededForLevel(player.level);
         if (player.xp >= needed) {
           player.xp -= needed;
           player.level++;
@@ -3803,7 +3901,7 @@ canvas {
       }
       if (dist(pu, player) < pu.r + PLAYER_R) {
         spawnParticles(pu.x, pu.y, pu.color, 15, 3);
-        spawnFloatingText(pu.x, pu.y, pu.label, pu.color);
+        spawnFloatingText(pu.x, pu.y, pu.label, pu.color, FLOATING_TEXT_LONG_DECAY);
         playPowerup();
         const def = POWERUP_DEFS[pu.type];
         if (def.isWeaponOverride) {
@@ -4221,6 +4319,460 @@ canvas {
       p.dmg *= 1.3;
     } }
   ];
+
+  // js/projectiles.js
+  function isStormHarpoonActive() {
+    return G.weapon === "harpoon" && G.equippedArtifact === "staticCoil" && G.player.pierceCount >= STORM_HARPOON_PIERCE_THRESHOLD;
+  }
+  function isBlizzardBarrageActive() {
+    return G.weapon === "barrage" && G.equippedArtifact === "frostbiteCharm" && G.player.projCount >= BLIZZARD_BARRAGE_PROJCOUNT_THRESHOLD;
+  }
+  function isRetaliationNovaActive() {
+    return G.weapon === "nova" && G.equippedArtifact === "blubberPlating" && G.player.novaRadius >= RETALIATION_NOVA_RADIUS_THRESHOLD;
+  }
+  function isBlazingHarpoonActive() {
+    return G.weapon === "harpoon" && G.equippedArtifact === "emberBrand" && G.player.projSpeed >= BLAZING_HARPOON_SPEED_THRESHOLD;
+  }
+  function isShatterBarrageActive() {
+    return G.weapon === "barrage" && G.equippedArtifact === "crackedIcebergShard" && G.player.projSpeed >= SHATTER_BARRAGE_SPEED_THRESHOLD;
+  }
+  function isGlacialNovaActive() {
+    return G.weapon === "nova" && G.equippedArtifact === "frostbiteCharm" && G.player.fireRate <= GLACIAL_NOVA_FIRERATE_THRESHOLD;
+  }
+  var EVOLUTION_PREDICATES = {
+    stormHarpoon: isStormHarpoonActive,
+    blazingHarpoon: isBlazingHarpoonActive,
+    blizzardBarrage: isBlizzardBarrageActive,
+    shatterBarrage: isShatterBarrageActive,
+    retaliationNova: isRetaliationNovaActive,
+    glacialNova: isGlacialNovaActive
+  };
+  function getActiveEvolution() {
+    for (const def of EVOLUTION_DEFS) {
+      const pred = EVOLUTION_PREDICATES[def.key];
+      if (pred && pred()) return def;
+    }
+    return null;
+  }
+  function checkWeaponEvolutionToasts(player) {
+    for (const def of EVOLUTION_DEFS) {
+      if (player.evolvedFlags[def.key]) continue;
+      const pred = EVOLUTION_PREDICATES[def.key];
+      if (pred && pred()) {
+        player.evolvedFlags[def.key] = true;
+        spawnFloatingText(player.x, player.y - 30, `${def.icon} ${def.name} Evolved!`, def.color, FLOATING_TEXT_LONG_DECAY);
+      }
+    }
+  }
+  function triggerRetaliationPulse(player) {
+    player.retaliationNovaCooldown = RETALIATION_NOVA_COOLDOWN;
+    const life = 0.35;
+    G.projectiles.push({
+      x: player.x,
+      y: player.y,
+      vx: 0,
+      vy: 0,
+      dmg: player.dmg,
+      r: player.novaRadius,
+      color: WEAPON_TYPES.nova.color,
+      aoe: true,
+      life,
+      maxLife: life,
+      maxRadius: player.novaRadius,
+      hitSet: /* @__PURE__ */ new Set(),
+      source: "retaliationNova"
+    });
+  }
+  function triggerAoeBurst(e, { radius, dmg, tag, coreColor, coreCount, hitColor, shake }) {
+    spawnParticles(e.x, e.y, coreColor, coreCount, 3);
+    G.screenShake.intensity = Math.min(G.screenShake.intensity + shake, 10);
+    for (const other of G.enemies) {
+      if (other === e) continue;
+      if (dist(e, other) > radius) continue;
+      other.hp -= dmg;
+      recordDamageDealt(tag, dmg);
+      spawnParticles(other.x, other.y, hitColor, 4, 2);
+      if (other.hp <= 0) {
+        const idx = G.enemies.indexOf(other);
+        if (idx !== -1) {
+          G.score += other.score;
+          recordKill();
+          spawnFloatingText(other.x, other.y, "+" + other.score, "#ffaa00");
+          spawnParticles(other.x, other.y, other.color, 12, 3);
+          G.screenShake.intensity = Math.min(G.screenShake.intensity + 3, 8);
+          playKill();
+          const gemVal = Math.floor(other.score / 10) + (Math.random() < 0.3 ? 1 : 0);
+          spawnGem(other.x, other.y, gemVal);
+          G.enemies.splice(idx, 1);
+        }
+      }
+    }
+  }
+  function triggerOverload(e) {
+    triggerAoeBurst(e, {
+      radius: OVERLOAD_RADIUS,
+      dmg: OVERLOAD_DAMAGE,
+      tag: "overload",
+      coreColor: "#eaffe0",
+      coreCount: 10,
+      hitColor: "#ffe680",
+      shake: 4
+    });
+  }
+  function triggerShatter(e, dmg) {
+    triggerAoeBurst(e, {
+      radius: SHATTER_RADIUS,
+      dmg: dmg * SHATTER_SPLASH_FRAC,
+      tag: "shatter",
+      coreColor: "#dff2ff",
+      coreCount: 8,
+      hitColor: "#bfeaff",
+      shake: 3
+    });
+  }
+  function applyOnHitArtifacts(e, dmg, source) {
+    if (e.slowTimer > 0) {
+      const bonus = dmg * BRITTLE_BONUS_MULT;
+      e.hp -= bonus;
+      recordDamageDealt("brittle", bonus);
+      spawnParticles(e.x, e.y, "#eafcff", 5, 2);
+    }
+    if (G.equippedArtifact === "frostbiteCharm") {
+      const a = getArtifactType("frostbiteCharm");
+      if (isBlizzardBarrageActive() || isGlacialNovaActive() || Math.random() < a.procChance) {
+        e.slowTimer = a.slowDuration;
+        e.slowMult = a.slowMult;
+      }
+    } else if (G.equippedArtifact === "emberBrand") {
+      if (isBlazingHarpoonActive()) {
+        const a = getArtifactType("emberBrand");
+        e.burnTimer = Math.max(e.burnTimer, a.burnDuration);
+        e.burnDps = a.burnDps;
+      }
+    } else if (G.equippedArtifact === "crackedIcebergShard") {
+      if (isShatterBarrageActive()) triggerShatter(e, dmg);
+    } else if (G.equippedArtifact === "staticCoil") {
+      const a = getArtifactType("staticCoil");
+      if (isStormHarpoonActive() || Math.random() < a.procChance) {
+        let target = null, bestDist = a.range;
+        for (const other of G.enemies) {
+          if (other === e) continue;
+          const d = dist(e, other);
+          if (d < bestDist) {
+            bestDist = d;
+            target = other;
+          }
+        }
+        if (target) {
+          const arcDmg = dmg * a.dmgFraction;
+          target.hp -= arcDmg;
+          recordDamageDealt("staticCoil", arcDmg);
+          spawnParticles(target.x, target.y, "#8fd8ff", 4, 2);
+          G.lightningArcs.push({ points: [{ x: e.x, y: e.y }, { x: target.x, y: target.y }], color: "#8fd8ff", age: 0, maxAge: 130 });
+          if (target.hp <= 0) {
+            const idx = G.enemies.indexOf(target);
+            if (idx !== -1) {
+              G.score += target.score;
+              recordKill();
+              spawnFloatingText(target.x, target.y, "+" + target.score, "#ffaa00");
+              spawnParticles(target.x, target.y, target.color, 12, 3);
+              G.screenShake.intensity = Math.min(G.screenShake.intensity + 3, 8);
+              playKill();
+              const gemVal = Math.floor(target.score / 10) + (Math.random() < 0.3 ? 1 : 0);
+              spawnGem(target.x, target.y, gemVal);
+              G.enemies.splice(idx, 1);
+            }
+          }
+        }
+      }
+    }
+    if (source === "thundersquall") {
+      e.shockedTimer = SHOCKED_DURATION;
+      if (e.burnTimer > 0) triggerOverload(e);
+    } else if (source === "ringOfFire") {
+      e.burnTimer = Math.max(e.burnTimer, RING_OF_FIRE_BURN_DURATION);
+      e.burnDps = RING_OF_FIRE_BURN_DPS;
+      if (e.shockedTimer > 0) triggerOverload(e);
+    }
+  }
+  function shoot() {
+    const player = G.player;
+    const now = performance.now();
+    if (now - player.lastShot >= player.fireRate) {
+      player.lastShot = now;
+      const fireMode = WEAPON_TYPES[G.weapon].fireMode;
+      if (fireMode === "pierce") fireHarpoon(player);
+      else if (fireMode === "aoe") fireNova(player);
+      else fireRadial(player);
+      playShoot(G.weapon);
+    }
+    const powerDef = player.powerWeapon && POWER_WEAPON_DEFS[player.powerWeapon];
+    if (powerDef && powerDef.fireMode !== "orbit" && now - player.powerLastShot >= powerDef.fireRate) {
+      player.powerLastShot = now;
+      if (powerDef.fireMode === "aoe") fireRingOfFire(player, powerDef);
+      else if (powerDef.fireMode === "chain") fireChainLightning(player, powerDef);
+      else fireFlamingSnowballs(player, powerDef);
+      playShoot(powerDef.key);
+    }
+  }
+  function fireRadial(player) {
+    const color = WEAPON_TYPES[G.weapon].color;
+    const count = player.projCount;
+    for (let i = 0; i < count; i++) {
+      const angle = Math.PI * 2 / count * i + Math.random() * 0.15;
+      G.projectiles.push({
+        x: player.x,
+        y: player.y,
+        originX: player.x,
+        originY: player.y,
+        vx: Math.cos(angle) * player.projSpeed,
+        vy: Math.sin(angle) * player.projSpeed,
+        dmg: player.dmg,
+        r: 4,
+        color,
+        shape: "snowball",
+        source: "barrage"
+      });
+    }
+  }
+  function fireHarpoon(player) {
+    let angle = player.facing;
+    let nearest = null, nearestDist = Infinity;
+    for (const e of G.enemies) {
+      const d = dist(player, e);
+      if (d < nearestDist) {
+        nearestDist = d;
+        nearest = e;
+      }
+    }
+    if (nearest) angle = Math.atan2(nearest.y - player.y, nearest.x - player.x);
+    G.projectiles.push({
+      x: player.x,
+      y: player.y,
+      originX: player.x,
+      originY: player.y,
+      vx: Math.cos(angle) * player.projSpeed,
+      vy: Math.sin(angle) * player.projSpeed,
+      dmg: player.dmg,
+      r: 6,
+      color: WEAPON_TYPES.harpoon.color,
+      shape: "harpoon",
+      pierce: true,
+      pierceLeft: player.pierceCount,
+      hitSet: /* @__PURE__ */ new Set(),
+      source: "harpoon"
+    });
+  }
+  function fireNova(player) {
+    const life = 0.35;
+    G.projectiles.push({
+      x: player.x,
+      y: player.y,
+      vx: 0,
+      vy: 0,
+      dmg: player.dmg,
+      r: player.novaRadius,
+      color: WEAPON_TYPES.nova.color,
+      aoe: true,
+      life,
+      maxLife: life,
+      maxRadius: player.novaRadius,
+      hitSet: /* @__PURE__ */ new Set(),
+      source: "nova"
+    });
+  }
+  function fireFlamingSnowballs(player, powerDef) {
+    const count = player.projCount;
+    const dmg = player.dmg * powerDef.dmgMult;
+    for (let i = 0; i < count; i++) {
+      const angle = Math.PI * 2 / count * i + Math.random() * 0.15;
+      G.projectiles.push({
+        x: player.x,
+        y: player.y,
+        originX: player.x,
+        originY: player.y,
+        vx: Math.cos(angle) * player.projSpeed,
+        vy: Math.sin(angle) * player.projSpeed,
+        dmg,
+        r: 5,
+        color: powerDef.color,
+        shape: "flame",
+        source: "flamingSnowballs"
+      });
+    }
+  }
+  function fireRingOfFire(player, powerDef) {
+    const life = 0.4;
+    G.projectiles.push({
+      x: player.x,
+      y: player.y,
+      vx: 0,
+      vy: 0,
+      dmg: player.dmg * powerDef.dmgMult,
+      r: powerDef.radius,
+      color: powerDef.color,
+      aoe: true,
+      fireRing: true,
+      life,
+      maxLife: life,
+      maxRadius: powerDef.radius,
+      hitSet: /* @__PURE__ */ new Set(),
+      source: "ringOfFire"
+    });
+  }
+  function fireChainLightning(player, powerDef) {
+    if (G.enemies.length === 0) return;
+    const dmg = player.dmg * powerDef.dmgMult;
+    let current = null, best = Infinity;
+    for (const e of G.enemies) {
+      const d = dist(player, e);
+      if (d < best) {
+        best = d;
+        current = e;
+      }
+    }
+    const hit = /* @__PURE__ */ new Set();
+    const points = [{ x: player.x, y: player.y }];
+    for (let hop = 0; hop < powerDef.chainCount && current; hop++) {
+      points.push({ x: current.x, y: current.y });
+      hit.add(current);
+      spawnParticles(current.x, current.y, powerDef.color, 6, 3);
+      damageEnemy(current, dmg, powerDef.color, "thundersquall");
+      const from = current;
+      let next = null, nBest = powerDef.chainRange;
+      for (const e of G.enemies) {
+        if (hit.has(e)) continue;
+        const d = dist(from, e);
+        if (d < nBest) {
+          nBest = d;
+          next = e;
+        }
+      }
+      current = next;
+    }
+    G.lightningArcs.push({ points, color: powerDef.color, age: 0, maxAge: 140 });
+  }
+  function damageEnemy(e, dmg, color, source) {
+    e.hp -= dmg;
+    recordDamageDealt(source, dmg);
+    e.flashTimer = 5;
+    applyOnHitArtifacts(e, dmg, source);
+    if (e.hp <= 0) {
+      const idx = G.enemies.indexOf(e);
+      if (idx === -1) return;
+      G.score += e.score;
+      recordKill();
+      spawnFloatingText(e.x, e.y, "+" + e.score, "#ffaa00");
+      spawnParticles(e.x, e.y, e.color, 12, 3);
+      G.screenShake.intensity = Math.min(G.screenShake.intensity + 3, 8);
+      playKill();
+      const gemVal = Math.floor(e.score / 10) + (Math.random() < 0.3 ? 1 : 0);
+      spawnGem(e.x, e.y, gemVal);
+      G.enemies.splice(idx, 1);
+    }
+  }
+  function updateOrbitals(dt) {
+    const player = G.player;
+    const def = player.powerWeapon && POWER_WEAPON_DEFS[player.powerWeapon];
+    if (!def || def.fireMode !== "orbit") {
+      if (G.orbitals.length) G.orbitals = [];
+      return;
+    }
+    G.orbitAngle = (G.orbitAngle + def.orbitSpeed * dt) % (Math.PI * 2);
+    G.orbitals = [];
+    for (let i = 0; i < def.orbitCount; i++) {
+      const a = G.orbitAngle + Math.PI * 2 / def.orbitCount * i;
+      G.orbitals.push({
+        x: player.x + Math.cos(a) * def.orbitRadius,
+        y: player.y + Math.sin(a) * def.orbitRadius,
+        angle: a
+      });
+    }
+    const dmg = player.dmg * def.dmgMult;
+    for (let j = G.enemies.length - 1; j >= 0; j--) {
+      const e = G.enemies[j];
+      e.orbitHitCd = (e.orbitHitCd || 0) - dt * 1e3;
+      if (e.orbitHitCd > 0) continue;
+      for (const o of G.orbitals) {
+        if (dist(o, e) < e.r + def.orbitHitR) {
+          e.orbitHitCd = def.hitInterval;
+          spawnParticles(e.x, e.y, def.color, 3, 2);
+          damageEnemy(e, dmg, def.color, "glacialOrbit");
+          break;
+        }
+      }
+    }
+  }
+  function updateProjectiles(dt) {
+    for (let i = G.lightningArcs.length - 1; i >= 0; i--) {
+      const arc = G.lightningArcs[i];
+      arc.age += dt * 1e3;
+      if (arc.age >= arc.maxAge) G.lightningArcs.splice(i, 1);
+    }
+    for (let i = G.projectiles.length - 1; i >= 0; i--) {
+      const p = G.projectiles[i];
+      p.x += p.vx * dt * 60;
+      p.y += p.vy * dt * 60;
+      if (p.life !== void 0) {
+        p.life -= dt;
+        if (p.life <= 0) {
+          G.projectiles.splice(i, 1);
+          continue;
+        }
+      }
+      if (!p.aoe && (p.x < -20 || p.x > WORLD_W + 20 || p.y < -20 || p.y > WORLD_H + 20)) {
+        G.projectiles.splice(i, 1);
+        continue;
+      }
+      if (!p.aoe && dist(p, { x: p.originX, y: p.originY }) > PROJECTILE_RANGE) {
+        G.projectiles.splice(i, 1);
+        continue;
+      }
+      if (!p.aoe && circleHitsObstacle(p.x, p.y, p.r)) {
+        spawnParticles(p.x, p.y, "#eef5f8", 5, 2);
+        G.projectiles.splice(i, 1);
+        continue;
+      }
+      let removed = false;
+      for (let j = G.enemies.length - 1; j >= 0; j--) {
+        const e = G.enemies[j];
+        if (dist(p, e) < e.r + p.r) {
+          if (p.hitSet && p.hitSet.has(e)) continue;
+          e.hp -= p.dmg;
+          recordDamageDealt(p.source, p.dmg);
+          e.flashTimer = 5;
+          if (p.hitSet) p.hitSet.add(e);
+          spawnParticles(e.x, e.y, p.color, 4, 2);
+          applyOnHitArtifacts(e, p.dmg, p.source);
+          if (e.hp <= 0) {
+            G.score += e.score;
+            recordKill();
+            spawnFloatingText(e.x, e.y, "+" + e.score, "#ffaa00");
+            spawnParticles(e.x, e.y, e.color, 12, 3);
+            G.screenShake.intensity = Math.min(G.screenShake.intensity + 3, 8);
+            playKill();
+            const gemVal = Math.floor(e.score / 10) + (Math.random() < 0.3 ? 1 : 0);
+            spawnGem(e.x, e.y, gemVal);
+            G.enemies.splice(j, 1);
+          }
+          if (p.aoe) continue;
+          if (p.pierce) {
+            p.pierceLeft--;
+            if (p.pierceLeft <= 0) {
+              G.projectiles.splice(i, 1);
+              removed = true;
+              break;
+            }
+            continue;
+          }
+          G.projectiles.splice(i, 1);
+          removed = true;
+          break;
+        }
+      }
+      if (removed) continue;
+    }
+  }
 
   // js/render.js
   function getPalette() {
@@ -4656,18 +5208,18 @@ canvas {
     const bodyColor = flash ? "#fff" : color;
     const headColor = flash ? "#fff" : "#e2c9a0";
     const armColor = flash ? "#eee" : darken(color, 0.3);
-    drawFlippers(x, y, r * 0.75, armColor, faceAngle);
+    drawFlippers(x, y, r * 0.95, armColor, faceAngle);
     ctx2.beginPath();
-    ctx2.ellipse(x, y, r * 0.55, r * 0.8, 0, 0, Math.PI * 2);
+    ctx2.ellipse(x, y, r * 0.85, r * 1.05, 0, 0, Math.PI * 2);
     ctx2.fillStyle = bodyColor;
     ctx2.fill();
-    const hx = x + Math.cos(faceAngle) * r * 0.5;
-    const hy = y + Math.sin(faceAngle) * r * 0.5;
+    const hx = x + Math.cos(faceAngle) * r * 0.6;
+    const hy = y + Math.sin(faceAngle) * r * 0.6;
     ctx2.beginPath();
-    ctx2.arc(hx, hy, r * 0.4, 0, Math.PI * 2);
+    ctx2.arc(hx, hy, r * 0.48, 0, Math.PI * 2);
     ctx2.fillStyle = headColor;
     ctx2.fill();
-    drawEyes(hx, hy, r * 0.7, faceAngle, "#fff", "#222");
+    drawEyes(hx, hy, r * 0.85, faceAngle, "#fff", "#222");
   }
   var CREATURE_DRAWERS = {
     walrus: drawWalrus,
@@ -5263,6 +5815,24 @@ canvas {
     ctx2.lineWidth = 2;
     ctx2.stroke();
   }
+  function drawShockedFx(e) {
+    const now = performance.now();
+    ctx2.beginPath();
+    ctx2.arc(e.x, e.y, e.r + 3, 0, Math.PI * 2);
+    ctx2.strokeStyle = "rgba(255, 240, 120, 0.8)";
+    ctx2.lineWidth = 2;
+    ctx2.stroke();
+    ctx2.strokeStyle = "rgba(255, 255, 200, 0.95)";
+    ctx2.lineWidth = 1.5;
+    for (let k = 0; k < 6; k++) {
+      const ang = Math.PI * 2 / 6 * k + Math.sin(now / 60 + k) * 0.5;
+      const r1 = e.r, r2 = e.r + 7 + Math.sin(now / 50 + k * 2) * 3;
+      ctx2.beginPath();
+      ctx2.moveTo(e.x + Math.cos(ang) * r1, e.y + Math.sin(ang) * r1);
+      ctx2.lineTo(e.x + Math.cos(ang) * r2, e.y + Math.sin(ang) * r2);
+      ctx2.stroke();
+    }
+  }
   var titleStars = null;
   function drawTitleMountains(baseY, count, color, alpha) {
     ctx2.save();
@@ -5623,6 +6193,7 @@ canvas {
       if (e.burnTimer > 0) drawBurningFx(e);
       if (e.slowTimer > 0) drawFrostedFx(e);
       if (e.immobilizedTimer > 0) drawNettedFx(e);
+      if (e.shockedTimer > 0) drawShockedFx(e);
       if (e.isMiniBoss) {
         const pulse = 1 + Math.sin(performance.now() / 180) * 0.06;
         ctx2.beginPath();
@@ -5902,7 +6473,7 @@ canvas {
         ctx2.lineWidth = 1;
         ctx2.strokeRect(hpX - 1, hpY - 1, hpW + 2, hpH + 2);
       }
-      const xpPct = player.xp / (XP_PER_LEVEL * Math.pow(XP_LEVEL_GROWTH, player.level - 1));
+      const xpPct = player.xp / xpNeededForLevel(player.level);
       const xpW = 120, xpH = 6;
       const xpX = W / 2 - xpW / 2, xpY = H - 42;
       ctx2.fillStyle = "rgba(0,0,0,0.5)";
@@ -5948,7 +6519,7 @@ canvas {
         { text: "\u2764\uFE0F " + Math.ceil(player.hp) + "/" + Math.round(player.maxHp), color: "#5fff8f" }
       ];
       if (player.regen > 0) buildSegs.push({ text: "\u{1F4A7} +" + player.regen.toFixed(2) + "/s", color: "#9fe8ff" });
-      const elapsed = G.state === "playing" ? Math.floor((performance.now() - G.startTime) / 1e3) : G.frozenElapsed;
+      const elapsed = G.state === "playing" || G.state === "paused" ? getElapsedSeconds() : G.frozenElapsed;
       const hudLines = [
         {
           segments: [
@@ -5963,7 +6534,17 @@ canvas {
       ];
       if (G.equippedArtifact) {
         const art = getArtifactType(G.equippedArtifact);
-        if (art) hudLines.push({ text: art.name, color: "#ffdd00", font: "12px Courier New" });
+        if (art) {
+          const evo = getActiveEvolution();
+          if (evo) {
+            hudLines.push({ segments: [
+              { text: art.name, color: "#ffdd00" },
+              { text: evo.icon + " " + evo.name, color: evo.color }
+            ], font: "12px Courier New" });
+          } else {
+            hudLines.push({ text: art.name, color: "#ffdd00", font: "12px Courier New" });
+          }
+        }
       }
       for (const ap of G.activePowerups) {
         hudLines.push({
@@ -6712,6 +7293,19 @@ canvas {
     });
     container.appendChild(grid);
   }
+  function renderEvolutions(container) {
+    container.appendChild(sectionNote(
+      'A permanent, run-long upgrade a weapon gains once you push one of its signature stats far enough WHILE the matching artifact is equipped \u2014 no separate pickup, it just triggers (with an "Evolved!" banner) the moment both conditions are met. Each weapon has two paths, one per partner artifact.'
+    ));
+    const grid = document.createElement("div");
+    grid.className = "compendium-grid";
+    EVOLUTION_DEFS.forEach((ev) => {
+      grid.appendChild(makeCard(
+        `<div class="compendium-card-name">${ev.icon} ${ev.name}</div><div><span class="compendium-card-tag">${ev.weapon}</span><span class="compendium-card-tag">${ev.artifact}</span></div><div class="compendium-card-stats">Requires: ${ev.trigger}</div><div class="compendium-card-desc">${ev.effect}</div>`
+      ));
+    });
+    container.appendChild(grid);
+  }
   var POWERUP_BASE_KEYS = ["dmg", "hp", "proj", "pierce", "radius"];
   var WEAPON_SPECIFIC_POWERUP_KEYS = /* @__PURE__ */ new Set(["proj", "pierce", "radius"]);
   function renderPowerups(container) {
@@ -6752,6 +7346,7 @@ canvas {
     { id: "permanent-upgrades", title: "\u{1F3EA} Permanent Upgrades", render: renderPermanentUpgrades },
     { id: "penguins", title: "\u{1F427} Penguins & Abilities", render: renderPenguins },
     { id: "artifacts", title: "\u{1F3FA} Artifacts", render: renderArtifacts },
+    { id: "evolutions", title: "\u{1F52E} Weapon Evolutions", render: renderEvolutions },
     { id: "powerups", title: "\u{1F48E} Powerups", render: renderPowerups },
     { id: "settings", title: "\u2699\uFE0F Settings", render: renderSettings },
     { id: "controls", title: "\u2328\uFE0F Controls", render: renderControlsList }
@@ -6866,329 +7461,6 @@ canvas {
     }
   }
 
-  // js/projectiles.js
-  function applyOnHitArtifacts(e, dmg) {
-    if (G.equippedArtifact === "frostbiteCharm") {
-      const a = getArtifactType("frostbiteCharm");
-      if (Math.random() < a.procChance) {
-        e.slowTimer = a.slowDuration;
-        e.slowMult = a.slowMult;
-      }
-    } else if (G.equippedArtifact === "staticCoil") {
-      const a = getArtifactType("staticCoil");
-      if (Math.random() < a.procChance) {
-        let target = null, bestDist = a.range;
-        for (const other of G.enemies) {
-          if (other === e) continue;
-          const d = dist(e, other);
-          if (d < bestDist) {
-            bestDist = d;
-            target = other;
-          }
-        }
-        if (target) {
-          const arcDmg = dmg * a.dmgFraction;
-          target.hp -= arcDmg;
-          recordDamageDealt("staticCoil", arcDmg);
-          spawnParticles(target.x, target.y, "#8fd8ff", 4, 2);
-          G.lightningArcs.push({ points: [{ x: e.x, y: e.y }, { x: target.x, y: target.y }], color: "#8fd8ff", age: 0, maxAge: 130 });
-          if (target.hp <= 0) {
-            const idx = G.enemies.indexOf(target);
-            if (idx !== -1) {
-              G.score += target.score;
-              recordKill();
-              spawnFloatingText(target.x, target.y, "+" + target.score, "#ffaa00");
-              spawnParticles(target.x, target.y, target.color, 12, 3);
-              G.screenShake.intensity = Math.min(G.screenShake.intensity + 3, 8);
-              playKill();
-              const gemVal = Math.floor(target.score / 10) + (Math.random() < 0.3 ? 1 : 0);
-              spawnGem(target.x, target.y, gemVal);
-              G.enemies.splice(idx, 1);
-            }
-          }
-        }
-      }
-    }
-  }
-  function shoot() {
-    const player = G.player;
-    const now = performance.now();
-    if (now - player.lastShot >= player.fireRate) {
-      player.lastShot = now;
-      const fireMode = WEAPON_TYPES[G.weapon].fireMode;
-      if (fireMode === "pierce") fireHarpoon(player);
-      else if (fireMode === "aoe") fireNova(player);
-      else fireRadial(player);
-      playShoot(G.weapon);
-    }
-    const powerDef = player.powerWeapon && POWER_WEAPON_DEFS[player.powerWeapon];
-    if (powerDef && powerDef.fireMode !== "orbit" && now - player.powerLastShot >= powerDef.fireRate) {
-      player.powerLastShot = now;
-      if (powerDef.fireMode === "aoe") fireRingOfFire(player, powerDef);
-      else if (powerDef.fireMode === "chain") fireChainLightning(player, powerDef);
-      else fireFlamingSnowballs(player, powerDef);
-      playShoot(powerDef.key);
-    }
-  }
-  function fireRadial(player) {
-    const color = WEAPON_TYPES[G.weapon].color;
-    const count = player.projCount;
-    for (let i = 0; i < count; i++) {
-      const angle = Math.PI * 2 / count * i + Math.random() * 0.15;
-      G.projectiles.push({
-        x: player.x,
-        y: player.y,
-        originX: player.x,
-        originY: player.y,
-        vx: Math.cos(angle) * player.projSpeed,
-        vy: Math.sin(angle) * player.projSpeed,
-        dmg: player.dmg,
-        r: 4,
-        color,
-        shape: "snowball",
-        source: "barrage"
-      });
-    }
-  }
-  function fireHarpoon(player) {
-    let angle = player.facing;
-    let nearest = null, nearestDist = Infinity;
-    for (const e of G.enemies) {
-      const d = dist(player, e);
-      if (d < nearestDist) {
-        nearestDist = d;
-        nearest = e;
-      }
-    }
-    if (nearest) angle = Math.atan2(nearest.y - player.y, nearest.x - player.x);
-    G.projectiles.push({
-      x: player.x,
-      y: player.y,
-      originX: player.x,
-      originY: player.y,
-      vx: Math.cos(angle) * player.projSpeed,
-      vy: Math.sin(angle) * player.projSpeed,
-      dmg: player.dmg,
-      r: 6,
-      color: WEAPON_TYPES.harpoon.color,
-      shape: "harpoon",
-      pierce: true,
-      pierceLeft: player.pierceCount,
-      hitSet: /* @__PURE__ */ new Set(),
-      source: "harpoon"
-    });
-  }
-  function fireNova(player) {
-    const life = 0.35;
-    G.projectiles.push({
-      x: player.x,
-      y: player.y,
-      vx: 0,
-      vy: 0,
-      dmg: player.dmg,
-      r: player.novaRadius,
-      color: WEAPON_TYPES.nova.color,
-      aoe: true,
-      life,
-      maxLife: life,
-      maxRadius: player.novaRadius,
-      hitSet: /* @__PURE__ */ new Set(),
-      source: "nova"
-    });
-  }
-  function fireFlamingSnowballs(player, powerDef) {
-    const count = player.projCount;
-    const dmg = player.dmg * powerDef.dmgMult;
-    for (let i = 0; i < count; i++) {
-      const angle = Math.PI * 2 / count * i + Math.random() * 0.15;
-      G.projectiles.push({
-        x: player.x,
-        y: player.y,
-        originX: player.x,
-        originY: player.y,
-        vx: Math.cos(angle) * player.projSpeed,
-        vy: Math.sin(angle) * player.projSpeed,
-        dmg,
-        r: 5,
-        color: powerDef.color,
-        shape: "flame",
-        source: "flamingSnowballs"
-      });
-    }
-  }
-  function fireRingOfFire(player, powerDef) {
-    const life = 0.4;
-    G.projectiles.push({
-      x: player.x,
-      y: player.y,
-      vx: 0,
-      vy: 0,
-      dmg: player.dmg * powerDef.dmgMult,
-      r: powerDef.radius,
-      color: powerDef.color,
-      aoe: true,
-      fireRing: true,
-      life,
-      maxLife: life,
-      maxRadius: powerDef.radius,
-      hitSet: /* @__PURE__ */ new Set(),
-      source: "ringOfFire"
-    });
-  }
-  function fireChainLightning(player, powerDef) {
-    if (G.enemies.length === 0) return;
-    const dmg = player.dmg * powerDef.dmgMult;
-    let current = null, best = Infinity;
-    for (const e of G.enemies) {
-      const d = dist(player, e);
-      if (d < best) {
-        best = d;
-        current = e;
-      }
-    }
-    const hit = /* @__PURE__ */ new Set();
-    const points = [{ x: player.x, y: player.y }];
-    for (let hop = 0; hop < powerDef.chainCount && current; hop++) {
-      points.push({ x: current.x, y: current.y });
-      hit.add(current);
-      spawnParticles(current.x, current.y, powerDef.color, 6, 3);
-      damageEnemy(current, dmg, powerDef.color, "thundersquall");
-      const from = current;
-      let next = null, nBest = powerDef.chainRange;
-      for (const e of G.enemies) {
-        if (hit.has(e)) continue;
-        const d = dist(from, e);
-        if (d < nBest) {
-          nBest = d;
-          next = e;
-        }
-      }
-      current = next;
-    }
-    G.lightningArcs.push({ points, color: powerDef.color, age: 0, maxAge: 140 });
-  }
-  function damageEnemy(e, dmg, color, source) {
-    e.hp -= dmg;
-    recordDamageDealt(source, dmg);
-    e.flashTimer = 5;
-    applyOnHitArtifacts(e, dmg);
-    if (e.hp <= 0) {
-      const idx = G.enemies.indexOf(e);
-      if (idx === -1) return;
-      G.score += e.score;
-      recordKill();
-      spawnFloatingText(e.x, e.y, "+" + e.score, "#ffaa00");
-      spawnParticles(e.x, e.y, e.color, 12, 3);
-      G.screenShake.intensity = Math.min(G.screenShake.intensity + 3, 8);
-      playKill();
-      const gemVal = Math.floor(e.score / 10) + (Math.random() < 0.3 ? 1 : 0);
-      spawnGem(e.x, e.y, gemVal);
-      G.enemies.splice(idx, 1);
-    }
-  }
-  function updateOrbitals(dt) {
-    const player = G.player;
-    const def = player.powerWeapon && POWER_WEAPON_DEFS[player.powerWeapon];
-    if (!def || def.fireMode !== "orbit") {
-      if (G.orbitals.length) G.orbitals = [];
-      return;
-    }
-    G.orbitAngle = (G.orbitAngle + def.orbitSpeed * dt) % (Math.PI * 2);
-    G.orbitals = [];
-    for (let i = 0; i < def.orbitCount; i++) {
-      const a = G.orbitAngle + Math.PI * 2 / def.orbitCount * i;
-      G.orbitals.push({
-        x: player.x + Math.cos(a) * def.orbitRadius,
-        y: player.y + Math.sin(a) * def.orbitRadius,
-        angle: a
-      });
-    }
-    const dmg = player.dmg * def.dmgMult;
-    for (let j = G.enemies.length - 1; j >= 0; j--) {
-      const e = G.enemies[j];
-      e.orbitHitCd = (e.orbitHitCd || 0) - dt * 1e3;
-      if (e.orbitHitCd > 0) continue;
-      for (const o of G.orbitals) {
-        if (dist(o, e) < e.r + def.orbitHitR) {
-          e.orbitHitCd = def.hitInterval;
-          spawnParticles(e.x, e.y, def.color, 3, 2);
-          damageEnemy(e, dmg, def.color, "glacialOrbit");
-          break;
-        }
-      }
-    }
-  }
-  function updateProjectiles(dt) {
-    for (let i = G.lightningArcs.length - 1; i >= 0; i--) {
-      const arc = G.lightningArcs[i];
-      arc.age += dt * 1e3;
-      if (arc.age >= arc.maxAge) G.lightningArcs.splice(i, 1);
-    }
-    for (let i = G.projectiles.length - 1; i >= 0; i--) {
-      const p = G.projectiles[i];
-      p.x += p.vx * dt * 60;
-      p.y += p.vy * dt * 60;
-      if (p.life !== void 0) {
-        p.life -= dt;
-        if (p.life <= 0) {
-          G.projectiles.splice(i, 1);
-          continue;
-        }
-      }
-      if (!p.aoe && (p.x < -20 || p.x > WORLD_W + 20 || p.y < -20 || p.y > WORLD_H + 20)) {
-        G.projectiles.splice(i, 1);
-        continue;
-      }
-      if (!p.aoe && dist(p, { x: p.originX, y: p.originY }) > PROJECTILE_RANGE) {
-        G.projectiles.splice(i, 1);
-        continue;
-      }
-      if (!p.aoe && circleHitsObstacle(p.x, p.y, p.r)) {
-        spawnParticles(p.x, p.y, "#eef5f8", 5, 2);
-        G.projectiles.splice(i, 1);
-        continue;
-      }
-      let removed = false;
-      for (let j = G.enemies.length - 1; j >= 0; j--) {
-        const e = G.enemies[j];
-        if (dist(p, e) < e.r + p.r) {
-          if (p.hitSet && p.hitSet.has(e)) continue;
-          e.hp -= p.dmg;
-          recordDamageDealt(p.source, p.dmg);
-          e.flashTimer = 5;
-          if (p.hitSet) p.hitSet.add(e);
-          spawnParticles(e.x, e.y, p.color, 4, 2);
-          applyOnHitArtifacts(e, p.dmg);
-          if (e.hp <= 0) {
-            G.score += e.score;
-            recordKill();
-            spawnFloatingText(e.x, e.y, "+" + e.score, "#ffaa00");
-            spawnParticles(e.x, e.y, e.color, 12, 3);
-            G.screenShake.intensity = Math.min(G.screenShake.intensity + 3, 8);
-            playKill();
-            const gemVal = Math.floor(e.score / 10) + (Math.random() < 0.3 ? 1 : 0);
-            spawnGem(e.x, e.y, gemVal);
-            G.enemies.splice(j, 1);
-          }
-          if (p.aoe) continue;
-          if (p.pierce) {
-            p.pierceLeft--;
-            if (p.pierceLeft <= 0) {
-              G.projectiles.splice(i, 1);
-              removed = true;
-              break;
-            }
-            continue;
-          }
-          G.projectiles.splice(i, 1);
-          removed = true;
-          break;
-        }
-      }
-      if (removed) continue;
-    }
-  }
-
   // js/enemies.js
   function getWaveScaleMult() {
     const maxTier = Math.floor(WAVE_SCALE_MAX_WAVE / WAVE_SCALE_STEP);
@@ -7275,7 +7547,9 @@ canvas {
       slowTimer: 0,
       slowMult: 1,
       burnTimer: 0,
-      burnDps: 0
+      burnDps: 0,
+      shockedTimer: 0
+      // Thundersquall's own inflicted status — see projectiles.js's applyOnHitArtifacts
     });
   }
   var DEFAULT_ROSTER = ["basic", "fast", "tank", "zombie", "bat", "demon"];
@@ -7383,7 +7657,9 @@ canvas {
       slowTimer: 0,
       slowMult: 1,
       burnTimer: 0,
-      burnDps: 0
+      burnDps: 0,
+      shockedTimer: 0
+      // Thundersquall's own inflicted status — see projectiles.js's applyOnHitArtifacts
     });
   }
   function pickEscortTypes(mapDef) {
@@ -7469,6 +7745,7 @@ canvas {
       if (e.slowTimer > 0) e.slowTimer -= dt;
       if (e.immobilizedTimer > 0) e.immobilizedTimer -= dt;
       if (e.hitCooldown > 0) e.hitCooldown -= dt;
+      if (e.shockedTimer > 0) e.shockedTimer -= dt;
       if (e.burnTimer > 0) {
         e.burnTimer -= dt;
         const burnDmg = e.burnDps * dt;
@@ -7536,6 +7813,7 @@ canvas {
           G.screenShake.intensity = Math.min(G.screenShake.intensity + 5, 12);
           spawnParticles(player.x, player.y, "#ff3366", 8, 2);
           if (artifact && artifact.key === "blubberPlating") spawnParticles(player.x, player.y, "#ffd9a0", 7, 2);
+          if (isRetaliationNovaActive() && player.retaliationNovaCooldown <= 0) triggerRetaliationPulse(player);
           playHurt();
           if (player.hp <= 0) {
             player.hp = 0;
@@ -7602,6 +7880,7 @@ canvas {
           G.screenShake.intensity = Math.min(G.screenShake.intensity + 5, 12);
           spawnParticles(player.x, player.y, p.color, 8, 2);
           if (p.dmg && artifact && artifact.key === "blubberPlating") spawnParticles(player.x, player.y, "#ffd9a0", 7, 2);
+          if (p.dmg && isRetaliationNovaActive() && player.retaliationNovaCooldown <= 0) triggerRetaliationPulse(player);
           if (p.stun) playNetted();
           else playHurt();
           if (player.hp <= 0) {
@@ -7723,7 +8002,7 @@ canvas {
         panel.style.display = "none";
         playLevelUp();
         spawnParticles(G.player.x, G.player.y, "#7dffea", 20, 4);
-        spawnFloatingText(G.player.x, G.player.y - 30, b.label, "#7dffea");
+        spawnFloatingText(G.player.x, G.player.y - 30, b.label, "#7dffea", FLOATING_TEXT_LONG_DECAY);
         advanceLevel();
       };
       choices.appendChild(btn);
@@ -7903,10 +8182,13 @@ canvas {
   }
   function pauseGame() {
     G.state = "paused";
+    G.pauseStartedAt = performance.now();
     showPausePanel();
   }
   function resumeGame() {
     G.state = "playing";
+    G.pausedAccum += performance.now() - G.pauseStartedAt;
+    G.pauseStartedAt = 0;
     G.lastTime = performance.now();
     hidePausePanel();
   }
@@ -7976,6 +8258,8 @@ canvas {
       if (cds[k] > 0) cds[k] -= dt * 1e3;
     }
     if (player.immobilizedTimer > 0) player.immobilizedTimer -= dt;
+    if (player.retaliationNovaCooldown > 0) player.retaliationNovaCooldown -= dt;
+    checkWeaponEvolutionToasts(player);
     if (G.equippedArtifact === "crackedIcebergShard" && player.hp > 0) {
       const bleed = getArtifactType("crackedIcebergShard").bleedPerSec * dt;
       player.hp -= bleed;
